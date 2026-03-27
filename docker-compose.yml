@@ -1,0 +1,26 @@
+# Easypanel Configuration for Atus Dashboard
+
+version: "3.8"
+
+services:
+  atus-dashboard:
+    image: ghcr.io/guilhermegiorgi/atus-dashboard:latest
+    container_name: atus-dashboard
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    networks:
+      - easypanel-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  easypanel-network:
+    external: true
