@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://chatbot.atusbr.com.br';
+const API_BASE_URL = '/api';
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY || 'atus-mcp-api-key-2026';
 
 interface ApiResponse<T> {
@@ -59,7 +59,6 @@ class AtusAPI {
       const url = `${API_BASE_URL}${endpoint}`;
       const response = await fetch(url, {
         ...options,
-        headers: this.getHeaders(),
       });
 
       const data = await response.json();
