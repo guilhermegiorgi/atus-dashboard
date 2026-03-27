@@ -48,3 +48,7 @@
 {"id":"int-88728006","kind":"field_change","created_at":"2026-03-27T16:13:09.424502793Z","actor":"sophia-ggailabs","issue_id":"ad-8el","extra":{"field":"status","new_value":"open","old_value":"closed"}}
 {"id":"int-57b2d3e4","kind":"field_change","created_at":"2026-03-27T16:13:26.896457423Z","actor":"sophia-ggailabs","issue_id":"ad-8el","extra":{"field":"status","new_value":"hooked","old_value":"open"}}
 {"id":"int-2867bc91","kind":"field_change","created_at":"2026-03-27T16:13:26.89659098Z","actor":"sophia-ggailabs","issue_id":"ad-8el","extra":{"field":"assignee","new_value":"atus_dashboard/polecats/quartz","old_value":""}}
+{"id":"int-51c22a2f","kind":"field_change","created_at":"2026-03-27T16:24:03.235685127Z","actor":"sophia-ggailabs","issue_id":"ad-sgi","extra":{"field":"status","new_value":"open","old_value":"hooked"}}
+{"id":"int-7afa22b7","kind":"field_change","created_at":"2026-03-27T16:24:03.235846371Z","actor":"sophia-ggailabs","issue_id":"ad-sgi","extra":{"field":"assignee","new_value":"","old_value":"atus_dashboard/witness"}}
+{"id":"int-feeb5c15","kind":"field_change","created_at":"2026-03-27T16:24:04.846854136Z","actor":"sophia-ggailabs","issue_id":"ad-sgi","extra":{"field":"status","new_value":"hooked","old_value":"open"}}
+{"id":"int-7418abfb","kind":"field_change","created_at":"2026-03-27T16:24:04.847024318Z","actor":"sophia-ggailabs","issue_id":"ad-sgi","extra":{"field":"assignee","new_value":"atus_dashboard/polecats/jasper","old_value":""}}
