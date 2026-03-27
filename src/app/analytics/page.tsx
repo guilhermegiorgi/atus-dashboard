@@ -10,16 +10,22 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+useEffect(() => {
     const fetchStats = async () => {
       try {
         const response = await api.getLeadsStats();
+        console.log('Stats API Response:', response);
+        
         if (response.error) {
           setError(response.error);
         } else if (response.data) {
-          setStats(response.data);
+          // Verificar formato da resposta
+          const statsData = (response.data as any).data || response.data;
+          console.log('Stats data:', statsData);
+          setStats(statsData);
         }
-      } catch {
+      } catch (err) {
+        console.error('Error fetching stats:', err);
         setError("Erro ao carregar estatísticas");
       } finally {
         setLoading(false);

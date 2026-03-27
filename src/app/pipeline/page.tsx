@@ -17,12 +17,18 @@ export default function PipelinePage() {
   const fetchLeads = async () => {
     try {
       const response = await api.getLeads();
+      console.log('API Response:', response);
+      
       if (response.error) {
         setError(response.error);
       } else if (response.data) {
-        setLeads(response.data);
+        // Verificar se é um array, se não, tentar extrair do formato esperado
+        const leadsData = Array.isArray(response.data) ? response.data : (response.data as any).data || [];
+        console.log('Leads data:', leadsData);
+        setLeads(leadsData);
       }
-    } catch {
+    } catch (err) {
+      console.error('Error fetching leads:', err);
       setError("Erro ao carregar leads");
     } finally {
       setLoading(false);
