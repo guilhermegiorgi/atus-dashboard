@@ -6,19 +6,13 @@ import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
   Users,
-  TrendingUp,
-  Settings,
-  BarChart3,
-  MessageSquare,
+  Home,
 } from 'lucide-react';
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Início', href: '/', icon: Home },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Leads', href: '/leads', icon: Users },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'Conversations', href: '/conversations', icon: MessageSquare },
-  { name: 'Pipeline', href: '/pipeline', icon: TrendingUp },
-  { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
 export function Sidebar() {
