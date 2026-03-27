@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, TrendingUp, Clock, CheckCircle } from "lucide-react";
+import { Users, TrendingUp, Clock, CheckCircle, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { api, Lead, StatsData } from "@/lib/api/client";
 
 export default function DashboardPage() {
@@ -47,7 +47,10 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground">Carregando...</div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
+          <p className="text-muted-foreground">Carregando dados...</p>
+        </div>
       </div>
     );
   }
@@ -55,7 +58,10 @@ export default function DashboardPage() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-destructive">Erro: {error}</div>
+        <div className="text-destructive text-center">
+          <p className="font-semibold">Erro ao carregar</p>
+          <p className="text-sm">{error}</p>
+        </div>
       </div>
     );
   }
@@ -67,95 +73,143 @@ export default function DashboardPage() {
 
   const statsCards = [
     {
-      title: "Total Leads",
+      title: "Total de Leads",
       value: total,
-      description: "Todos os leads registrados",
+      description: "Leads registrados no sistema",
       icon: Users,
       trend: "+12% este mês",
+      trendUp: true,
+      color: "text-blue-400",
+      bgColor: "bg-blue-500/10",
     },
     {
       title: "Leads Novos",
       value: novos,
-      description: "Leads não contatados",
+      description: "Aguardando primeiro contato",
       icon: Clock,
-      trend: "+5 novos hoje",
+      trend: "+5 hoje",
+      trendUp: true,
+      color: "text-yellow-400",
+      bgColor: "bg-yellow-500/10",
     },
     {
       title: "Convertidos",
       value: converted,
-      description: "Leads que converteram",
+      description: "Leads que fecharam negócio",
       icon: CheckCircle,
       trend: "+3 esta semana",
+      trendUp: true,
+      color: "text-green-400",
+      bgColor: "bg-green-500/10",
     },
     {
       title: "Taxa de Conversão",
       value: `${conversionRate}%`,
-      description: "De leads convertidos",
+      description: "Média de conversão",
       icon: TrendingUp,
       trend: "+2.3% vs mês anterior",
+      trendUp: true,
+      color: "text-primary",
+      bgColor: "bg-primary/10",
     },
   ];
 
   const recentLeads = leads.slice(0, 5);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">
-            Visão geral dos seus leads e métricas
+            Visão geral dos seus leads e métricas de desempenho
           </p>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {statsCards.map((stat) => (
-          <Card key={stat.title}>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {statsCards.map((stat, index) => (
+          <Card 
+            key={stat.title} 
+            className="glass border-border/50 hover:border-primary/30 transition-all duration-300 animate-slide-up"
+            style={{ animationDelay: `${index * 100}ms` }}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
                 {stat.title}
               </CardTitle>
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
+              <div className={`h-10 w-10 rounded-xl ${stat.bgColor} flex items-center justify-center`}>
+                <stat.icon className={`h-5 w-5 ${stat.color}`} />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-3xl font-bold">{stat.value}</div>
+              <p className="text-xs text-muted-foreground mt-1">
                 {stat.description}
               </p>
-              <p className="text-xs text-green-600 mt-1">
-                {stat.trend}
-              </p>
+              <div className="flex items-center gap-1 mt-2">
+                {stat.trendUp ? (
+                  <ArrowUpRight className="h-3 w-3 text-green-400" />
+                ) : (
+                  <ArrowDownRight className="h-3 w-3 text-red-400" />
+                )}
+                <span className={`text-xs ${stat.trendUp ? 'text-green-400' : 'text-red-400'}`}>
+                  {stat.trend}
+                </span>
+              </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Recent Leads Table */}
-      <Card>
+      <Card className="glass border-border/50 animate-slide-up stagger-4">
         <CardHeader>
-          <CardTitle>Leads Recentes</CardTitle>
-          <CardDescription>
-            Últimos 5 leads adicionados ao sistema
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Leads Recentes</CardTitle>
+              <CardDescription>
+                Últimos leads adicionados ao sistema
+              </CardDescription>
+            </div>
+            <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+              {leads.length} total
+            </Badge>
+          </div>
         </CardHeader>
         <CardContent>
           {recentLeads.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">Nenhum lead encontrado</p>
+            <div className="text-center py-12">
+              <Users className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+              <p className="text-muted-foreground">Nenhum lead encontrado</p>
+            </div>
           ) : (
             <div className="space-y-4">
-              {recentLeads.map((lead) => (
-                <div key={lead.id} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">{lead.nome_completo || 'Sem nome'}</p>
-                    <p className="text-sm text-muted-foreground">{lead.email || lead.telefone}</p>
+              {recentLeads.map((lead, index) => (
+                <div 
+                  key={lead.id} 
+                  className="flex items-center justify-between p-4 rounded-xl bg-secondary/30 hover:bg-secondary/50 transition-colors border border-transparent hover:border-border/50 animate-slide-up"
+                  style={{ animationDelay: `${(index + 5) * 50}ms` }}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-orange-600/20 flex items-center justify-center text-primary font-semibold">
+                      {(lead.nome_completo || 'SN').charAt(0).toUpperCase()}
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">{lead.nome_completo || 'Sem nome'}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {lead.email || lead.telefone || 'Sem contato'}
+                      </p>
+                    </div>
                   </div>
                   <Badge variant={
-                    lead.status === 'NOVO' ? 'secondary' :
-                    lead.status === 'EM_ATENDIMENTO' ? 'default' :
+                    lead.status === 'NOVO' ? 'default' :
+                    lead.status === 'EM_ATENDIMENTO' ? 'secondary' :
                     lead.status === 'CONVERTIDO' ? 'outline' :
                     'destructive'
+                  } className={
+                    lead.status === 'NOVO' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
+                    lead.status === 'EM_ATENDIMENTO' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
+                    lead.status === 'CONVERTIDO' ? 'bg-green-500/20 text-green-400 border-green-500/30' : ''
                   }>
                     {lead.status === 'NOVO' ? 'Novo' :
                      lead.status === 'EM_ATENDIMENTO' ? 'Em Atendimento' :

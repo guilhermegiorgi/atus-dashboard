@@ -16,8 +16,8 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "ATUS Dashboard",
-  description: "Lead management dashboard",
+  title: "ATUS Dashboard | Gestão de Leads",
+  description: "Plataforma de gestão de leads e conversas da Atus",
 };
 
 export default function RootLayout({
@@ -26,13 +26,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="pt-BR" className="h-full">
       <body
-        className={cn("font-sans antialiased h-full", geistSans.variable, geistMono.variable)}
+        className={cn("font-sans antialiased h-full bg-background", geistSans.variable, geistMono.variable)}
       >
         <div className="flex h-full">
           <Sidebar />
-          <main className="flex-1 overflow-auto">
+          <main className="flex-1 overflow-auto p-8">
             {children}
           </main>
         </div>
