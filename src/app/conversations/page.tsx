@@ -28,31 +28,43 @@ export default function ConversationsPage() {
     fetchLeads();
   }, []);
 
-  const fetchLeads = async () => {
+const fetchLeads = async () => {
     try {
       const response = await api.getLeads();
+      console.log('Leads API Response:', response);
+      
       if (response.error) {
         setError(response.error);
       } else if (response.data) {
-        setLeads(response.data);
+        const leadsData = Array.isArray(response.data) ? response.data : (response.data as { data?: Lead[] }).data || [];
+        console.log('Leads data:', leadsData);
+        setLeads(leadsData);
       }
-    } catch {
+    } catch (err) {
+      console.error('Error fetching leads:', err);
       setError("Erro ao carregar leads");
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchConversations = async (leadId: string) => {
+const fetchConversations = async (leadId: string) => {
     try {
       const response = await api.getLeadConversations(leadId);
+      console.log('Conversations API Response:', response);
+      
       if (response.error) {
         setError(response.error);
       } else if (response.data) {
-        setConversations(response.data);
+        const convData = Array.isArray(response.data) ? response.data : (response.data as { data?: Conversa[] }).data || [];
+        console.log('Conversations data:', convData);
+        setConversations(convData);
       }
-    } catch {
+    } catch (err) {
+      console.error('Error fetching conversations:', err);
       setError("Erro ao carregar conversas");
+    } finally {
+      setLoading(false);
     }
   };
 

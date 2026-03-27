@@ -19,10 +19,9 @@ useEffect(() => {
         if (response.error) {
           setError(response.error);
         } else if (response.data) {
-          // Verificar formato da resposta
-          const statsData = (response.data as any).data || response.data;
+          const statsData = (response.data as { data?: StatsData }).data || response.data;
           console.log('Stats data:', statsData);
-          setStats(statsData);
+          setStats(statsData as StatsData);
         }
       } catch (err) {
         console.error('Error fetching stats:', err);

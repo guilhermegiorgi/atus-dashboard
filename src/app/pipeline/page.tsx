@@ -22,8 +22,7 @@ export default function PipelinePage() {
       if (response.error) {
         setError(response.error);
       } else if (response.data) {
-        // Verificar se é um array, se não, tentar extrair do formato esperado
-        const leadsData = Array.isArray(response.data) ? response.data : (response.data as any).data || [];
+        const leadsData = Array.isArray(response.data) ? response.data : (response.data as { data?: Lead[] }).data || [];
         console.log('Leads data:', leadsData);
         setLeads(leadsData);
       }
