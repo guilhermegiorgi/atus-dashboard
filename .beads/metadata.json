@@ -4,6 +4,5 @@
   "dolt_database": "ad",
   "dolt_mode": "server",
   "dolt_server_host": "127.0.0.1",
-  "dolt_server_port": 3307,
-  "project_id": "911c80aa-b0c5-47be-904a-60e2e5b331b9"
+  "dolt_server_port": 3307
 }
