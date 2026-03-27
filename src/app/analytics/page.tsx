@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, ArrowUpRight } from "lucide-react";
 import { api, StatsData } from "@/lib/api/client";
+import PieChart from "@/components/analytics/PieChart";
 
 export default function AnalyticsPage() {
   const [stats, setStats] = useState<StatsData | null>(null);
@@ -144,6 +145,8 @@ export default function AnalyticsPage() {
           </Card>
         ))}
       </div>
+
+      <PieChart />
 
       {stats && (
         <Card className="glass border-border/50 animate-slide-up stagger-5">
