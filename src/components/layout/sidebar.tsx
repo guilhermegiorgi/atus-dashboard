@@ -7,12 +7,18 @@ import {
   LayoutDashboard,
   Users,
   Home,
+  BarChart3,
+  MessageSquare,
+  TrendingUp,
 } from 'lucide-react';
 
 const navigation = [
   { name: 'Início', href: '/', icon: Home },
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Leads', href: '/leads', icon: Users },
+  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+  { name: 'Conversations', href: '/conversations', icon: MessageSquare },
+  { name: 'Pipeline', href: '/pipeline', icon: TrendingUp },
 ];
 
 export function Sidebar() {
