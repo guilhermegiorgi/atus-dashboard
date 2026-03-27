@@ -1,5 +1,5 @@
-const API_BASE_URL = 'https://chatbot.atusbr.com.br';
-const API_KEY = 'atus-mcp-api-key-2026';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://chatbot.atusbr.com.br';
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY || 'atus-mcp-api-key-2026';
 
 interface ApiResponse<T> {
   data?: T;
@@ -131,7 +131,7 @@ class AtusAPI {
 
   // MCP
   async getLeadByPhone(telefone: string): Promise<ApiResponse<Lead>> {
-    return this.request<Lead>(`/mcp/lead/${telefone}`);
+    return this.request<Lead>(`/api/mcp/lead-phone/${telefone}`);
   }
 
   async createLead(data: Omit<Lead, 'id' | 'created_at' | 'updated_at'>): Promise<ApiResponse<Lead>> {
