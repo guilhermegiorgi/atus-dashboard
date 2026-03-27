@@ -52,3 +52,9 @@
 # - linear.api-key
 # - github.org
 # - github.repo
+
+prefix: ad
+issue-prefix: ad
+dolt.idle-timeout: "0"
+
+routing.mode: "explicit"
