@@ -9,7 +9,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Lead } from "@/types/leads";
+import { Lead } from "@/lib/api/client";
 import { Mail, Phone, MapPin, DollarSign, Building2, EditIcon } from "lucide-react";
 
 interface LeadDetailModalProps {
@@ -19,10 +19,10 @@ interface LeadDetailModalProps {
 }
 
 const statusColors: Record<string, string> = {
-  novo: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-  em_atendimento: "bg-orange-500/20 text-orange-400 border-orange-500/30",
-  convertido: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  perdido: "bg-red-500/20 text-red-400 border-red-500/30",
+  NOVO: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+  EM_ATENDIMENTO: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+  CONVERTIDO: "bg-green-500/20 text-green-400 border-green-500/30",
+  PERDIDO: "bg-red-500/20 text-red-400 border-red-500/30",
 };
 
 export function LeadDetailModal({ lead, open, onClose }: LeadDetailModalProps) {
