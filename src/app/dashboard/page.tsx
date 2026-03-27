@@ -82,29 +82,27 @@ export default function DashboardPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {recentLeads.map((lead) => (
-              <div key={lead.id} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium leading-none">{lead.name}</p>
-                  <p className="text-sm text-muted-foreground">{lead.company}</p>
-                </div>
-                <Badge variant={
-                  lead.status === 'new' ? 'default' :
-                  lead.status === 'contacted' ? 'secondary' :
-                  lead.status === 'qualified' ? 'outline' :
-                  lead.status === 'converted' ? 'default' :
-                  'destructive'
-                }>
-                  {lead.status === 'new' ? 'Novo' :
-                   lead.status === 'contacted' ? 'Contatado' :
-                   lead.status === 'qualified' ? 'Qualificado' :
-                   lead.status === 'converted' ? 'Convertido' :
-                   'Perdido'}
-                </Badge>
-              </div>
-            ))}
+<div className="space-y-4">
+        {recentLeads.map((lead) => (
+          <div key={lead.id} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
+            <div className="space-y-1">
+              <p className="text-sm font-medium leading-none">{lead.nome_completo || 'Sem nome'}</p>
+              <p className="text-sm text-muted-foreground">{lead.email || lead.telefone}</p>
+            </div>
+            <Badge variant={
+              lead.status === 'NOVO' ? 'secondary' :
+              lead.status === 'EM_ATENDIMENTO' ? 'default' :
+              lead.status === 'CONVERTIDO' ? 'outline' :
+              'destructive'
+            }>
+              {lead.status === 'NOVO' ? 'Novo' :
+               lead.status === 'EM_ATENDIMENTO' ? 'Em Atendimento' :
+               lead.status === 'CONVERTIDO' ? 'Convertido' :
+               lead.status === 'PERDIDO' ? 'Perdido' : lead.status}
+            </Badge>
           </div>
+        ))}
+      </div>
         </CardContent>
       </Card>
     </div>

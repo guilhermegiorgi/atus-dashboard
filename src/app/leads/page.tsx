@@ -102,16 +102,15 @@ export default function LeadsPage() {
             <TableBody>
               {filteredLeads.map((lead) => (
                 <TableRow key={lead.id}>
-                  <TableCell className="font-medium">{lead.name}</TableCell>
-                  <TableCell>{lead.company}</TableCell>
-                  <TableCell>{lead.email}</TableCell>
-                  <TableCell>
-                    <Badge variant={statusMap[lead.status].variant}>
-                      {statusMap[lead.status].label}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>R$ {lead.value.toLocaleString('pt-BR')}</TableCell>
-                  <TableCell>{lead.assignedTo}</TableCell>
+<TableCell className="font-medium">{lead.nome_completo || 'Sem nome'}</TableCell>
+              <TableCell>{lead.email || lead.telefone}</TableCell>
+              <TableCell>
+                <Badge variant={statusMap[lead.status]?.variant || "default"}>
+                  {statusMap[lead.status]?.label || lead.status}
+                </Badge>
+              </TableCell>
+              <TableCell>R$ {(lead.renda_comprovada || 0).toLocaleString('pt-BR')}</TableCell>
+              <TableCell>-</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button variant="ghost" size="icon">
