@@ -52,3 +52,11 @@
 {"id":"int-7afa22b7","kind":"field_change","created_at":"2026-03-27T16:24:03.235846371Z","actor":"sophia-ggailabs","issue_id":"ad-sgi","extra":{"field":"assignee","new_value":"","old_value":"atus_dashboard/witness"}}
 {"id":"int-feeb5c15","kind":"field_change","created_at":"2026-03-27T16:24:04.846854136Z","actor":"sophia-ggailabs","issue_id":"ad-sgi","extra":{"field":"status","new_value":"hooked","old_value":"open"}}
 {"id":"int-7418abfb","kind":"field_change","created_at":"2026-03-27T16:24:04.847024318Z","actor":"sophia-ggailabs","issue_id":"ad-sgi","extra":{"field":"assignee","new_value":"atus_dashboard/polecats/jasper","old_value":""}}
+{"id":"int-c3d5ded1","kind":"field_change","created_at":"2026-03-27T16:38:03.253947691Z","actor":"sophia-ggailabs","issue_id":"ad-1ha","extra":{"field":"status","new_value":"open","old_value":"hooked"}}
+{"id":"int-936ce69c","kind":"field_change","created_at":"2026-03-27T16:38:03.254165247Z","actor":"sophia-ggailabs","issue_id":"ad-1ha","extra":{"field":"assignee","new_value":"","old_value":"atus_dashboard/polecats/obsidian"}}
+{"id":"int-2f8b17b4","kind":"field_change","created_at":"2026-03-27T16:38:06.616735536Z","actor":"sophia-ggailabs","issue_id":"ad-1ha","extra":{"field":"status","new_value":"hooked","old_value":"open"}}
+{"id":"int-308da35d","kind":"field_change","created_at":"2026-03-27T16:38:06.616873056Z","actor":"sophia-ggailabs","issue_id":"ad-1ha","extra":{"field":"assignee","new_value":"atus_dashboard/polecats/jasper","old_value":""}}
+{"id":"int-2b5e5b29","kind":"field_change","created_at":"2026-03-27T16:43:50.954570822Z","actor":"sophia-ggailabs","issue_id":"ad-8el","extra":{"field":"status","new_value":"open","old_value":"hooked"}}
+{"id":"int-6838c1e5","kind":"field_change","created_at":"2026-03-27T16:43:50.954702698Z","actor":"sophia-ggailabs","issue_id":"ad-8el","extra":{"field":"assignee","new_value":"","old_value":"atus_dashboard/polecats/quartz"}}
+{"id":"int-7a338c08","kind":"field_change","created_at":"2026-03-27T16:43:56.655894859Z","actor":"sophia-ggailabs","issue_id":"ad-8el","extra":{"field":"status","new_value":"hooked","old_value":"open"}}
+{"id":"int-cd930c1f","kind":"field_change","created_at":"2026-03-27T16:43:56.656073139Z","actor":"sophia-ggailabs","issue_id":"ad-8el","extra":{"field":"assignee","new_value":"atus_dashboard/polecats/obsidian","old_value":""}}

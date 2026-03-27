@@ -56,3 +56,34 @@ time="2026-03-27T12:33:12-04:00" level=info msg=NewConnection DisableClientMulti
 time="2026-03-27T12:33:12-04:00" level=info msg=ConnectionClosed connectionID=22
 time="2026-03-27T12:33:12-04:00" level=info msg=ConnectionClosed connectionID=20
 time="2026-03-27T12:33:12-04:00" level=info msg=ConnectionClosed connectionID=19
+time="2026-03-27T12:33:12-04:00" level=info msg=NewConnection DisableClientMultiStatements=false connectionID=23
+time="2026-03-27T12:33:12-04:00" level=info msg=ConnectionClosed connectionID=23
+time="2026-03-27T12:33:12-04:00" level=info msg=NewConnection DisableClientMultiStatements=false connectionID=24
+time="2026-03-27T12:33:12-04:00" level=info msg=NewConnection DisableClientMultiStatements=false connectionID=25
+time="2026-03-27T12:33:12-04:00" level=info msg=ConnectionClosed connectionID=24
+time="2026-03-27T12:33:12-04:00" level=info msg=ConnectionClosed connectionID=25
+time="2026-03-27T12:33:12-04:00" level=info msg=NewConnection DisableClientMultiStatements=false connectionID=26
+time="2026-03-27T12:33:12-04:00" level=info msg=ConnectionClosed connectionID=26
+time="2026-03-27T12:33:12-04:00" level=info msg=NewConnection DisableClientMultiStatements=false connectionID=27
+time="2026-03-27T12:33:12-04:00" level=info msg=NewConnection DisableClientMultiStatements=false connectionID=28
+time="2026-03-27T12:33:12-04:00" level=info msg=ConnectionClosed connectionID=27
+time="2026-03-27T12:33:12-04:00" level=info msg=ConnectionClosed connectionID=28
+time="2026-03-27T12:33:12-04:00" level=info msg=NewConnection DisableClientMultiStatements=false connectionID=29
+time="2026-03-27T12:33:12-04:00" level=info msg=ConnectionClosed connectionID=29
+time="2026-03-27T12:33:12-04:00" level=info msg=NewConnection DisableClientMultiStatements=false connectionID=30
+time="2026-03-27T12:33:12-04:00" level=info msg=NewConnection DisableClientMultiStatements=false connectionID=31
+time="2026-03-27T12:33:12-04:00" level=info msg=ConnectionClosed connectionID=30
+time="2026-03-27T12:33:12-04:00" level=info msg=ConnectionClosed connectionID=31
+time="2026-03-27T12:33:12-04:00" level=info msg=NewConnection DisableClientMultiStatements=false connectionID=32
+time="2026-03-27T12:33:12-04:00" level=info msg=ConnectionClosed connectionID=32
+time="2026-03-27T12:33:12-04:00" level=info msg=NewConnection DisableClientMultiStatements=false connectionID=33
+time="2026-03-27T12:33:12-04:00" level=info msg=ConnectionClosed connectionID=33
+time="2026-03-27T12:33:12-04:00" level=info msg=NewConnection DisableClientMultiStatements=false connectionID=34
+time="2026-03-27T12:33:12-04:00" level=info msg=ConnectionClosed connectionID=34
+time="2026-03-27T12:33:12-04:00" level=info msg=NewConnection DisableClientMultiStatements=false connectionID=35
+time="2026-03-27T12:33:12-04:00" level=info msg=NewConnection DisableClientMultiStatements=false connectionID=36
+time="2026-03-27T12:33:12-04:00" level=info msg=ConnectionClosed connectionID=35
+time="2026-03-27T12:33:12-04:00" level=warning msg="error running query" connectTime="2026-03-27 12:33:12.703028589 -0400 -04 m=+1351.699862415" connectionDb=atus_dashboard connectionID=36 error="nothing to commit" queryTime="2026-03-27 12:33:12.718744748 -0400 -04 m=+1351.715578591"
+time="2026-03-27T12:33:13-04:00" level=info msg=NewConnection DisableClientMultiStatements=false connectionID=37
+time="2026-03-27T12:33:13-04:00" level=info msg=ConnectionClosed connectionID=37
+time="2026-03-27T12:33:13-04:00" level=info msg=ConnectionClosed connectionID=36
