@@ -7,3 +7,4 @@
 {"timestamp":"2026-03-27T16:49:33Z","operation":"burn","pinned_bead_id":"ad-8el","detached_molecule":"ad-wisp-cs1b","reason":"force re-sling: burning stale molecules","previous_state":"hooked"}
 {"timestamp":"2026-03-27T16:49:44Z","operation":"burn","pinned_bead_id":"ad-ap9","detached_molecule":"ad-wisp-wyfj","reason":"force re-sling: burning stale molecules","previous_state":"open"}
 {"timestamp":"2026-03-27T16:55:29Z","operation":"burn","pinned_bead_id":"ad-0vg","detached_molecule":"ad-wisp-xe50","reason":"force re-sling: burning stale molecules","previous_state":"open"}
+{"timestamp":"2026-03-28T16:55:38Z","operation":"burn","pinned_bead_id":"ad-1ha","detached_molecule":"ad-wisp-1567","reason":"force re-sling: burning stale molecules","previous_state":"open"}
