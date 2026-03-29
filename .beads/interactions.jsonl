@@ -92,3 +92,7 @@
 {"id":"int-edfe73ec","kind":"field_change","created_at":"2026-03-28T18:08:45.39745127Z","actor":"sophia-ggailabs","issue_id":"ad-sgi","extra":{"field":"assignee","new_value":"","old_value":"atus_dashboard/polecats/opal"}}
 {"id":"int-00936868","kind":"field_change","created_at":"2026-03-28T18:08:50.267848499Z","actor":"sophia-ggailabs","issue_id":"ad-sgi","extra":{"field":"status","new_value":"hooked","old_value":"open"}}
 {"id":"int-c7f5c0dd","kind":"field_change","created_at":"2026-03-28T18:08:50.268148373Z","actor":"sophia-ggailabs","issue_id":"ad-sgi","extra":{"field":"assignee","new_value":"atus_dashboard/polecats/onyx","old_value":""}}
+{"id":"int-8fe37284","kind":"field_change","created_at":"2026-03-29T13:43:36.332331866Z","actor":"atus_dashboard/witness","issue_id":"ad-1ha","extra":{"field":"status","new_value":"open","old_value":"hooked"}}
+{"id":"int-741c0bac","kind":"field_change","created_at":"2026-03-29T13:43:36.332577373Z","actor":"atus_dashboard/witness","issue_id":"ad-1ha","extra":{"field":"assignee","new_value":"","old_value":"atus_dashboard/polecats/obsidian"}}
+{"id":"int-ebbcd3cc","kind":"field_change","created_at":"2026-03-29T13:43:37.770359303Z","actor":"atus_dashboard/witness","issue_id":"ad-sgi","extra":{"field":"status","new_value":"open","old_value":"hooked"}}
+{"id":"int-1716f7e5","kind":"field_change","created_at":"2026-03-29T13:43:37.770567003Z","actor":"atus_dashboard/witness","issue_id":"ad-sgi","extra":{"field":"assignee","new_value":"","old_value":"atus_dashboard/polecats/onyx"}}
