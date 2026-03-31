@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Clock, CheckCircle, XCircle, TrendingUp, Users, Target, Zap } from "lucide-react";
+import { api } from "@/lib/api/client";
 import type { LeadSLA, SLAStats } from "@/types/sla";
 
 interface SLADashboardProps {
@@ -40,65 +41,75 @@ export function SLADashboard({ className }: SLADashboardProps) {
   const [recentAlerts, setRecentAlerts] = useState<LeadSLA[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Mock data - em produção, isso viria da API
+  // Buscar dados reais da API
   useEffect(() => {
-    const mockStats: SLAStats = {
-      totalLeads: 156,
-      onTime: 98,
-      atRisk: 23,
-      overdue: 12,
-      completed: 23,
-      averageResponseTime: 45, // minutos
-      averageResolutionTime: 24, // horas
-      complianceRate: 85.5,
+    const loadSLAMetrics = async () => {
+      try {
+        setLoading(true);
+        const response = await api.getSLAMetrics();
+        
+        if (response.data) {
+          setStats({
+            totalLeads: response.data.totalLeads,
+            onTime: response.data.onTime,
+            atRisk: response.data.atRisk,
+            overdue: response.data.overdue,
+            completed: response.data.completed,
+            averageResponseTime: response.data.averageResponseTime,
+            averageResolutionTime: response.data.averageResolutionTime,
+            complianceRate: response.data.complianceRate,
+          });
+          setRecentAlerts(response.data.recentAlerts.map(alert => ({
+            id: alert.id,
+            leadId: alert.leadId,
+            serviceLevelId: 'default',
+            assignedAt: new Date().toISOString(),
+            responseDeadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+            resolutionDeadline: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
+            status: alert.status,
+            alerts: alert.alerts.map(alertItem => ({
+              id: alertItem.id,
+              leadSLAId: alert.id,
+              type: alertItem.type,
+              message: alertItem.message,
+              createdAt: alertItem.createdAt,
+              acknowledged: alertItem.acknowledged
+            }))
+          })));
+        } else {
+          // Fallback para dados mockados se a API não tiver os endpoints
+          console.warn("API de métricas SLA não disponível, usando dados mockados");
+          setStats({
+            totalLeads: 0,
+            onTime: 0,
+            atRisk: 0,
+            overdue: 0,
+            completed: 0,
+            averageResponseTime: 0,
+            averageResolutionTime: 0,
+            complianceRate: 0,
+          });
+          setRecentAlerts([]);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar métricas SLA:", error);
+        setStats({
+          totalLeads: 0,
+          onTime: 0,
+          atRisk: 0,
+          overdue: 0,
+          completed: 0,
+          averageResponseTime: 0,
+          averageResolutionTime: 0,
+          complianceRate: 0,
+        });
+        setRecentAlerts([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const mockAlerts: LeadSLA[] = [
-      {
-        id: "1",
-        leadId: "lead-1",
-        serviceLevelId: "sla-1",
-        assignedAt: new Date().toISOString(),
-        responseDeadline: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 horas
-        resolutionDeadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 horas
-        status: "at_risk",
-        alerts: [
-          {
-            id: "alert-1",
-            leadSLAId: "1",
-            type: "response_due",
-            message: "Resposta próxima do vencimento",
-            createdAt: new Date().toISOString(),
-            acknowledged: false,
-          },
-        ],
-      },
-      {
-        id: "2",
-        leadId: "lead-2",
-        serviceLevelId: "sla-2",
-        assignedAt: new Date().toISOString(),
-        responseDeadline: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(), // 1 hora atrás
-        resolutionDeadline: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(), // 12 horas
-        status: "overdue",
-        alerts: [
-          {
-            id: "alert-2",
-            leadSLAId: "2",
-            type: "overdue",
-            message: "Resposta vencida",
-            createdAt: new Date().toISOString(),
-            acknowledged: false,
-          },
-        ],
-      },
-    ];
-
-    setTimeout(() => {
-      setStats(mockStats);
-      setRecentAlerts(mockAlerts);
-      setLoading(false);
-    }, 1000);
+    loadSLAMetrics();
   }, []);
 
   const getComplianceColor = (rate: number) => {

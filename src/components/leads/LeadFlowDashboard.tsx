@@ -15,6 +15,7 @@ import {
   DollarSign,
   Calendar
 } from "lucide-react";
+import { api } from "@/lib/api/client";
 
 interface FlowMetrics {
   totalLeads: number;
@@ -69,41 +70,63 @@ export function LeadFlowDashboard({ className }: LeadFlowDashboardProps) {
   
   const [loading, setLoading] = useState(true);
 
-  // Mock data - em produção, isso viria da API
+  // Buscar dados reais da API
   useEffect(() => {
-    const mockMetrics: FlowMetrics = {
-      totalLeads: 1247,
-      conversionRate: 23.5,
-      averageResponseTime: 2.3, // horas
-      averageLeadTime: 5.7, // dias
-      activeLeads: 342,
-      completedLeads: 293,
-      lostLeads: 156,
-      monthlyGrowth: 12.8,
-      topSources: [
-        { name: "Facebook Ads", leads: 456, conversionRate: 28.5 },
-        { name: "Google Ads", leads: 387, conversionRate: 24.2 },
-        { name: "Indicação", leads: 234, conversionRate: 45.3 },
-        { name: "Site Orgânico", leads: 170, conversionRate: 18.7 },
-      ],
-      statusDistribution: {
-        NOVO: 298,
-        EM_ATENDIMENTO: 156,
-        CONVERTIDO: 293,
-        PERDIDO: 156,
-      },
-      weeklyTrend: [
-        { week: "Semana 1", leads: 45, conversions: 12 },
-        { week: "Semana 2", leads: 52, conversions: 15 },
-        { week: "Semana 3", leads: 38, conversions: 9 },
-        { week: "Semana 4", leads: 61, conversions: 18 },
-      ],
+    const loadMetrics = async () => {
+      try {
+        setLoading(true);
+        const response = await api.getLeadFlowMetrics();
+        
+        if (response.data) {
+          setMetrics(response.data);
+        } else {
+          // Fallback para dados mockados se a API não tiver os endpoints
+          console.warn("API de métricas não disponível, usando dados mockados");
+          setMetrics({
+            totalLeads: 0,
+            conversionRate: 0,
+            averageResponseTime: 0,
+            averageLeadTime: 0,
+            activeLeads: 0,
+            completedLeads: 0,
+            lostLeads: 0,
+            monthlyGrowth: 0,
+            topSources: [],
+            statusDistribution: {
+              NOVO: 0,
+              EM_ATENDIMENTO: 0,
+              CONVERTIDO: 0,
+              PERDIDO: 0,
+            },
+            weeklyTrend: [],
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao carregar métricas de fluxo:", error);
+        setMetrics({
+          totalLeads: 0,
+          conversionRate: 0,
+          averageResponseTime: 0,
+          averageLeadTime: 0,
+          activeLeads: 0,
+          completedLeads: 0,
+          lostLeads: 0,
+          monthlyGrowth: 0,
+          topSources: [],
+          statusDistribution: {
+            NOVO: 0,
+            EM_ATENDIMENTO: 0,
+            CONVERTIDO: 0,
+            PERDIDO: 0,
+          },
+          weeklyTrend: [],
+        });
+      } finally {
+        setLoading(false);
+      }
     };
 
-    setTimeout(() => {
-      setMetrics(mockMetrics);
-      setLoading(false);
-    }, 1200);
+    loadMetrics();
   }, []);
 
   const getStatusColor = (status: keyof typeof metrics.statusDistribution) => {

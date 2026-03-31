@@ -188,6 +188,60 @@ class AtusAPI {
   async getStats(): Promise<ApiResponse<StatsData>> {
     return this.request<StatsData>("/api/mcp/stats");
   }
+
+  async getLeadFlowMetrics(): Promise<ApiResponse<{
+    totalLeads: number;
+    conversionRate: number;
+    averageResponseTime: number;
+    averageLeadTime: number;
+    activeLeads: number;
+    completedLeads: number;
+    lostLeads: number;
+    monthlyGrowth: number;
+    topSources: Array<{
+      name: string;
+      leads: number;
+      conversionRate: number;
+    }>;
+    statusDistribution: {
+      NOVO: number;
+      EM_ATENDIMENTO: number;
+      CONVERTIDO: number;
+      PERDIDO: number;
+    };
+    weeklyTrend: Array<{
+      week: string;
+      leads: number;
+      conversions: number;
+    }>;
+  }>> {
+    return this.request("/api/v1/metrics/flow");
+  }
+
+  async getSLAMetrics(): Promise<ApiResponse<{
+    totalLeads: number;
+    onTime: number;
+    atRisk: number;
+    overdue: number;
+    completed: number;
+    averageResponseTime: number;
+    averageResolutionTime: number;
+    complianceRate: number;
+    recentAlerts: Array<{
+      id: string;
+      leadId: string;
+      status: "on_time" | "at_risk" | "overdue" | "completed";
+      alerts: Array<{
+        id: string;
+        type: "response_due" | "resolution_due" | "overdue";
+        message: string;
+        createdAt: string;
+        acknowledged: boolean;
+      }>;
+    }>;
+  }>> {
+    return this.request("/api/v1/metrics/sla");
+  }
 }
 
 export const api = new AtusAPI();
