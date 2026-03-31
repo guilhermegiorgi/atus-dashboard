@@ -21,11 +21,9 @@ export default function PipelinePage() {
       if (response.error) {
         setError(response.error);
       } else if (response.data) {
-        const leadsData = Array.isArray(response.data) ? response.data : (response.data as { data?: Lead[] }).data || [];
-        setLeads(leadsData);
+        setLeads(Array.isArray(response.data) ? response.data : []);
       }
-    } catch (err) {
-      console.error('Erro ao carregar leads:', err);
+    } catch {
       setError("Erro ao carregar leads");
     } finally {
       setLoading(false);
@@ -41,7 +39,8 @@ export default function PipelinePage() {
       bgColor: "bg-yellow-500/10",
       borderColor: "border-yellow-500/30",
       textColor: "text-yellow-400",
-      count: leads.filter(l => l.status === "NOVO").length,
+      progressClass: "bg-yellow-500",
+      count: leads.filter((lead: Lead) => lead.status === "NOVO").length,
     },
     {
       name: "Em Atendimento",
@@ -51,7 +50,8 @@ export default function PipelinePage() {
       bgColor: "bg-blue-500/10",
       borderColor: "border-blue-500/30",
       textColor: "text-blue-400",
-      count: leads.filter(l => l.status === "EM_ATENDIMENTO").length,
+      progressClass: "bg-blue-500",
+      count: leads.filter((lead: Lead) => lead.status === "EM_ATENDIMENTO").length,
     },
     {
       name: "Convertidos",
@@ -61,7 +61,8 @@ export default function PipelinePage() {
       bgColor: "bg-green-500/10",
       borderColor: "border-green-500/30",
       textColor: "text-green-400",
-      count: leads.filter(l => l.status === "CONVERTIDO").length,
+      progressClass: "bg-green-500",
+      count: leads.filter((lead: Lead) => lead.status === "CONVERTIDO").length,
     },
     {
       name: "Perdidos",
@@ -71,16 +72,21 @@ export default function PipelinePage() {
       bgColor: "bg-red-500/10",
       borderColor: "border-red-500/30",
       textColor: "text-red-400",
-      count: leads.filter(l => l.status === "PERDIDO").length,
+      progressClass: "bg-red-500",
+      count: leads.filter((lead: Lead) => lead.status === "PERDIDO").length,
     },
   ] : [];
 
   const conversionRate = leads.length > 0 
-    ? ((leads.filter(l => l.status === "CONVERTIDO").length / leads.length) * 100).toFixed(1)
+    ? ((leads.filter((lead: Lead) => lead.status === "CONVERTIDO").length / leads.length) * 100).toFixed(1)
     : "0.0";
 
-  const totalValue = leads.reduce((sum, lead) => {
-    return sum + (lead.status === "CONVERTIDO" ? 50000 : 0);
+  const totalValue = leads.reduce((sum: number, lead: Lead) => {
+    if (lead.status !== "CONVERTIDO") {
+      return sum;
+    }
+
+    return sum + Math.max(lead.fixa_preco_max || 0, lead.fixa_preco_min || 0, 0);
   }, 0);
 
   if (loading) {
@@ -143,10 +149,12 @@ export default function PipelinePage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
-              R$ {(totalValue / 1000000).toFixed(1)}M
+              {totalValue > 0
+                ? `R$ ${totalValue.toLocaleString("pt-BR")}`
+                : "Sem valor informado"}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Baseado em R$ 50k por lead convertido
+              Soma do potencial informado nos leads convertidos
             </p>
           </CardContent>
         </Card>
@@ -191,7 +199,7 @@ export default function PipelinePage() {
                   <div className="text-4xl font-bold mb-3">{stage.count}</div>
                   <div className="h-2 bg-secondary rounded-full overflow-hidden">
                     <div
-                      className={`h-full bg-${stage.color}-500 transition-all duration-500`}
+                      className={`h-full ${stage.progressClass} transition-all duration-500`}
                       style={{
                         width: `${leads.length > 0 ? (stage.count / leads.length) * 100 : 0}%`,
                       }}

@@ -69,11 +69,9 @@ export default function PieChartComponent() {
         if (response.error) {
           setError(response.error);
         } else if (response.data) {
-          const statsData = (response.data as { data?: StatsData }).data || response.data;
-          setStats(statsData as StatsData);
+          setStats(response.data);
         }
-      } catch (err) {
-        console.error("Erro ao buscar estatísticas:", err);
+      } catch {
         setError("Erro ao carregar dados");
       } finally {
         setLoading(false);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Plus, Eye, Edit, Trash2, Users, Filter } from "lucide-react";
 import { api, Lead } from "@/lib/api/client";
 import { LeadDetailModal } from "@/components/leads/LeadDetailModal";
+import { LeadFormModal } from "@/components/leads/LeadFormModal";
+import { LeadFormValues } from "@/types/leads";
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive"; className: string }> = {
   NOVO: { label: "Novo", variant: "default", className: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
@@ -25,34 +27,171 @@ export default function LeadsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [editingLead, setEditingLead] = useState<Lead | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-  useEffect(() => {
-    const fetchLeads = async () => {
-      try {
-        const response = await api.getLeads();
-        
-        if (response.error) {
-          setError(response.error);
-        } else if (response.data) {
-          const leadsData = (response.data as { data?: Lead[] }).data || response.data;
-          setLeads(Array.isArray(leadsData) ? leadsData : []);
-        }
-      } catch (err) {
-        console.error('Erro ao carregar leads:', err);
-        setError("Erro ao carregar leads");
-      } finally {
-        setLoading(false);
+  const loadLeads = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await api.getLeads();
+
+      if (response.error) {
+        setError(response.error);
+        return;
       }
-    };
 
-    fetchLeads();
+      const leadsData = Array.isArray(response.data) ? response.data : [];
+      const orderedLeads = [...leadsData].sort((firstLead, secondLead) => {
+        const firstDate = new Date(firstLead.updated_at || firstLead.created_at).getTime();
+        const secondDate = new Date(secondLead.updated_at || secondLead.created_at).getTime();
+
+        return secondDate - firstDate;
+      });
+
+      setLeads(orderedLeads);
+    } catch {
+      setError("Erro ao carregar leads");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const filteredLeads = leads.filter((lead) => {
+  useEffect(() => {
+    void loadLeads();
+  }, [loadLeads]);
+
+  const openCreateModal = () => {
+    setEditingLead(null);
+    setIsFormOpen(true);
+  };
+
+  const openEditModal = (lead: Lead) => {
+    setSelectedLead(null);
+    setEditingLead(lead);
+    setIsFormOpen(true);
+  };
+
+  const closeFormModal = () => {
+    if (isSaving) {
+      return;
+    }
+
+    setIsFormOpen(false);
+    setEditingLead(null);
+  };
+
+  const upsertLeadOnList = (lead: Lead) => {
+    setLeads((currentLeads: Lead[]) => {
+      const otherLeads = currentLeads.filter((currentLead: Lead) => currentLead.id !== lead.id);
+      return [lead, ...otherLeads];
+    });
+  };
+
+  const handleFormSubmit = async (values: LeadFormValues) => {
+    try {
+      setIsSaving(true);
+      setFeedback(null);
+
+      if (editingLead) {
+        const response = await api.updateLead(editingLead.id, values);
+
+        if (response.error) {
+          setFeedback({ type: "error", message: response.error });
+          return;
+        }
+
+        const updatedLead = response.data;
+
+        if (updatedLead) {
+          upsertLeadOnList(updatedLead);
+          setSelectedLead(updatedLead);
+        } else {
+          await loadLeads();
+        }
+
+        setFeedback({ type: "success", message: "Lead atualizado com sucesso." });
+      } else {
+        const response = await api.createLead(values);
+
+        if (response.error) {
+          setFeedback({ type: "error", message: response.error });
+          return;
+        }
+
+        if (response.data) {
+          upsertLeadOnList(response.data);
+        } else {
+          await loadLeads();
+        }
+
+        setFeedback({ type: "success", message: "Lead criado com sucesso." });
+      }
+
+      setIsFormOpen(false);
+      setEditingLead(null);
+    } catch {
+      setFeedback({ type: "error", message: "Não foi possível salvar o lead." });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteLead = async (lead: Lead) => {
+    const confirmed = window.confirm(`Deseja excluir o lead "${lead.nome_completo || lead.telefone}"?`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setFeedback(null);
+      const response = await api.deleteLead(lead.id);
+
+      if (response.error) {
+        setFeedback({ type: "error", message: response.error });
+        return;
+      }
+
+      setLeads((currentLeads: Lead[]) =>
+        currentLeads.filter((currentLead: Lead) => currentLead.id !== lead.id)
+      );
+
+      if (selectedLead?.id === lead.id) {
+        setSelectedLead(null);
+      }
+
+      if (editingLead?.id === lead.id) {
+        setEditingLead(null);
+      }
+
+      setFeedback({ type: "success", message: "Lead excluído com sucesso." });
+    } catch {
+      setFeedback({ type: "error", message: "Não foi possível excluir o lead." });
+    }
+  };
+
+  const currentFormValues: Partial<LeadFormValues> | undefined = editingLead
+    ? {
+        nome_completo: editingLead.nome_completo || "",
+        telefone: editingLead.telefone || "",
+        email: editingLead.email || "",
+        status: (editingLead.status as LeadFormValues["status"]) || "NOVO",
+        localizacao: editingLead.localizacao || "",
+        origem: editingLead.origem || "",
+        tipo_interesse: editingLead.tipo_interesse || "",
+        renda_comprovada: editingLead.renda_comprovada || 0,
+        observacoes: editingLead.observacoes || "",
+      }
+    : undefined;
+
+  const filteredLeads = leads.filter((lead: Lead) => {
     const matchesSearch =
-      (lead.nome_completo?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (lead.email?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (lead.telefone || '').includes(searchTerm);
+      (lead.nome_completo?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (lead.email?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (lead.telefone || "").includes(searchTerm);
     const matchesStatus = statusFilter === "all" || lead.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -88,11 +227,23 @@ export default function LeadsPage() {
             Gerencie e acompanhe todos os seus leads
           </p>
         </div>
-        <Button className="glow-primary">
+        <Button className="glow-primary" onClick={openCreateModal}>
           <Plus className="mr-2 h-4 w-4" />
           Novo Lead
         </Button>
       </div>
+
+      {feedback && (
+        <div
+          className={`rounded-xl border px-4 py-3 text-sm ${
+            feedback.type === "success"
+              ? "border-green-500/30 bg-green-500/10 text-green-300"
+              : "border-destructive/30 bg-destructive/10 text-destructive"
+          }`}
+        >
+          {feedback.message}
+        </div>
+      )}
 
       <Card className="glass border-border/50 animate-slide-up">
         <CardContent className="pt-6">
@@ -160,7 +311,7 @@ export default function LeadsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredLeads.map((lead, index) => (
+                  {filteredLeads.map((lead: Lead, index) => (
                     <TableRow 
                       key={lead.id} 
                       className="hover:bg-secondary/30 transition-colors border-border/50 animate-slide-up"
@@ -198,10 +349,20 @@ export default function LeadsPage() {
                           <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary" onClick={() => setSelectedLead(lead)}>
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                            onClick={() => openEditModal(lead)}
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => handleDeleteLead(lead)}
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -220,8 +381,18 @@ export default function LeadsPage() {
           lead={selectedLead}
           open={!!selectedLead}
           onClose={() => setSelectedLead(null)}
+          onEdit={openEditModal}
         />
       )}
+
+      <LeadFormModal
+        open={isFormOpen}
+        mode={editingLead ? "edit" : "create"}
+        initialValues={currentFormValues}
+        loading={isSaving}
+        onClose={closeFormModal}
+        onSubmit={handleFormSubmit}
+      />
     </div>
   );
 }

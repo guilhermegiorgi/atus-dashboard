@@ -19,11 +19,9 @@ export default function AnalyticsPage() {
         if (response.error) {
           setError(response.error);
         } else if (response.data) {
-          const statsData = (response.data as { data?: StatsData }).data || response.data;
-          setStats(statsData as StatsData);
+          setStats(response.data);
         }
-      } catch (err) {
-        console.error('Erro ao buscar estatísticas:', err);
+      } catch {
         setError("Erro ao carregar estatísticas");
       } finally {
         setLoading(false);
@@ -54,6 +52,9 @@ export default function AnalyticsPage() {
       </div>
     );
   }
+
+  const total = stats?.total || 0;
+  const toPercent = (value: number) => (total > 0 ? ((value / total) * 100).toFixed(1) : "0.0");
 
   const metrics = stats ? [
     {
@@ -103,7 +104,7 @@ export default function AnalyticsPage() {
     },
     {
       title: "Taxa de Conversão",
-      value: `${((stats.convertidos / stats.total) * 100).toFixed(1)}%`,
+      value: `${toPercent(stats.convertidos)}%`,
       description: "Percentual de conversão",
       icon: TrendingUp,
       color: "text-primary",
@@ -177,11 +178,11 @@ export default function AnalyticsPage() {
                 <div className="h-3 bg-secondary rounded-full overflow-hidden">
                   <div
                     className="h-full bg-yellow-500 transition-all duration-500"
-                    style={{ width: `${(stats.novos / stats.total) * 100}%` }}
+                    style={{ width: `${toPercent(stats.novos)}%` }}
                   />
                 </div>
                 <span className="text-xs text-muted-foreground">
-                  {((stats.novos / stats.total) * 100).toFixed(1)}% do total
+                  {toPercent(stats.novos)}% do total
                 </span>
               </div>
 
@@ -196,11 +197,11 @@ export default function AnalyticsPage() {
                 <div className="h-3 bg-secondary rounded-full overflow-hidden">
                   <div
                     className="h-full bg-blue-500 transition-all duration-500"
-                    style={{ width: `${(stats.em_atendimento / stats.total) * 100}%` }}
+                    style={{ width: `${toPercent(stats.em_atendimento)}%` }}
                   />
                 </div>
                 <span className="text-xs text-muted-foreground">
-                  {((stats.em_atendimento / stats.total) * 100).toFixed(1)}% do total
+                  {toPercent(stats.em_atendimento)}% do total
                 </span>
               </div>
 
@@ -215,11 +216,11 @@ export default function AnalyticsPage() {
                 <div className="h-3 bg-secondary rounded-full overflow-hidden">
                   <div
                     className="h-full bg-green-500 transition-all duration-500"
-                    style={{ width: `${(stats.convertidos / stats.total) * 100}%` }}
+                    style={{ width: `${toPercent(stats.convertidos)}%` }}
                   />
                 </div>
                 <span className="text-xs text-muted-foreground">
-                  {((stats.convertidos / stats.total) * 100).toFixed(1)}% do total
+                  {toPercent(stats.convertidos)}% do total
                 </span>
               </div>
 
@@ -234,11 +235,11 @@ export default function AnalyticsPage() {
                 <div className="h-3 bg-secondary rounded-full overflow-hidden">
                   <div
                     className="h-full bg-red-500 transition-all duration-500"
-                    style={{ width: `${(stats.perdidos / stats.total) * 100}%` }}
+                    style={{ width: `${toPercent(stats.perdidos)}%` }}
                   />
                 </div>
                 <span className="text-xs text-muted-foreground">
-                  {((stats.perdidos / stats.total) * 100).toFixed(1)}% do total
+                  {toPercent(stats.perdidos)}% do total
                 </span>
               </div>
             </div>

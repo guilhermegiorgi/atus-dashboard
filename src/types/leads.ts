@@ -1,3 +1,13 @@
+export const LEAD_STATUSES = ["NOVO", "EM_ATENDIMENTO", "CONVERTIDO", "PERDIDO"] as const;
+
+export type LeadStatus = (typeof LEAD_STATUSES)[number];
+
+export interface ApiResponse<T> {
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
 export interface Lead {
   id: string;
   uuid: string;
@@ -27,14 +37,14 @@ export interface Lead {
   em_followup: boolean;
   followup_rodadas: number;
   followup_expira_em: string | null;
-  status: string;
+  status: LeadStatus | string;
   corretor_id: string | null;
   primeiro_contato: string;
   ultimo_contato: string;
   conversao_data: string | null;
   created_at: string;
   updated_at: string;
-  conversas: Conversa[];
+  conversas?: Conversa[];
 }
 
 export interface StatsData {
@@ -48,10 +58,32 @@ export interface StatsData {
 export interface Conversa {
   id: string;
   lead_id: string;
-  started_at: string;
-  ended_at: string | null;
-  status: string;
-  contexto: string;
+  mensagem?: string;
+  resposta?: string;
+  started_at?: string;
+  ended_at?: string | null;
+  status?: string;
+  contexto?: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
+}
+
+export interface Corretor {
+  id: string;
+  nome: string;
+  telefone: string;
+  email: string;
+  especialidade: string;
+}
+
+export interface LeadFormValues {
+  nome_completo: string;
+  telefone: string;
+  email: string;
+  status: LeadStatus;
+  localizacao: string;
+  origem: string;
+  tipo_interesse: string;
+  renda_comprovada: number;
+  observacoes: string;
 }
