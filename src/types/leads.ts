@@ -1,4 +1,4 @@
-export const LEAD_STATUSES = ["NOVO", "EM_ATENDIMENTO", "CONVERTIDO", "PERDIDO"] as const;
+export const LEAD_STATUSES = ["NOVO", "EM_ATENDIMENTO", "CONVERTIDO", "PERDIDO", "AGUARDANDO_RETORNO"] as const;
 
 export type LeadStatus = (typeof LEAD_STATUSES)[number];
 
@@ -34,9 +34,12 @@ export interface Lead {
   origem: string;
   codigo_ref: string;
   link_click_id: string | null;
-  em_followup: boolean;
+  em_follow_up: boolean;
   followup_rodadas: number;
   followup_expira_em: string | null;
+  intervention_type?: string;
+  intervention_at?: string;
+  resetado_em?: string | null;
   status: LeadStatus | string;
   corretor_id: string | null;
   primeiro_contato: string;

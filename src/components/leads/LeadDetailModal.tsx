@@ -246,7 +246,7 @@ export function LeadDetailModal({ lead, open, onClose, onEdit, onOpenCommunicati
                   {lead.tem_carteira_assinada ? "Carteira assinada" : "Sem carteira assinada"}
                 </span>
                 <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-zinc-200">
-                  {lead.em_followup ? `Follow-up ativo · ${lead.followup_rodadas || 0} rodadas` : "Sem follow-up ativo"}
+                  {lead.em_follow_up ? `Follow-up ativo · ${lead.followup_rodadas || 0} rodadas` : "Sem follow-up ativo"}
                 </span>
                 <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-zinc-200">
                   {lead.tem_entrada ? "Possui entrada" : "Sem entrada definida"}
