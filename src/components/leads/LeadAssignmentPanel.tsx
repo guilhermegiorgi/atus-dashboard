@@ -133,10 +133,10 @@ export function LeadAssignmentPanel({ leadId, open, onClose, onAssignmentChange 
           </div>
         </DialogHeader>
 
-        <div className="grid h-[60vh] grid-cols-1 md:grid-cols-2">
+        <div className="grid grid-cols-1 md:grid-cols-2">
           {/* Lista de atribuições */}
-          <div className="flex flex-col border-r border-white/10">
-            <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex flex-col border-b border-white/10 md:border-b-0 md:border-r">
+            <div className="flex-1 p-6">
               {loading ? (
                 <div className="flex h-full items-center justify-center">
                   <div className="flex flex-col items-center gap-2">
@@ -203,7 +203,7 @@ export function LeadAssignmentPanel({ leadId, open, onClose, onAssignmentChange 
           </div>
 
           {/* Formulário de nova atribuição */}
-          <div className="flex flex-col p-4">
+          <div className="flex flex-col p-6">
             <div className="mb-4">
               <h3 className="text-lg font-semibold text-white mb-2">Nova Atribuição</h3>
               <p className="text-sm text-zinc-400">Atribua este lead a um corretor</p>
