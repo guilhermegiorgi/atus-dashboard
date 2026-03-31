@@ -2,139 +2,41 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { AlertTriangle, Clock, CheckCircle, XCircle, TrendingUp, Users, Target, Zap } from "lucide-react";
+import { AlertTriangle, Clock, CheckCircle, XCircle, TrendingUp, Target, Zap } from "lucide-react";
 import { api } from "@/lib/api/client";
-import type { LeadSLA, SLAStats } from "@/types/sla";
 
-interface SLADashboardProps {
-  className?: string;
+interface SLAData {
+  dentro_do_sla: number;
+  fora_do_sla: number;
+  tempo_medio_resposta_min: number;
+  por_origem: Record<string, { dentro: number; fora: number }>;
 }
 
-const statusColors = {
-  on_time: "bg-green-500/20 text-green-400 border-green-500/30",
-  at_risk: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-  overdue: "bg-red-500/20 text-red-400 border-red-500/30",
-  completed: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-};
+const EMPTY: SLAData = { dentro_do_sla: 0, fora_do_sla: 0, tempo_medio_resposta_min: 0, por_origem: {} };
 
-const statusLabels = {
-  on_time: "No Prazo",
-  at_risk: "Em Risco",
-  overdue: "Atrasado",
-  completed: "Concluído",
-};
-
-export function SLADashboard({ className }: SLADashboardProps) {
-  const [stats, setStats] = useState<SLAStats>({
-    totalLeads: 0,
-    onTime: 0,
-    atRisk: 0,
-    overdue: 0,
-    completed: 0,
-    averageResponseTime: 0,
-    averageResolutionTime: 0,
-    complianceRate: 0,
-  });
-
-  const [recentAlerts, setRecentAlerts] = useState<LeadSLA[]>([]);
+export function SLADashboard({ className }: { className?: string }) {
+  const [data, setData] = useState<SLAData>(EMPTY);
   const [loading, setLoading] = useState(true);
 
-  // Buscar dados reais da API
   useEffect(() => {
-    const loadSLAMetrics = async () => {
-      try {
-        setLoading(true);
-        const response = await api.getSLAMetrics();
-        
-        if (response.data) {
-          setStats({
-            totalLeads: response.data.totalLeads,
-            onTime: response.data.onTime,
-            atRisk: response.data.atRisk,
-            overdue: response.data.overdue,
-            completed: response.data.completed,
-            averageResponseTime: response.data.averageResponseTime,
-            averageResolutionTime: response.data.averageResolutionTime,
-            complianceRate: response.data.complianceRate,
-          });
-          setRecentAlerts(response.data.recentAlerts.map(alert => ({
-            id: alert.id,
-            leadId: alert.leadId,
-            serviceLevelId: 'default',
-            assignedAt: new Date().toISOString(),
-            responseDeadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-            resolutionDeadline: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
-            status: alert.status,
-            alerts: alert.alerts.map(alertItem => ({
-              id: alertItem.id,
-              leadSLAId: alert.id,
-              type: alertItem.type,
-              message: alertItem.message,
-              createdAt: alertItem.createdAt,
-              acknowledged: alertItem.acknowledged
-            }))
-          })));
-        } else {
-          // Fallback para dados mockados se a API não tiver os endpoints
-          console.warn("API de métricas SLA não disponível, usando dados mockados");
-          setStats({
-            totalLeads: 0,
-            onTime: 0,
-            atRisk: 0,
-            overdue: 0,
-            completed: 0,
-            averageResponseTime: 0,
-            averageResolutionTime: 0,
-            complianceRate: 0,
-          });
-          setRecentAlerts([]);
-        }
-      } catch (error) {
-        console.error("Erro ao carregar métricas SLA:", error);
-        setStats({
-          totalLeads: 0,
-          onTime: 0,
-          atRisk: 0,
-          overdue: 0,
-          completed: 0,
-          averageResponseTime: 0,
-          averageResolutionTime: 0,
-          complianceRate: 0,
-        });
-        setRecentAlerts([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadSLAMetrics();
+    api.getSLAMetrics()
+      .then((res) => { if (res.data) setData(res.data); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
-  const getComplianceColor = (rate: number) => {
-    if (rate >= 90) return "text-green-400";
-    if (rate >= 80) return "text-yellow-400";
-    return "text-red-400";
-  };
-
-  const getTimeColor = (time: number, type: "response" | "resolution") => {
-    const limits = type === "response" ? [30, 60, 120] : [12, 24, 48];
-    const colors = ["text-green-400", "text-yellow-400", "text-orange-400", "text-red-400"];
-    
-    for (let i = 0; i < limits.length; i++) {
-      if (time <= limits[i]) return colors[i];
-    }
-    return colors[colors.length - 1];
-  };
+  const total = data.dentro_do_sla + data.fora_do_sla;
+  const complianceRate = total > 0 ? ((data.dentro_do_sla / total) * 100).toFixed(1) : "0.0";
+  const complianceColor = Number(complianceRate) >= 90 ? "text-green-400" : Number(complianceRate) >= 70 ? "text-yellow-400" : "text-red-400";
+  const responseColor = data.tempo_medio_resposta_min <= 30 ? "text-green-400" : data.tempo_medio_resposta_min <= 60 ? "text-yellow-400" : "text-red-400";
 
   if (loading) {
     return (
       <Card className="glass border-border/50">
-        <CardContent className="flex items-center justify-center h-64">
-          <div className="flex flex-col items-center gap-4">
-            <div className="h-12 w-12 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
-            <p className="text-muted-foreground">Carregando métricas SLA...</p>
+        <CardContent className="flex items-center justify-center h-48">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-10 w-10 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
+            <p className="text-muted-foreground text-sm">Carregando métricas SLA...</p>
           </div>
         </CardContent>
       </Card>
@@ -142,122 +44,72 @@ export function SLADashboard({ className }: SLADashboardProps) {
   }
 
   return (
-    <div className={`space-y-6 ${className || ""}`}>
-      {/* Cards de Métricas Principais */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+    <div className={`space-y-6 ${className ?? ""}`}>
+      {/* KPIs */}
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-3">
         <Card className="glass border-border/50">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taxa de Conformidade</CardTitle>
+            <CardTitle className="text-sm font-medium">Conformidade SLA</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${getComplianceColor(stats.complianceRate)}`}>
-              {stats.complianceRate.toFixed(1)}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {stats.onTime + stats.completed} de {stats.totalLeads} no prazo
-            </p>
+            <div className={`text-2xl font-bold ${complianceColor}`}>{complianceRate}%</div>
+            <p className="text-xs text-muted-foreground">{data.dentro_do_sla} de {total} no prazo</p>
           </CardContent>
         </Card>
 
         <Card className="glass border-border/50">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tempo Médio de Resposta</CardTitle>
+            <CardTitle className="text-sm font-medium">Tempo Médio Resposta</CardTitle>
             <Zap className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${getTimeColor(stats.averageResponseTime, "response")}`}>
-              {stats.averageResponseTime}min
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Meta: 30 minutos
-            </p>
+            <div className={`text-2xl font-bold ${responseColor}`}>{data.tempo_medio_resposta_min}min</div>
+            <p className="text-xs text-muted-foreground">Meta: 30 minutos</p>
           </CardContent>
         </Card>
 
-        <Card className="glass border-border/50">
+        <Card className="glass border-border/50 col-span-2 lg:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tempo Médio de Resolução</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Monitorado</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${getTimeColor(stats.averageResolutionTime, "resolution")}`}>
-              {stats.averageResolutionTime}h
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Meta: 24 horas
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="glass border-border/50">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Leads Ativos</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalLeads}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.atRisk} em risco, {stats.overdue} atrasados
-            </p>
+            <div className="text-2xl font-bold">{total}</div>
+            <p className="text-xs text-muted-foreground">{data.fora_do_sla} fora do prazo</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Distribuição por Status */}
+      {/* Dentro x Fora */}
       <Card className="glass border-border/50">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            Distribuição por Status
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            Resumo de Conformidade
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 grid-cols-2">
             <div className="rounded-xl border border-white/10 bg-white/5 p-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/20">
                   <CheckCircle className="h-5 w-5 text-green-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">No Prazo</p>
-                  <p className="text-2xl font-semibold text-green-400">{stats.onTime}</p>
+                  <p className="text-xs text-muted-foreground">Dentro do SLA</p>
+                  <p className="text-2xl font-semibold text-green-400">{data.dentro_do_sla}</p>
                 </div>
               </div>
             </div>
-            
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-500/20">
-                  <AlertTriangle className="h-5 w-5 text-yellow-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Em Risco</p>
-                  <p className="text-2xl font-semibold text-yellow-400">{stats.atRisk}</p>
-                </div>
-              </div>
-            </div>
-            
             <div className="rounded-xl border border-white/10 bg-white/5 p-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/20">
                   <XCircle className="h-5 w-5 text-red-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Atrasados</p>
-                  <p className="text-2xl font-semibold text-red-400">{stats.overdue}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/20">
-                  <CheckCircle className="h-5 w-5 text-blue-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Concluídos</p>
-                  <p className="text-2xl font-semibold text-blue-400">{stats.completed}</p>
+                  <p className="text-xs text-muted-foreground">Fora do SLA</p>
+                  <p className="text-2xl font-semibold text-red-400">{data.fora_do_sla}</p>
                 </div>
               </div>
             </div>
@@ -265,42 +117,31 @@ export function SLADashboard({ className }: SLADashboardProps) {
         </CardContent>
       </Card>
 
-      {/* Alertas Recentes */}
-      {recentAlerts.length > 0 && (
+      {/* Por Origem */}
+      {Object.keys(data.por_origem).length > 0 && (
         <Card className="glass border-border/50">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-orange-400" />
-              Alertas Recentes
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <AlertTriangle className="h-4 w-4 text-primary" />
+              SLA por Origem
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {recentAlerts.map((alert) => (
-                <div
-                  key={alert.id}
-                  className="rounded-xl border border-white/10 bg-white/5 p-4 transition-all hover:border-orange-500/30"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Badge variant="outline" className={statusColors[alert.status]}>
-                        {statusLabels[alert.status]}
-                      </Badge>
-                      <span className="text-sm text-zinc-300">
-                        Lead #{alert.leadId.slice(-6)}
-                      </span>
+              {Object.entries(data.por_origem).map(([origem, vals]) => {
+                const origTotal = vals.dentro + vals.fora;
+                const pct = origTotal > 0 ? ((vals.dentro / origTotal) * 100).toFixed(0) : "0";
+                return (
+                  <div key={origem} className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-4 py-2.5">
+                    <span className="text-sm capitalize">{origem}</span>
+                    <div className="flex items-center gap-4 text-xs text-right">
+                      <span className="text-green-400">{vals.dentro} ✓</span>
+                      <span className="text-red-400">{vals.fora} ✗</span>
+                      <span className="font-semibold text-zinc-300 w-10">{pct}%</span>
                     </div>
-                    <Button variant="ghost" size="sm" className="text-xs">
-                      Ver Lead
-                    </Button>
                   </div>
-                  {alert.alerts.length > 0 && (
-                    <p className="mt-2 text-sm text-zinc-400">
-                      {alert.alerts[0].message}
-                    </p>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>

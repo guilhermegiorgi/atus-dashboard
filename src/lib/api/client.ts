@@ -228,55 +228,18 @@ class AtusAPI {
   }
 
   async getLeadFlowMetrics(): Promise<ApiResponse<{
-    totalLeads: number;
-    conversionRate: number;
-    averageResponseTime: number;
-    averageLeadTime: number;
-    activeLeads: number;
-    completedLeads: number;
-    lostLeads: number;
-    monthlyGrowth: number;
-    topSources: Array<{
-      name: string;
-      leads: number;
-      conversionRate: number;
-    }>;
-    statusDistribution: {
-      NOVO: number;
-      EM_ATENDIMENTO: number;
-      CONVERTIDO: number;
-      PERDIDO: number;
-    };
-    weeklyTrend: Array<{
-      week: string;
-      leads: number;
-      conversions: number;
-    }>;
+    por_status: Record<string, number>;
+    conversoes_semana: Array<{ dia: string; total: number }>;
+    por_origem: Record<string, number>;
   }>> {
     return this.request("/api/v1/metrics/flow");
   }
 
   async getSLAMetrics(): Promise<ApiResponse<{
-    totalLeads: number;
-    onTime: number;
-    atRisk: number;
-    overdue: number;
-    completed: number;
-    averageResponseTime: number;
-    averageResolutionTime: number;
-    complianceRate: number;
-    recentAlerts: Array<{
-      id: string;
-      leadId: string;
-      status: "on_time" | "at_risk" | "overdue" | "completed";
-      alerts: Array<{
-        id: string;
-        type: "response_due" | "resolution_due" | "overdue";
-        message: string;
-        createdAt: string;
-        acknowledged: boolean;
-      }>;
-    }>;
+    dentro_do_sla: number;
+    fora_do_sla: number;
+    tempo_medio_resposta_min: number;
+    por_origem: Record<string, { dentro: number; fora: number }>;
   }>> {
     return this.request("/api/v1/metrics/sla");
   }
