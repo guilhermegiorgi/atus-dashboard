@@ -2,13 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Calendar, Clock, CheckCircle, X, Plus } from "lucide-react";
+import { Calendar, Bot, User, CheckCircle, Clock, PauseCircle, PlayCircle } from "lucide-react";
 import { api } from "@/lib/api/client";
-import type { LeadFollowup } from "@/types/leads";
+import type { Note } from "@/types/leads";
 
 interface LeadFollowupPanelProps {
   leadId: string;
@@ -17,48 +16,33 @@ interface LeadFollowupPanelProps {
   onFollowupChange?: () => void;
 }
 
-const followupTypes = [
-  { value: "email", label: "Email", color: "text-blue-400" },
-  { value: "whatsapp", label: "WhatsApp", color: "text-green-400" },
-  { value: "meeting", label: "Reunião", color: "text-orange-400" },
-] as const;
-
-const typeLabels: Record<string, string> = {
-  email: "Email",
-  whatsapp: "WhatsApp",
-  meeting: "Reunião",
-};
-
-const statusColors: Record<string, string> = {
-  pending: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-  completed: "bg-green-500/20 text-green-400 border-green-500/30",
-  cancelled: "bg-red-500/20 text-red-400 border-red-500/30",
-};
-
-const statusLabels: Record<string, string> = {
-  pending: "Pendente",
-  completed: "Concluído",
-  cancelled: "Cancelado",
-};
-
 export function LeadFollowupPanel({ leadId, open, onClose, onFollowupChange }: LeadFollowupPanelProps) {
-  const [followups, setFollowups] = useState<LeadFollowup[]>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [followupStatus, setFollowupStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
-  const [selectedType, setSelectedType] = useState<"email" | "whatsapp" | "meeting">("email");
-  const [scheduledDate, setScheduledDate] = useState("");
-  const [scheduledTime, setScheduledTime] = useState("");
-  const [notes, setNotes] = useState("");
+  const [addingNote, setAddingNote] = useState(false);
+  const [changingStatus, setChangingStatus] = useState(false);
+  const [newNoteContent, setNewNoteContent] = useState("");
 
-  const loadFollowups = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const response = await api.getLeadFollowups(leadId);
-      if (response.data) {
-        setFollowups(response.data);
+      // Fetch status
+      const statusRes = await api.getLeadFollowupStatus(leadId);
+      if (statusRes.data) {
+        setFollowupStatus(statusRes.data);
+      }
+      
+      // Fetch notes
+      const notesRes = await api.getLeadNotes(leadId);
+      if (notesRes.data) {
+        // Filter out only follow_up related notes or show all notes
+        // We will show all notes of type 'follow_up'
+        const fuNotes = notesRes.data.filter((n: Note) => n.type === 'follow_up');
+        setNotes(fuNotes);
       }
     } catch (error) {
-      console.error("Erro ao carregar follow-ups:", error);
+      console.error("Erro ao carregar dados de follow-up:", error);
     } finally {
       setLoading(false);
     }
@@ -66,317 +50,186 @@ export function LeadFollowupPanel({ leadId, open, onClose, onFollowupChange }: L
 
   useEffect(() => {
     if (open) {
-      loadFollowups();
+      loadData();
     }
   }, [open, leadId]);
 
-  const handleCreate = async () => {
-    if (!scheduledDate || !scheduledTime) return;
-
+  const handleIntervene = async () => {
     try {
-      setCreating(true);
-      
-      const scheduledAt = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
-
-      const data = {
-        lead_id: leadId,
-        type: selectedType,
-        scheduled_at: scheduledAt,
-        notes: notes.trim(),
-        status: "pending" as const,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      const response = await api.createLeadFollowup(leadId, data);
-      
-      if (response.data) {
-        setFollowups([...followups, response.data]);
-        setScheduledDate("");
-        setScheduledTime("");
-        setNotes("");
-        onFollowupChange?.();
-      }
+      setChangingStatus(true);
+      await api.interveneLead(leadId, "HUMAN_TAKEOVER", "Ação manual via painel");
+      await loadData();
+      onFollowupChange?.();
     } catch (error) {
-      console.error("Erro ao criar follow-up:", error);
+      console.error("Erro ao intervir:", error);
     } finally {
-      setCreating(false);
+      setChangingStatus(false);
     }
   };
 
-  const handleComplete = async (followup: LeadFollowup) => {
+  const handleRelease = async () => {
     try {
-      const updatedFollowup = {
-        ...followup,
-        status: "completed" as const,
-        completed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      // Atualizar localmente primeiro
-      setFollowups(followups.map(f => f.id === followup.id ? updatedFollowup : f));
+      setChangingStatus(true);
+      await api.releaseLeadFollowup(leadId);
+      await loadData();
       onFollowupChange?.();
     } catch (error) {
-      console.error("Erro ao completar follow-up:", error);
+      console.error("Erro ao liberar bot:", error);
+    } finally {
+      setChangingStatus(false);
     }
   };
 
-  const handleCancel = async (followup: LeadFollowup) => {
+  const handleAddNote = async () => {
+    if (!newNoteContent.trim()) return;
     try {
-      const updatedFollowup = {
-        ...followup,
-        status: "cancelled" as const,
-        updated_at: new Date().toISOString(),
-      };
-
-      setFollowups(followups.map(f => f.id === followup.id ? updatedFollowup : f));
-      onFollowupChange?.();
+      setAddingNote(true);
+      await api.createLeadNote(leadId, newNoteContent.trim(), "follow_up");
+      setNewNoteContent("");
+      await loadData();
     } catch (error) {
-      console.error("Erro ao cancelar follow-up:", error);
+      console.error("Erro ao adicionar nota:", error);
+    } finally {
+      setAddingNote(false);
     }
   };
 
-  const formatDateTime = (dateString: string) => {
+  const formatDate = (dateString: string) => {
     try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('pt-BR', {
-        day: '2-digit',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit'
+      return new Date(dateString).toLocaleDateString('pt-BR', {
+        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
       });
     } catch {
       return dateString;
     }
   };
 
-  const isPastScheduled = (scheduledAt: string) => {
-    return new Date(scheduledAt) < new Date();
-  };
-
-  const pendingFollowups = followups.filter(f => f.status === 'pending');
-  const completedFollowups = followups.filter(f => f.status === 'completed');
+  const isBotActive = !followupStatus?.active && !followupStatus?.is_paused; // Or whatever logic represents "Bot is handling it" vs "Human is handling it". Assume `active` means Follow-up by human is active. Let's rely on standard UI assumptions:
+  const isHumanTakeover = followupStatus?.em_follow_up || followupStatus?.active || !!followupStatus?.intervention_type; 
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="w-[95vw] max-w-6xl xl:max-w-7xl max-h-[90vh] overflow-y-auto overflow-x-hidden border border-white/10 bg-zinc-950/95 p-0 text-zinc-100 backdrop-blur-xl">
-        <div tabIndex={0} className="sr-only focus:outline-none" aria-hidden="true" />
+      <DialogContent className="w-[95vw] sm:max-w-5xl max-h-[90vh] overflow-y-auto overflow-x-hidden border border-white/10 bg-zinc-950/95 p-0 text-zinc-100 backdrop-blur-xl">
         <DialogHeader className="border-b border-white/5 px-6 py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-blue-400">
-              <Calendar className="h-6 w-6 text-white" />
+              <User className="h-6 w-6 text-white" />
             </div>
             <div>
               <DialogTitle className="text-xl font-semibold text-white">
-                Follow-ups do Lead
+                Follow-up & Intervenção
               </DialogTitle>
               <DialogDescription className="text-zinc-400">
-                Gerencie o agendamento e acompanhamento de follow-ups
+                Assuma o controle da conversa ou gerencie as notas de follow-up
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-2">
-          {/* Lista de follow-ups */}
-          <div className="flex flex-col border-b border-white/10 md:border-b-0 md:border-r">
-            <div className="flex-1 p-6 space-y-6">
-              {loading ? (
-                <div className="flex h-full items-center justify-center">
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary/30 border-t-primary" />
-                    <p className="text-sm text-zinc-400">Carregando follow-ups...</p>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {/* Follow-ups Pendentes */}
-                  {pendingFollowups.length > 0 && (
-                    <div className="space-y-3">
-                      <h3 className="text-sm font-semibold text-zinc-300 flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-yellow-400" />
-                        Pendentes ({pendingFollowups.length})
-                      </h3>
-                      {pendingFollowups.map((followup) => (
-                        <div
-                          key={followup.id}
-                          className={`rounded-xl border border-white/10 p-4 transition-all ${
-                            isPastScheduled(followup.scheduled_at) 
-                              ? 'border-red-500/50 bg-red-500/10' 
-                              : 'bg-white/5 hover:border-purple-500/30'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1 space-y-2">
-                              <div className="flex items-center gap-2">
-                                <span className={`text-sm font-medium ${followupTypes.find(t => t.value === followup.type)?.color}`}>
-                                  {typeLabels[followup.type]}
-                                </span>
-                                <Badge variant="outline" className={statusColors[followup.status]}>
-                                  {statusLabels[followup.status]}
-                                </Badge>
-                              </div>
-                              {followup.notes && (
-                                <p className="text-sm text-zinc-300 leading-relaxed">
-                                  {followup.notes}
-                                </p>
-                              )}
-                              <div className="flex items-center gap-2 text-xs text-zinc-500">
-                                <Calendar className="h-3 w-3" />
-                                <span className={isPastScheduled(followup.scheduled_at) ? 'text-red-400' : ''}>
-                                  {formatDateTime(followup.scheduled_at)}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 hover:bg-green-500/10 hover:text-green-400"
-                                onClick={() => handleComplete(followup)}
-                              >
-                                <CheckCircle className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 hover:bg-red-500/10 hover:text-red-400"
-                                onClick={() => handleCancel(followup)}
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Follow-ups Concluídos */}
-                  {completedFollowups.length > 0 && (
-                    <div className="space-y-3">
-                      <h3 className="text-sm font-semibold text-zinc-300 flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-400" />
-                        Concluídos ({completedFollowups.length})
-                      </h3>
-                      {completedFollowups.map((followup) => (
-                        <div
-                          key={followup.id}
-                          className="rounded-xl border border-white/10 bg-white/5 p-4 opacity-75"
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1 space-y-2">
-                              <div className="flex items-center gap-2">
-                                <span className={`text-sm font-medium ${followupTypes.find(t => t.value === followup.type)?.color}`}>
-                                  {typeLabels[followup.type]}
-                                </span>
-                                <Badge variant="outline" className={statusColors[followup.status]}>
-                                  {statusLabels[followup.status]}
-                                </Badge>
-                              </div>
-                              {followup.notes && (
-                                <p className="text-sm text-zinc-300 leading-relaxed">
-                                  {followup.notes}
-                                </p>
-                              )}
-                              <div className="flex items-center gap-2 text-xs text-zinc-500">
-                                <Calendar className="h-3 w-3" />
-                                <span>{formatDateTime(followup.scheduled_at)}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Nenhum follow-up */}
-                  {followups.length === 0 && (
-                    <div className="flex h-full flex-col items-center justify-center text-center">
-                      <Calendar className="mb-4 h-12 w-12 text-zinc-500" />
-                      <p className="text-zinc-400">Nenhum follow-up agendado</p>
-                      <p className="text-sm text-zinc-500">Crie seu primeiro follow-up</p>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Formulário de novo follow-up */}
-          <div className="flex flex-col p-6">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold text-white mb-2">Novo Follow-up</h3>
-              <p className="text-sm text-zinc-400">Agende um novo follow-up com o lead</p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-zinc-200">Tipo de follow-up</label>
-                <Select value={selectedType} onValueChange={(value) => setSelectedType(value as typeof selectedType)}>
-                  <SelectTrigger className="border-white/10 bg-secondary/50 focus:border-purple-500/50">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {followupTypes.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        <div className="flex items-center gap-2">
-                          <span className={type.color}>{type.label}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+        <div className="grid grid-cols-1 md:grid-cols-2 min-h-[400px]">
+          {/* Left panel: Bot Control */}
+          <div className="flex flex-col border-b border-white/10 md:border-b-0 md:border-r p-6 bg-black/20">
+            <h3 className="text-lg font-semibold text-white mb-4">Controle do Chatbot</h3>
+            
+            {loading ? (
+              <div className="flex justify-center p-4">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
               </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-200">Data</label>
-                  <Input
-                    type="date"
-                    value={scheduledDate}
-                    onChange={(e) => setScheduledDate(e.target.value)}
-                    min={new Date().toISOString().split('T')[0]}
-                    className="border-white/10 bg-secondary/50 focus:border-purple-500/50"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-200">Hora</label>
-                  <Input
-                    type="time"
-                    value={scheduledTime}
-                    onChange={(e) => setScheduledTime(e.target.value)}
-                    className="border-white/10 bg-secondary/50 focus:border-purple-500/50"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-zinc-200">Observações</label>
-                <textarea
-                  placeholder="Adicione notas sobre este follow-up..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="min-h-[120px] w-full rounded-lg border border-white/10 bg-secondary/50 px-3 py-2 text-sm text-zinc-200 focus:border-purple-500/50 focus:outline-none"
-                />
-              </div>
-
-              <Button
-                onClick={handleCreate}
-                disabled={creating || !scheduledDate || !scheduledTime}
-                className="w-full bg-gradient-to-r from-purple-500 to-blue-400 text-white shadow-[0_12px_30px_rgba(147,51,234,0.28)] hover:from-purple-400 hover:to-blue-300"
-              >
-                {creating ? (
+            ) : (
+              <div className="flex flex-col items-center justify-center space-y-6 flex-1 bg-white/5 rounded-xl border border-white/10 p-6 text-center">
+                {isHumanTakeover ? (
                   <>
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    Agendando...
+                    <div className="h-20 w-20 rounded-full bg-blue-500/20 flex items-center justify-center border-4 border-blue-500/30">
+                      <User className="h-10 w-10 text-blue-400" />
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-bold text-blue-400 mb-2">Intervenção Humana Ativa</h4>
+                      <p className="text-sm text-zinc-400 max-w-xs mx-auto">
+                        O bot está pausado. As conversas estão sob controle de um corretor humano no momento.
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={handleRelease} 
+                      disabled={changingStatus}
+                      className="mt-4 bg-zinc-800 hover:bg-zinc-700 text-white border border-white/10"
+                    >
+                      {changingStatus ? "Processando..." : (
+                        <>
+                          <PlayCircle className="mr-2 h-4 w-4" />
+                          Liberar Bot (Remover Follow-up)
+                        </>
+                      )}
+                    </Button>
                   </>
                 ) : (
                   <>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Agendar Follow-up
+                    <div className="h-20 w-20 rounded-full bg-green-500/20 flex items-center justify-center border-4 border-green-500/30">
+                      <Bot className="h-10 w-10 text-green-400" />
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-bold text-green-400 mb-2">Bot Autônomo Ativo</h4>
+                      <p className="text-sm text-zinc-400 max-w-xs mx-auto">
+                        O bot de IA está controlando as respostas neste momento. Você pode intervir para assumir a conversa.
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={handleIntervene} 
+                      disabled={changingStatus}
+                      className="mt-4 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-400 hover:to-blue-400 text-white"
+                    >
+                      {changingStatus ? "Processando..." : (
+                        <>
+                          <PauseCircle className="mr-2 h-4 w-4" />
+                          Assumir Conversa (Pausar Bot)
+                        </>
+                      )}
+                    </Button>
                   </>
                 )}
+              </div>
+            )}
+          </div>
+
+          {/* Right panel: Notes */}
+          <div className="flex flex-col p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Notas de Follow-up</h3>
+            
+            <div className="flex-1 overflow-y-auto space-y-3 mb-4 max-h-[250px] pr-2">
+              {loading ? (
+                 <div className="flex justify-center p-4">
+                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+               </div>
+              ) : notes.length === 0 ? (
+                <div className="text-center p-6 text-sm text-zinc-500 border border-dashed border-white/10 rounded-xl">
+                  Nenhuma nota de follow-up registrada.
+                </div>
+              ) : (
+                notes.map((note) => (
+                  <div key={note.id} className="bg-white/5 border border-white/10 p-3 rounded-lg">
+                    <p className="text-sm text-zinc-200 whitespace-pre-wrap">{note.content}</p>
+                    <div className="flex justify-between items-center mt-2 text-xs text-zinc-500">
+                      <span>{note.author_name || "Usuário"}</span>
+                      <span>{formatDate(note.created_at)}</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="mt-auto space-y-3 pt-4 border-t border-white/10">
+              <label className="text-sm font-medium text-zinc-300">Nova Nota</label>
+              <Textarea
+                placeholder="Excedeu tempo de resposta, aguardando retorno do cliente..."
+                value={newNoteContent}
+                onChange={(e) => setNewNoteContent(e.target.value)}
+                className="min-h-[80px] border-white/10 bg-secondary/50 focus:border-purple-500/50 resize-none"
+              />
+              <Button
+                onClick={handleAddNote}
+                disabled={addingNote || !newNoteContent.trim()}
+                className="w-full bg-white/10 hover:bg-white/20 text-white"
+              >
+                {addingNote ? "Salvando..." : "Salvar Nota"}
               </Button>
             </div>
           </div>

@@ -108,40 +108,78 @@ class AtusAPI {
     });
   }
 
+  // Conversations & Messages
   async getLeadConversations(id: string): Promise<ApiResponse<Conversa[]>> {
     return this.request<Conversa[]>(`/api/v1/leads/${id}/conversas`);
   }
 
-  async getLeadCommunications(id: string): Promise<ApiResponse<LeadCommunication[]>> {
-    return this.request<LeadCommunication[]>(`/api/v1/leads/${id}/comunicacoes`);
+  async getConversationMessages(conversaId: string, limit = 50, before?: string): Promise<ApiResponse<{
+    data: any[];
+    total: number;
+    has_more: boolean;
+  }>> {
+    const params = new URLSearchParams();
+    params.append("limit", String(limit));
+    if (before) params.append("before", before);
+    return this.request(`/api/v1/conversas/${conversaId}/mensagens?${params.toString()}`);
   }
 
-  async createLeadCommunication(id: string, data: Omit<LeadCommunication, "id">): Promise<ApiResponse<LeadCommunication>> {
-    return this.request<LeadCommunication>(`/api/v1/leads/${id}/comunicacoes`, {
+  async sendWhatsAppMessage(id: string, mensagem: string, followUp = false): Promise<ApiResponse<{ success: boolean; message_id: string; status: string }>> {
+    return this.request(`/api/v1/leads/${id}/send-message`, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({ mensagem, follow_up: followUp }),
     });
   }
 
-  async getLeadAssignments(id: string): Promise<ApiResponse<LeadAssignment[]>> {
-    return this.request<LeadAssignment[]>(`/api/v1/leads/${id}/atribuicoes`);
-  }
-
-  async assignLead(id: string, corretorId: string, notes?: string): Promise<ApiResponse<LeadAssignment>> {
-    return this.request<LeadAssignment>(`/api/v1/leads/${id}/atribuir`, {
+  // Follow-up Intervention
+  async interveneLead(id: string, type: "HUMAN_TAKEOVER" | "PAUSED" | "URGENT", reason?: string): Promise<ApiResponse<{ success: boolean; lead_id: string; status: string }>> {
+    return this.request(`/api/v1/leads/${id}/intervene`, {
       method: "POST",
-      body: JSON.stringify({ corretor_id: corretorId, notes }),
+      body: JSON.stringify({ type, reason }),
     });
   }
 
-  async getLeadFollowups(id: string): Promise<ApiResponse<LeadFollowup[]>> {
-    return this.request<LeadFollowup[]>(`/api/v1/leads/${id}/followups`);
+  async releaseLeadFollowup(id: string): Promise<ApiResponse<{ success: boolean; lead_id: string; status: string }>> {
+    return this.request(`/api/v1/leads/${id}/release-followup`, {
+      method: "POST",
+    });
   }
 
-  async createLeadFollowup(id: string, data: Omit<LeadFollowup, "id">): Promise<ApiResponse<LeadFollowup>> {
-    return this.request<LeadFollowup>(`/api/v1/leads/${id}/followups`, {
+  async getLeadFollowupStatus(id: string): Promise<ApiResponse<any>> {
+    return this.request(`/api/v1/leads/${id}/follow-up-status`);
+  }
+
+  // Notes
+  async getLeadNotes(id: string): Promise<ApiResponse<any[]>> {
+    return this.request<any[]>(`/api/v1/leads/${id}/notes`);
+  }
+
+  async createLeadNote(id: string, content: string, type: "observation" | "visit" | "follow_up" | "urgent"): Promise<ApiResponse<any>> {
+    return this.request<any>(`/api/v1/leads/${id}/notes`, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({ content, type }),
+    });
+  }
+
+  async updateLeadNote(noteId: string, content: string): Promise<ApiResponse<any>> {
+    return this.request<any>(`/api/v1/notes/${noteId}`, {
+      method: "PUT",
+      body: JSON.stringify({ content }),
+    });
+  }
+
+  async deleteLeadNote(noteId: string): Promise<ApiResponse<void>> {
+    return this.request<void>(`/api/v1/notes/${noteId}`, {
+      method: "DELETE",
+    });
+  }
+
+  // Assignment
+  async assignLead(id: string, corretorId: string, notes?: string): Promise<ApiResponse<Lead>> {
+    // Falls back to direct lead update since specific route was dropped in favor of single PUT update
+    return this.request<Lead>(`/api/v1/leads/${id}`, {
+      method: "PUT",
+      body: JSON.stringify({ corretor_id: corretorId, observacoes: notes }),
     });
   }
 

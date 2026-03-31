@@ -65,14 +65,30 @@ export interface StatsData {
 export interface Conversa {
   id: string;
   lead_id: string;
-  mensagem?: string;
-  resposta?: string;
-  started_at?: string;
-  ended_at?: string | null;
-  status?: string;
-  contexto?: string;
+  status: string;
+  started_at: string;
+  ended_at: string | null;
+  message_count: number;
+}
+
+export interface Mensagem {
+  id: string;
+  conversa_id: string;
+  tipo: "TEXTO" | "IMAGEM" | "AUDIO" | "VIDEO" | "DOCUMENTO";
+  conteudo: string;
+  direcao: "ENTRADA" | "SAIDA";
+  midia_url?: string;
+  timestamp: string;
+}
+
+export interface Note {
+  id: string;
+  lead_id: string;
+  content: string;
+  author_id: string;
+  author_name: string;
   created_at: string;
-  updated_at?: string;
+  type: "observation" | "visit" | "follow_up" | "urgent";
 }
 
 export interface Corretor {
