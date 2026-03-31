@@ -3,15 +3,19 @@
 import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, Eye, Edit, Trash2, Users, Filter } from "lucide-react";
+import { Plus, Eye, Edit, Trash2, Users, MessageSquare, CalendarDays } from "lucide-react";
 import { api, Lead } from "@/lib/api/client";
 import { LeadDetailModal } from "@/components/leads/LeadDetailModal";
 import { LeadFormModal } from "@/components/leads/LeadFormModal";
-import { LeadFormValues } from "@/types/leads";
+import { LeadFormValues, LeadFilterOptions } from "@/types/leads";
+import { LeadFilters } from "@/components/leads/LeadFilters";
+import { LeadCommunicationPanel } from "@/components/leads/LeadCommunicationPanel";
+import { LeadAssignmentPanel } from "@/components/leads/LeadAssignmentPanel";
+import { LeadFollowupPanel } from "@/components/leads/LeadFollowupPanel";
+import { SLADashboard } from "@/components/leads/SLADashboard";
+import { LeadFlowDashboard } from "@/components/leads/LeadFlowDashboard";
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive"; className: string }> = {
   NOVO: { label: "Novo", variant: "default", className: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
@@ -24,19 +28,21 @@ export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [filters, setFilters] = useState<LeadFilterOptions>({});
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [isCommunicationPanelOpen, setIsCommunicationPanelOpen] = useState(false);
+  const [isAssignmentPanelOpen, setIsAssignmentPanelOpen] = useState(false);
+  const [isFollowupPanelOpen, setIsFollowupPanelOpen] = useState(false);
 
   const loadLeads = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await api.getLeads();
+      const response = await api.getLeads(filters);
 
       if (response.error) {
         setError(response.error);
@@ -57,7 +63,7 @@ export default function LeadsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [filters]);
 
   useEffect(() => {
     void loadLeads();
@@ -187,14 +193,40 @@ export default function LeadsPage() {
       }
     : undefined;
 
-  const filteredLeads = leads.filter((lead: Lead) => {
-    const matchesSearch =
-      (lead.nome_completo?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-      (lead.email?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-      (lead.telefone || "").includes(searchTerm);
-    const matchesStatus = statusFilter === "all" || lead.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const openCommunicationPanel = (lead: Lead) => {
+    setSelectedLead(lead);
+    setIsCommunicationPanelOpen(true);
+  };
+
+  const closeCommunicationPanel = () => {
+    setIsCommunicationPanelOpen(false);
+  };
+
+  const openAssignmentPanel = (lead: Lead) => {
+    setSelectedLead(lead);
+    setIsAssignmentPanelOpen(true);
+  };
+
+  const closeAssignmentPanel = () => {
+    setIsAssignmentPanelOpen(false);
+  };
+
+  const handleAssignmentChange = () => {
+    loadLeads();
+  };
+
+  const openFollowupPanel = (lead: Lead) => {
+    setSelectedLead(lead);
+    setIsFollowupPanelOpen(true);
+  };
+
+  const closeFollowupPanel = () => {
+    setIsFollowupPanelOpen(false);
+  };
+
+  const handleFollowupChange = () => {
+    loadLeads();
+  };
 
   if (loading) {
     return (
@@ -245,34 +277,17 @@ export default function LeadsPage() {
         </div>
       )}
 
-      <Card className="glass border-border/50 animate-slide-up">
-        <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome, email ou telefone..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-11 bg-secondary/50 border-border/50 focus:border-primary/50"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value || "all")}>
-              <SelectTrigger className="w-full md:w-[200px] bg-secondary/50 border-border/50">
-                <Filter className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os status</SelectItem>
-                <SelectItem value="NOVO">Novo</SelectItem>
-                <SelectItem value="EM_ATENDIMENTO">Em Atendimento</SelectItem>
-                <SelectItem value="CONVERTIDO">Convertido</SelectItem>
-                <SelectItem value="PERDIDO">Perdido</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      <LeadFilters
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClearFilters={() => setFilters({})}
+      />
+
+      {/* Dashboard de Métricas */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <LeadFlowDashboard />
+        <SLADashboard />
+      </div>
 
       <Card className="glass border-border/50 animate-slide-up stagger-2">
         <CardHeader>
@@ -280,7 +295,7 @@ export default function LeadsPage() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-primary" />
-                {filteredLeads.length} {filteredLeads.length === 1 ? "lead" : "leads"}
+                {leads.length} {leads.length === 1 ? "lead" : "leads"}
               </CardTitle>
               <CardDescription>
                 Lista completa de leads no sistema
@@ -289,7 +304,7 @@ export default function LeadsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {filteredLeads.length === 0 ? (
+          {leads.length === 0 ? (
             <div className="text-center py-12">
               <Users className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
               <p className="text-muted-foreground">Nenhum lead encontrado</p>
@@ -311,7 +326,7 @@ export default function LeadsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredLeads.map((lead: Lead, index) => (
+                  {leads.map((lead: Lead, index: number) => (
                     <TableRow 
                       key={lead.id} 
                       className="hover:bg-secondary/30 transition-colors border-border/50 animate-slide-up"
@@ -352,6 +367,30 @@ export default function LeadsPage() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="h-8 w-8 hover:bg-green-500/10 hover:text-green-400"
+                            onClick={() => openCommunicationPanel(lead)}
+                          >
+                            <MessageSquare className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-purple-500/10 hover:text-purple-400"
+                            onClick={() => openFollowupPanel(lead)}
+                          >
+                            <CalendarDays className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-blue-500/10 hover:text-blue-400"
+                            onClick={() => openAssignmentPanel(lead)}
+                          >
+                            <Users className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
                             onClick={() => openEditModal(lead)}
                           >
@@ -382,6 +421,7 @@ export default function LeadsPage() {
           open={!!selectedLead}
           onClose={() => setSelectedLead(null)}
           onEdit={openEditModal}
+          onOpenCommunication={openCommunicationPanel}
         />
       )}
 
@@ -393,6 +433,32 @@ export default function LeadsPage() {
         onClose={closeFormModal}
         onSubmit={handleFormSubmit}
       />
+
+      {selectedLead && (
+        <LeadCommunicationPanel
+          leadId={selectedLead.id}
+          open={isCommunicationPanelOpen}
+          onClose={closeCommunicationPanel}
+        />
+      )}
+
+      {selectedLead && (
+        <LeadAssignmentPanel
+          leadId={selectedLead.id}
+          open={isAssignmentPanelOpen}
+          onClose={closeAssignmentPanel}
+          onAssignmentChange={handleAssignmentChange}
+        />
+      )}
+
+      {selectedLead && (
+        <LeadFollowupPanel
+          leadId={selectedLead.id}
+          open={isFollowupPanelOpen}
+          onClose={closeFollowupPanel}
+          onFollowupChange={handleFollowupChange}
+        />
+      )}
     </div>
   );
 }

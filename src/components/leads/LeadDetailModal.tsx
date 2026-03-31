@@ -18,6 +18,7 @@ import {
   Mail,
   MapPin,
   MessageSquareText,
+  MessageSquare,
   Phone,
   Sparkles,
   UserRound,
@@ -28,6 +29,7 @@ interface LeadDetailModalProps {
   open: boolean;
   onClose: () => void;
   onEdit: (lead: Lead) => void;
+  onOpenCommunication?: (lead: Lead) => void;
 }
 
 const statusColors: Record<string, string> = {
@@ -37,7 +39,7 @@ const statusColors: Record<string, string> = {
   PERDIDO: "bg-red-500/20 text-red-400 border-red-500/30",
 };
 
-export function LeadDetailModal({ lead, open, onClose, onEdit }: LeadDetailModalProps) {
+export function LeadDetailModal({ lead, open, onClose, onEdit, onOpenCommunication }: LeadDetailModalProps) {
   const statusClass = statusColors[lead.status] || "bg-gray-500/20 text-gray-400 border-gray-500/30";
 
   const formatCurrency = (value: number) => {
@@ -264,6 +266,16 @@ export function LeadDetailModal({ lead, open, onClose, onEdit }: LeadDetailModal
           >
             Fechar
           </Button>
+          {onOpenCommunication && (
+            <Button
+              variant="outline"
+              className="border-white/10 bg-white/5 text-zinc-300 hover:bg-green-500/10 hover:text-green-400"
+              onClick={() => onOpenCommunication(lead)}
+            >
+              <MessageSquare className="mr-2 h-4 w-4" />
+              Comunicação
+            </Button>
+          )}
           <Button
             className="bg-gradient-to-r from-orange-500 to-amber-400 text-white shadow-[0_12px_30px_rgba(249,115,22,0.28)] hover:from-orange-400 hover:to-amber-300"
             onClick={() => onEdit(lead)}

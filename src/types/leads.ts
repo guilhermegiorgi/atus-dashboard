@@ -45,6 +45,10 @@ export interface Lead {
   created_at: string;
   updated_at: string;
   conversas?: Conversa[];
+  corretor?: Corretor;
+  comunicacoes?: LeadCommunication[];
+  atribuicoes?: LeadAssignment[];
+  followups?: LeadFollowup[];
 }
 
 export interface StatsData {
@@ -86,4 +90,57 @@ export interface LeadFormValues {
   tipo_interesse: string;
   renda_comprovada: number;
   observacoes: string;
+}
+
+export interface LeadFilterOptions {
+  status?: LeadStatus;
+  origem?: string;
+  corretor_id?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  minRenda?: number;
+  maxRenda?: number;
+  temEntrada?: boolean;
+  temCarteira?: boolean;
+  search?: string;
+  sortBy?: "created_at" | "updated_at" | "nome_completo" | "renda_comprovada" | "ultimo_contato";
+  sortOrder?: "asc" | "desc";
+  page?: number;
+  limit?: number;
+}
+
+export interface LeadCommunication {
+  id: string;
+  lead_id: string;
+  type: "email" | "whatsapp" | "sms" | "meeting" | "note";
+  direction: "inbound" | "outbound";
+  subject?: string;
+  content: string;
+  scheduled_at?: string;
+  completed_at?: string;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LeadAssignment {
+  id: string;
+  lead_id: string;
+  corretor_id: string;
+  assigned_at: string;
+  assigned_by?: string;
+  status: "active" | "completed" | "transferred";
+  notes?: string;
+}
+
+export interface LeadFollowup {
+  id: string;
+  lead_id: string;
+  type: "email" | "whatsapp" | "meeting";
+  scheduled_at: string;
+  completed_at?: string;
+  notes?: string;
+  status: "pending" | "completed" | "cancelled";
+  created_at: string;
+  updated_at: string;
 }
