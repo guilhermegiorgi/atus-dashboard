@@ -418,7 +418,12 @@ export default function LeadsPage() {
       {selectedLead && (
         <LeadDetailModal
           lead={selectedLead}
-          open={!!selectedLead}
+          open={
+            !!selectedLead &&
+            !isCommunicationPanelOpen &&
+            !isAssignmentPanelOpen &&
+            !isFollowupPanelOpen
+          }
           onClose={() => setSelectedLead(null)}
           onEdit={openEditModal}
           onOpenCommunication={openCommunicationPanel}

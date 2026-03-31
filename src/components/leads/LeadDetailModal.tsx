@@ -82,6 +82,7 @@ export function LeadDetailModal({ lead, open, onClose, onEdit, onOpenCommunicati
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="w-[95vw] max-w-6xl xl:max-w-7xl max-h-[90vh] overflow-y-auto overflow-x-hidden border border-white/10 bg-zinc-950/95 p-0 text-zinc-100 backdrop-blur-xl">
+        <div tabIndex={0} className="sr-only focus:outline-none" aria-hidden="true" />
         <div className="relative overflow-hidden border-b border-white/5">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.28),transparent_35%),radial-gradient(circle_at_top_left,rgba(251,191,36,0.14),transparent_30%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0))]" />
           <div className="relative grid gap-6 px-6 py-6 md:grid-cols-[1.5fr_1fr]">

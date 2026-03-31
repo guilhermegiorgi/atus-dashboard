@@ -160,6 +160,7 @@ export function LeadFollowupPanel({ leadId, open, onClose, onFollowupChange }: L
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="w-[95vw] max-w-6xl xl:max-w-7xl max-h-[90vh] overflow-y-auto overflow-x-hidden border border-white/10 bg-zinc-950/95 p-0 text-zinc-100 backdrop-blur-xl">
+        <div tabIndex={0} className="sr-only focus:outline-none" aria-hidden="true" />
         <DialogHeader className="border-b border-white/5 px-6 py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-blue-400">
