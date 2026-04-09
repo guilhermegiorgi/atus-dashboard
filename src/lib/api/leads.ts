@@ -73,6 +73,7 @@ export function normalizeLead(raw: RawLead): Lead {
     origem_detalhada: asOptionalString(raw.origem_detalhada),
     external_lead_id: asOptionalString(raw.external_lead_id),
     resumo_qualificacao: asOptionalString(raw.resumo_qualificacao),
+    fase: asOptionalString(raw.fase),
     codigo_ref: asOptionalString(raw.codigo_ref),
     tracked_codigo_ref: asOptionalString(raw.tracked_codigo_ref),
     link_click_id: asNullableString(raw.link_click_id),

@@ -40,6 +40,7 @@ export interface Lead {
   origem_detalhada?: string;
   external_lead_id?: string;
   resumo_qualificacao?: string;
+  fase?: string;
   codigo_ref?: string;
   tracked_codigo_ref?: string;
   link_click_id?: string | null;
