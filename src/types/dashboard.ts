@@ -42,6 +42,105 @@ export interface AnalyticsOverview {
   taxa_conversao_comercial: number;
 }
 
+export interface AnalyticsFilters {
+  date_from?: string;
+  date_to?: string;
+  canal_origem?: string;
+  sistema_origem?: string;
+  campanha_origem?: string;
+  tracked_codigo_ref?: string;
+  status?: string;
+  fase?: string;
+  corretor_id?: string;
+  intervention_type?: string;
+  limit?: number;
+  offset?: number;
+  search?: string;
+}
+
+export interface AnalyticsTimeseriesPoint {
+  date: string;
+  leads: number;
+  operational_conversions: number;
+  commercial_conversions: number;
+  human_takeovers: number;
+}
+
+export interface AnalyticsGroupedRow {
+  key: string;
+  label: string;
+  total_leads: number;
+  leads_em_tratativa: number;
+  takeovers_humanos: number;
+  conversoes_operacionais: number;
+  conversoes_comerciais: number;
+  taxa_conversao_operacional: number;
+  taxa_conversao_comercial: number;
+  score_prontidao_medio: number;
+  score_potencial_medio: number;
+}
+
+export interface AnalyticsLeadRow {
+  lead_id: string;
+  telefone: string;
+  nome_completo: string;
+  canal_origem: string;
+  sistema_origem: string;
+  campanha_origem: string;
+  tracked_codigo_ref: string;
+  corretor_id: string | null;
+  status: string;
+  fase: string;
+  intervention_type: string;
+  qualification_summary: string;
+  score_prontidao_operacional: number;
+  score_prontidao_bucket: string;
+  score_potencial_comercial: number;
+  score_potencial_bucket: string;
+  updated_at: string;
+}
+
+export interface TrackedLinksFilters {
+  limit?: number;
+  offset?: number;
+  ativo?: boolean;
+  search?: string;
+}
+
+export interface TrackedLink {
+  id: string;
+  nome: string;
+  nome_campanha: string;
+  source: string;
+  medium: string;
+  content: string;
+  term: string;
+  codigo_ref: string;
+  whatsapp_num: string;
+  whatsapp_msg: string;
+  url_base: string;
+  clicks: number;
+  leads_convertidos: number;
+  ativo: boolean;
+  expira_em: string | null;
+  created_at: string;
+  updated_at: string;
+  link?: string;
+}
+
+export interface CreateTrackedLinkValues {
+  nome: string;
+  nome_campanha?: string;
+  source?: string;
+  medium?: string;
+  content?: string;
+  term?: string;
+  whatsapp_num: string;
+  whatsapp_msg?: string;
+  url_base?: string;
+  expira_em?: string;
+}
+
 export interface OperationalQueueItem {
   lead_id: string;
   telefone: string;

@@ -1,5 +1,10 @@
 import {
+  AnalyticsFilters,
+  AnalyticsGroupedRow,
+  AnalyticsLeadRow,
   AnalyticsOverview,
+  AnalyticsTimeseriesPoint,
+  CreateTrackedLinkValues,
   FlowMetrics,
   FollowupMetrics,
   FollowupQueueFilters,
@@ -11,6 +16,8 @@ import {
   OperationalQueueItem,
   OperationalStatus,
   SlaMetrics,
+  TrackedLink,
+  TrackedLinksFilters,
 } from "@/types/dashboard";
 import { ApiResult, PaginatedResponse } from "@/types/api";
 import {
@@ -36,10 +43,21 @@ import {
   normalizeOperationalStatus,
 } from "@/lib/pipeline/queue";
 import {
+  buildAnalyticsQuery,
+  normalizeAnalyticsGroupedRow,
+  normalizeAnalyticsLeadRow,
+  normalizeAnalyticsTimeseriesPoint,
+} from "@/lib/analytics/reports";
+import {
   buildInboxConversationsQuery,
   normalizeInboxConversationDetail,
   normalizeInboxConversationSummary,
 } from "@/lib/inbox/conversations";
+import {
+  buildTrackedLinkPayload,
+  buildTrackedLinksQuery,
+  normalizeTrackedLink,
+} from "@/lib/tracking/tracked-links";
 
 const API_BASE_URL = "";
 
@@ -613,9 +631,12 @@ class AtusAPI {
     };
   }
 
-  async getAnalyticsOverview(): Promise<ApiResult<AnalyticsOverview>> {
+  async getAnalyticsOverview(
+    filters: AnalyticsFilters = {}
+  ): Promise<ApiResult<AnalyticsOverview>> {
+    const query = buildAnalyticsQuery(filters);
     const response = await this.request<{ data: AnalyticsOverview }>(
-      "/api/internal/analytics/overview"
+      `/api/internal/analytics/overview${query.size ? `?${query.toString()}` : ""}`
     );
 
     if (response.error || !response.data) {
@@ -627,6 +648,288 @@ class AtusAPI {
 
     return {
       data: response.data.data,
+      message: response.message,
+    };
+  }
+
+  async getAnalyticsTimeseries(
+    filters: AnalyticsFilters = {}
+  ): Promise<ApiResult<AnalyticsTimeseriesPoint[]>> {
+    const query = buildAnalyticsQuery(filters);
+    const response = await this.request<{ data: Record<string, unknown>[] }>(
+      `/api/internal/analytics/timeseries${query.size ? `?${query.toString()}` : ""}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data.map(normalizeAnalyticsTimeseriesPoint),
+      message: response.message,
+    };
+  }
+
+  async getAnalyticsSources(
+    filters: AnalyticsFilters = {}
+  ): Promise<ApiResult<AnalyticsGroupedRow[]>> {
+    const query = buildAnalyticsQuery(filters);
+    const response = await this.request<{ data: Record<string, unknown>[] }>(
+      `/api/internal/analytics/sources${query.size ? `?${query.toString()}` : ""}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data.map(normalizeAnalyticsGroupedRow),
+      message: response.message,
+    };
+  }
+
+  async getAnalyticsCampaigns(
+    filters: AnalyticsFilters = {}
+  ): Promise<ApiResult<AnalyticsGroupedRow[]>> {
+    const query = buildAnalyticsQuery(filters);
+    const response = await this.request<{ data: Record<string, unknown>[] }>(
+      `/api/internal/analytics/campaigns${query.size ? `?${query.toString()}` : ""}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data.map(normalizeAnalyticsGroupedRow),
+      message: response.message,
+    };
+  }
+
+  async getAnalyticsCorretors(
+    filters: AnalyticsFilters = {}
+  ): Promise<ApiResult<AnalyticsGroupedRow[]>> {
+    const query = buildAnalyticsQuery(filters);
+    const response = await this.request<{ data: Record<string, unknown>[] }>(
+      `/api/internal/analytics/corretors${query.size ? `?${query.toString()}` : ""}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data.map(normalizeAnalyticsGroupedRow),
+      message: response.message,
+    };
+  }
+
+  async getAnalyticsLeads(
+    filters: AnalyticsFilters = {}
+  ): Promise<ApiResult<PaginatedResponse<AnalyticsLeadRow>>> {
+    const query = buildAnalyticsQuery(filters);
+    const response = await this.request<PaginatedResponse<Record<string, unknown>>>(
+      `/api/internal/analytics/leads${query.size ? `?${query.toString()}` : ""}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: {
+        data: response.data.data.map(normalizeAnalyticsLeadRow),
+        meta: response.data.meta,
+      },
+      message: response.message,
+    };
+  }
+
+  async getAnalyticsRankingOrigins(
+    filters: AnalyticsFilters = {}
+  ): Promise<ApiResult<AnalyticsGroupedRow[]>> {
+    const query = buildAnalyticsQuery(filters);
+    const response = await this.request<{ data: Record<string, unknown>[] }>(
+      `/api/internal/analytics/rankings/origins${query.size ? `?${query.toString()}` : ""}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data.map(normalizeAnalyticsGroupedRow),
+      message: response.message,
+    };
+  }
+
+  async getAnalyticsRankingCampaigns(
+    filters: AnalyticsFilters = {}
+  ): Promise<ApiResult<AnalyticsGroupedRow[]>> {
+    const query = buildAnalyticsQuery(filters);
+    const response = await this.request<{ data: Record<string, unknown>[] }>(
+      `/api/internal/analytics/rankings/campaigns${query.size ? `?${query.toString()}` : ""}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data.map(normalizeAnalyticsGroupedRow),
+      message: response.message,
+    };
+  }
+
+  async getAnalyticsRankingCorretors(
+    filters: AnalyticsFilters = {}
+  ): Promise<ApiResult<AnalyticsGroupedRow[]>> {
+    const query = buildAnalyticsQuery(filters);
+    const response = await this.request<{ data: Record<string, unknown>[] }>(
+      `/api/internal/analytics/rankings/corretors${query.size ? `?${query.toString()}` : ""}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data.map(normalizeAnalyticsGroupedRow),
+      message: response.message,
+    };
+  }
+
+  async getAnalyticsRankingTriageReady(
+    filters: AnalyticsFilters = {}
+  ): Promise<ApiResult<PaginatedResponse<AnalyticsLeadRow>>> {
+    const query = buildAnalyticsQuery(filters);
+    const response = await this.request<PaginatedResponse<Record<string, unknown>>>(
+      `/api/internal/analytics/rankings/triage-ready${query.size ? `?${query.toString()}` : ""}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: {
+        data: response.data.data.map(normalizeAnalyticsLeadRow),
+        meta: response.data.meta,
+      },
+      message: response.message,
+    };
+  }
+
+  async getAnalyticsRankingLeadScores(
+    filters: AnalyticsFilters = {}
+  ): Promise<ApiResult<PaginatedResponse<AnalyticsLeadRow>>> {
+    const query = buildAnalyticsQuery(filters);
+    const response = await this.request<PaginatedResponse<Record<string, unknown>>>(
+      `/api/internal/analytics/rankings/lead-scores${query.size ? `?${query.toString()}` : ""}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: {
+        data: response.data.data.map(normalizeAnalyticsLeadRow),
+        meta: response.data.meta,
+      },
+      message: response.message,
+    };
+  }
+
+  async getTrackedLinks(
+    filters: TrackedLinksFilters = {}
+  ): Promise<ApiResult<TrackedLink[]>> {
+    const query = buildTrackedLinksQuery(filters);
+    const response = await this.request<{ data: Record<string, unknown>[] }>(
+      `/api/internal/tracked-links${query.size ? `?${query.toString()}` : ""}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data.map((item) => normalizeTrackedLink(item)),
+      message: response.message,
+    };
+  }
+
+  async getTrackedLink(id: string): Promise<ApiResult<TrackedLink>> {
+    const response = await this.request<{ data: Record<string, unknown>; link?: string }>(
+      `/api/internal/tracked-links/${id}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: normalizeTrackedLink(response.data.data, response.data.link),
+      message: response.message,
+    };
+  }
+
+  async createTrackedLink(
+    values: CreateTrackedLinkValues
+  ): Promise<ApiResult<TrackedLink>> {
+    const response = await this.request<{ data: Record<string, unknown>; link?: string }>(
+      "/api/internal/tracked-links",
+      {
+        method: "POST",
+        body: JSON.stringify(buildTrackedLinkPayload(values)),
+      }
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: normalizeTrackedLink(response.data.data, response.data.link),
       message: response.message,
     };
   }
