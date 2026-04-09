@@ -21,6 +21,7 @@ const statusLabels: Record<LeadStatus, string> = {
   EM_ATENDIMENTO: "Em Atendimento", 
   CONVERTIDO: "Convertido",
   PERDIDO: "Perdido",
+  AGUARDANDO_RETORNO: "Aguard. Retorno",
 };
 
 export function LeadFilters({ filters, onFiltersChange, onClearFilters }: LeadFiltersProps) {

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, ArrowLeft, MessageSquare, Clock, User, Bot } from "lucide-react";
+import { Search, ArrowLeft, MessageSquare, Clock, User } from "lucide-react";
 import { api, Lead, Conversa } from "@/lib/api/client";
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive"; className: string }> = {
@@ -279,7 +279,7 @@ export default function ConversationsPage() {
                     >
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Clock className="h-4 w-4" />
-                        {new Date(conv.created_at).toLocaleString('pt-BR')}
+                        {new Date(conv.started_at).toLocaleString('pt-BR')}
                       </div>
                       <div className="space-y-4">
                         <div className="flex gap-3">
@@ -288,22 +288,10 @@ export default function ConversationsPage() {
                           </div>
                           <div className="flex-1 bg-secondary/50 rounded-xl rounded-tl-none p-4">
                             <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-                              <User className="h-3 w-3" />
-                              Cliente
+                              <MessageSquare className="h-3 w-3" />
+                              Resumo da Conversa
                             </div>
-                            <p className="text-sm">{conv.mensagem || 'Sem mensagem'}</p>
-                          </div>
-                        </div>
-                        <div className="flex gap-3">
-                          <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                            <Bot className="h-4 w-4 text-primary" />
-                          </div>
-                          <div className="flex-1 bg-primary/10 rounded-xl rounded-tl-none p-4 border border-primary/20">
-                            <div className="text-xs text-primary mb-2 flex items-center gap-1">
-                              <Bot className="h-3 w-3" />
-                              Atus Bot
-                            </div>
-                            <p className="text-sm">{conv.resposta || 'Sem resposta'}</p>
+                            <p className="text-sm">Esta conversa registrou {conv.message_count} interações. Acesse o lead na aba Contatos para conversar ou visualizar o histórico completo.</p>
                           </div>
                         </div>
                       </div>

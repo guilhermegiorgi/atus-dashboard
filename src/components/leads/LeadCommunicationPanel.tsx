@@ -4,8 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { MessageSquare, Send, CheckCircle, Clock } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { MessageSquare, Send } from "lucide-react";
 import { api } from "@/lib/api/client";
 import type { Conversa } from "@/types/leads";
 
@@ -18,7 +18,7 @@ interface LeadCommunicationPanelProps {
 export function LeadCommunicationPanel({ leadId, open, onClose }: LeadCommunicationPanelProps) {
   const [conversations, setConversations] = useState<Conversa[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversa | null>(null);
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<Record<string, unknown>[]>([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
@@ -48,7 +48,7 @@ export function LeadCommunicationPanel({ leadId, open, onClose }: LeadCommunicat
       const response = await api.getConversationMessages(conversaId);
       if (response.data?.data) {
         // Assume API returns newest first or oldest first. We will sort oldest first for chat flow
-        const sorted = [...response.data.data].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        const sorted = [...response.data.data].sort((a, b) => new Date(a.timestamp as string).getTime() - new Date(b.timestamp as string).getTime());
         setMessages(sorted);
       }
     } catch (error) {
@@ -67,6 +67,7 @@ export function LeadCommunicationPanel({ leadId, open, onClose }: LeadCommunicat
       setMessages([]);
       setContent("");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, leadId]);
 
   useEffect(() => {
@@ -208,15 +209,15 @@ export function LeadCommunicationPanel({ leadId, open, onClose }: LeadCommunicat
                 messages.map((msg) => {
                   const isSentByUs = msg.direcao === "SAIDA";
                   return (
-                    <div key={msg.id} className={`flex ${isSentByUs ? "justify-end" : "justify-start"}`}>
+                    <div key={msg.id as string} className={`flex ${isSentByUs ? "justify-end" : "justify-start"}`}>
                       <div className={`max-w-[80%] rounded-2xl px-4 py-2 ${
                         isSentByUs 
                           ? "bg-green-600/20 border border-green-500/30 text-green-100 rounded-tr-sm" 
                           : "bg-white/10 border border-white/5 text-zinc-200 rounded-tl-sm"
                       }`}>
-                        <div className="text-sm whitespace-pre-wrap">{msg.conteudo}</div>
+                        <div className="text-sm whitespace-pre-wrap">{msg.conteudo as string}</div>
                         <div className={`mt-1 text-[10px] text-right ${isSentByUs ? "text-green-400/70" : "text-zinc-500"}`}>
-                          {formatTime(msg.timestamp)}
+                          {formatTime(msg.timestamp as string)}
                         </div>
                       </div>
                     </div>

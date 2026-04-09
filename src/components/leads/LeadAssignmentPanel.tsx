@@ -57,6 +57,7 @@ export function LeadAssignmentPanel({ leadId, open, onClose, onAssignmentChange 
       setShowCreateForm(false);
       setNewCorretor({ nome: "", telefone: "", email: "", especialidade: "" });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, leadId]);
 
   const handleAssign = async () => {
@@ -65,7 +66,7 @@ export function LeadAssignmentPanel({ leadId, open, onClose, onAssignmentChange 
     try {
       setAssigning(true);
       const targetId = selectedCorretorId === "unassigned" ? null : selectedCorretorId;
-      const response = await api.assignLead(leadId, targetId as any, notes);
+      const response = await api.assignLead(leadId, targetId as string | null, notes);
 
       if (response.data) {
         await loadData();

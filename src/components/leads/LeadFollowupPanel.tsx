@@ -3,9 +3,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Calendar, Bot, User, CheckCircle, Clock, PauseCircle, PlayCircle } from "lucide-react";
+import { Bot, User, PauseCircle, PlayCircle } from "lucide-react";
 import { api } from "@/lib/api/client";
 import type { Note } from "@/types/leads";
 
@@ -18,7 +17,7 @@ interface LeadFollowupPanelProps {
 
 export function LeadFollowupPanel({ leadId, open, onClose, onFollowupChange }: LeadFollowupPanelProps) {
   const [notes, setNotes] = useState<Note[]>([]);
-  const [followupStatus, setFollowupStatus] = useState<any>(null);
+  const [followupStatus, setFollowupStatus] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [addingNote, setAddingNote] = useState(false);
   const [changingStatus, setChangingStatus] = useState(false);
@@ -52,6 +51,7 @@ export function LeadFollowupPanel({ leadId, open, onClose, onFollowupChange }: L
     if (open) {
       loadData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, leadId]);
 
   const handleIntervene = async () => {
@@ -104,6 +104,7 @@ export function LeadFollowupPanel({ leadId, open, onClose, onFollowupChange }: L
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const isBotActive = !followupStatus?.active && !followupStatus?.is_paused; // Or whatever logic represents "Bot is handling it" vs "Human is handling it". Assume `active` means Follow-up by human is active. Let's rely on standard UI assumptions:
   const isHumanTakeover = followupStatus?.em_follow_up || followupStatus?.active || !!followupStatus?.intervention_type; 
 
