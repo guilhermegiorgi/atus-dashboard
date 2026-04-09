@@ -1,15 +1,11 @@
-import { NextRequest } from "next/server";
 export { dynamic, revalidate } from "@/lib/server/atus-route";
 
+import { NextRequest } from "next/server";
 import { proxyAtusJson } from "@/lib/server/atus-proxy";
-
-export async function GET() {
-  return proxyAtusJson({ path: "/mcp/stats" });
-}
 
 export async function POST(request: NextRequest) {
   return proxyAtusJson({
-    path: "/mcp/chat",
+    path: "/api/v1/inbound/leads",
     method: "POST",
     body: await request.json(),
   });

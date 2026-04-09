@@ -1,24 +1,11 @@
-import { NextResponse } from 'next/server';
+export { dynamic, revalidate } from "@/lib/server/atus-route";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://chatbot.atusbr.com.br';
-const API_KEY = process.env.NEXT_PUBLIC_API_KEY || 'atus-mcp-api-key-2026';
+import { NextRequest } from "next/server";
+import { proxyAtusJson } from "@/lib/server/atus-proxy";
 
-async function proxyRequest(url: string, options: RequestInit = {}) {
-  const headers: HeadersInit = {
-    'x-api-key': API_KEY,
-    'Content-Type': 'application/json',
-  };
-
-  const response = await fetch(`${API_BASE_URL}${url}`, {
-    ...options,
-    headers,
+export async function GET(request: NextRequest) {
+  return proxyAtusJson({
+    path: "/mcp/leads",
+    searchParams: request.nextUrl.searchParams,
   });
-
-  const data = await response.json();
-
-  return NextResponse.json(data, { status: response.status });
-}
-
-export async function GET() {
-  return proxyRequest('/mcp/leads');
 }
