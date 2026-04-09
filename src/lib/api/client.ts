@@ -3,6 +3,9 @@ import {
   FlowMetrics,
   FollowupMetrics,
   FollowupQueueFilters,
+  InboxConversationDetail,
+  InboxConversationFilters,
+  InboxConversationSummary,
   LeadAction,
   LeadStats,
   OperationalQueueItem,
@@ -32,6 +35,11 @@ import {
   normalizeOperationalQueueItem,
   normalizeOperationalStatus,
 } from "@/lib/pipeline/queue";
+import {
+  buildInboxConversationsQuery,
+  normalizeInboxConversationDetail,
+  normalizeInboxConversationSummary,
+} from "@/lib/inbox/conversations";
 
 const API_BASE_URL = "";
 
@@ -484,6 +492,109 @@ class AtusAPI {
       data: response.data,
       message: response.message,
     };
+  }
+
+  async getInboxConversations(
+    filters: InboxConversationFilters = {}
+  ): Promise<ApiResult<PaginatedResponse<InboxConversationSummary>>> {
+    const query = buildInboxConversationsQuery(filters);
+    const response = await this.request<
+      PaginatedResponse<Record<string, unknown>>
+    >(`/api/internal/inbox/conversations${query.size ? `?${query.toString()}` : ""}`);
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: {
+        data: response.data.data.map(normalizeInboxConversationSummary),
+        meta: response.data.meta,
+      },
+      message: response.message,
+    };
+  }
+
+  async getInboxConversationDetail(
+    leadId: string
+  ): Promise<ApiResult<InboxConversationDetail>> {
+    const response = await this.request<{ data: Record<string, unknown> }>(
+      `/api/internal/inbox/conversations/${leadId}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: normalizeInboxConversationDetail(response.data.data),
+      message: response.message,
+    };
+  }
+
+  async sendInboxMessage(
+    leadId: string,
+    body: {
+      message: string;
+      actor_name: string;
+      actor_type: string;
+      introduce_actor?: boolean;
+    }
+  ): Promise<ApiResult<{ success: boolean }>> {
+    return this.request(`/api/internal/inbox/conversations/${leadId}/messages`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async assignInboxConversation(
+    leadId: string,
+    body: {
+      assigned_corretor_id: string;
+      assigned_by: string;
+      note?: string;
+    }
+  ): Promise<ApiResult<{ success: boolean }>> {
+    return this.request(`/api/internal/inbox/conversations/${leadId}/assign`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async updateInboxConversationState(
+    leadId: string,
+    body: {
+      state: string;
+      actor_name: string;
+      reason?: string;
+    }
+  ): Promise<ApiResult<{ success: boolean }>> {
+    return this.request(`/api/internal/inbox/conversations/${leadId}/state`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async returnInboxConversationToBot(
+    leadId: string,
+    body: {
+      actor_name: string;
+      reason?: string;
+    }
+  ): Promise<ApiResult<{ success: boolean }>> {
+    return this.request(
+      `/api/internal/inbox/conversations/${leadId}/return-to-bot`,
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+      }
+    );
   }
 
   async getSLAMetrics(): Promise<ApiResult<SlaMetrics>> {

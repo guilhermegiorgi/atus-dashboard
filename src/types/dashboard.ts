@@ -91,3 +91,54 @@ export interface FollowupQueueFilters {
   triage_state?: string;
   search?: string;
 }
+
+export interface InboxConversationSummary {
+  lead_id: string;
+  telefone: string;
+  nome_completo: string;
+  conversation_state: string;
+  owner_user_name: string;
+  owner_user_type: string;
+  assigned_corretor_id: string | null;
+  assigned_by: string;
+  assigned_at: string | null;
+  returned_to_bot_at: string | null;
+  canal_origem: string;
+  sistema_origem: string;
+  status: string;
+  fase: string;
+  qualification_summary: string;
+  last_message_preview: string;
+  last_message_direction: string;
+  updated_at: string;
+}
+
+export interface InboxConversationFilters {
+  state?: string;
+  owner_user_name?: string;
+  assigned_corretor_id?: string;
+  canal_origem?: string;
+  sistema_origem?: string;
+  status?: string;
+  fase?: string;
+  limit?: number;
+  offset?: number;
+  search?: string;
+}
+
+export interface InboxMessage {
+  id: string;
+  content: string;
+  direction: string;
+  timestamp: string;
+  actor_name: string;
+  actor_type: string;
+}
+
+export interface InboxConversationDetail extends InboxConversationSummary {
+  email: string;
+  tracked_codigo_ref: string;
+  link_click_id: string | null;
+  messages: InboxMessage[];
+  operational_status?: OperationalStatus | null;
+}

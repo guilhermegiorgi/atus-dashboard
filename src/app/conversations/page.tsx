@@ -1,84 +1,264 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, ArrowLeft, MessageSquare, Clock, User, Bot } from "lucide-react";
-import { api, Lead, Conversa } from "@/lib/api/client";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { api } from "@/lib/api/client";
+import { Corretor } from "@/types/leads";
+import {
+  InboxConversationDetail,
+  InboxConversationFilters,
+  InboxConversationSummary,
+} from "@/types/dashboard";
+import { getOffsetForPage } from "@/lib/leads/query-state";
+import {
+  ArrowRight,
+  Bot,
+  MessageSquare,
+  RotateCcw,
+  Send,
+  ShieldAlert,
+  UserRound,
+} from "lucide-react";
 
-const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive"; className: string }> = {
-  NOVO: { label: "Novo", variant: "default", className: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
-  EM_ATENDIMENTO: { label: "Em Atendimento", variant: "secondary", className: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
-  CONVERTIDO: { label: "Convertido", variant: "outline", className: "bg-green-500/20 text-green-400 border-green-500/30" },
-  PERDIDO: { label: "Perdido", variant: "destructive", className: "bg-red-500/20 text-red-400 border-red-500/30" },
-};
+const PAGE_SIZE = 20;
+const ACTOR_NAME = "Dashboard";
+const ACTOR_TYPE = "admin";
+const INBOX_STATES = [
+  "TRIAGE_HUMAN",
+  "ASSIGNED_TO_BROKER",
+  "HUMAN_ACTIVE",
+  "HUMAN_STANDBY",
+  "RETURNED_TO_BOT",
+  "CLOSED",
+] as const;
+
+function stateTone(state: string) {
+  switch (state) {
+    case "TRIAGE_HUMAN":
+      return "border-amber-500/20 bg-amber-500/10 text-amber-300";
+    case "ASSIGNED_TO_BROKER":
+      return "border-blue-500/20 bg-blue-500/10 text-blue-300";
+    case "HUMAN_ACTIVE":
+      return "border-green-500/20 bg-green-500/10 text-green-400";
+    case "HUMAN_STANDBY":
+      return "border-zinc-500/20 bg-zinc-500/10 text-zinc-300";
+    case "RETURNED_TO_BOT":
+      return "border-primary/20 bg-primary/10 text-primary";
+    case "CLOSED":
+      return "border-red-500/20 bg-red-500/10 text-red-300";
+    default:
+      return "border-border/50 bg-secondary/30 text-foreground";
+  }
+}
 
 export default function ConversationsPage() {
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [conversations, setConversations] = useState<Conversa[]>([]);
+  const [filters, setFilters] = useState<InboxConversationFilters>({
+    limit: PAGE_SIZE,
+    offset: 0,
+  });
+  const [conversations, setConversations] = useState<InboxConversationSummary[]>([]);
+  const [meta, setMeta] = useState({ total: 0, limit: PAGE_SIZE, offset: 0 });
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const [selectedConversation, setSelectedConversation] =
+    useState<InboxConversationDetail | null>(null);
+  const [corretores, setCorretores] = useState<Corretor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [search, setSearch] = useState("");
+  const [message, setMessage] = useState("");
+  const [introduceActor, setIntroduceActor] = useState(true);
+  const [assignedCorretorId, setAssignedCorretorId] = useState("");
+  const [assignNote, setAssignNote] = useState("");
+  const [stateValue, setStateValue] = useState("HUMAN_STANDBY");
+  const [stateReason, setStateReason] = useState("");
+  const [returnReason, setReturnReason] = useState("");
 
-  useEffect(() => {
-    fetchLeads();
+  const requestFingerprint = JSON.stringify(filters);
+
+  const loadInbox = useCallback(async (currentFilters: InboxConversationFilters) => {
+    setLoading(true);
+    setError(null);
+
+    const [listResult, corretoresResult] = await Promise.all([
+      api.getInboxConversations(currentFilters),
+      api.getCorretores(),
+    ]);
+
+    const firstError = listResult.error ?? corretoresResult.error ?? null;
+
+    if (firstError || !listResult.data) {
+      setError(firstError ?? "Erro ao carregar inbox humana");
+      setLoading(false);
+      return;
+    }
+
+    setConversations(listResult.data.data);
+    setMeta(listResult.data.meta);
+    setCorretores(corretoresResult.data ?? []);
+    setLoading(false);
   }, []);
 
-  const fetchLeads = async () => {
-    try {
-      const response = await api.getLeads();
-      
-      if (response.error) {
-        setError(response.error);
-      } else if (response.data) {
-        const leadsData = Array.isArray(response.data) ? response.data : (response.data as { data?: Lead[] }).data || [];
-        setLeads(leadsData);
-      }
-    } catch (err) {
-      console.error('Erro ao carregar leads:', err);
-      setError("Erro ao carregar leads");
-    } finally {
-      setLoading(false);
+  const loadConversationDetail = useCallback(async (leadId: string) => {
+    setDetailLoading(true);
+    const detailResult = await api.getInboxConversationDetail(leadId);
+
+    if (detailResult.error || !detailResult.data) {
+      setError(detailResult.error ?? "Erro ao carregar detalhe da inbox");
+      setDetailLoading(false);
+      return;
     }
-  };
 
-  const fetchConversations = async (leadId: string) => {
-    try {
-      const response = await api.getLeadConversations(leadId);
-      
-      if (response.error) {
-        setError(response.error);
-      } else if (response.data) {
-        const convData = Array.isArray(response.data) ? response.data : (response.data as { data?: Conversa[] }).data || [];
-        setConversations(convData);
-      }
-    } catch (err) {
-      console.error('Erro ao carregar conversas:', err);
-      setError("Erro ao carregar conversas");
+    setSelectedConversation(detailResult.data);
+    setAssignedCorretorId(detailResult.data.assigned_corretor_id ?? "");
+    setStateValue(
+      detailResult.data.conversation_state === "ASSIGNED_TO_BROKER"
+        ? "HUMAN_ACTIVE"
+        : detailResult.data.conversation_state || "HUMAN_STANDBY"
+    );
+    setDetailLoading(false);
+  }, []);
+
+  useEffect(() => {
+    void loadInbox(filters);
+  }, [filters, loadInbox, requestFingerprint]);
+
+  useEffect(() => {
+    if (!selectedLeadId) {
+      setSelectedConversation(null);
+      return;
     }
-  };
 
-  const handleLeadClick = (lead: Lead) => {
-    setSelectedLead(lead);
-    fetchConversations(lead.id);
-  };
+    void loadConversationDetail(selectedLeadId);
+  }, [selectedLeadId, loadConversationDetail]);
 
-  const filteredLeads = leads.filter((lead) =>
-    (lead.nome_completo?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-    (lead.email?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-    (lead.telefone || '').includes(searchTerm)
-  );
+  const visibleConversations = useMemo(() => {
+    const normalized = search.trim().toLowerCase();
+
+    if (!normalized) {
+      return conversations;
+    }
+
+    return conversations.filter((item) =>
+      [
+        item.nome_completo,
+        item.telefone,
+        item.owner_user_name,
+        item.qualification_summary,
+      ]
+        .filter(Boolean)
+        .some((value) => value.toLowerCase().includes(normalized))
+    );
+  }, [conversations, search]);
+
+  const totalPages = Math.max(1, Math.ceil(meta.total / meta.limit));
+  const currentPage = Math.floor(meta.offset / meta.limit) + 1;
+
+  async function refreshSelectedConversation() {
+    if (selectedLeadId) {
+      await loadConversationDetail(selectedLeadId);
+    }
+    await loadInbox(filters);
+  }
+
+  async function handleSendMessage() {
+    if (!selectedLeadId || !message.trim()) {
+      return;
+    }
+
+    const result = await api.sendInboxMessage(selectedLeadId, {
+      message: message.trim(),
+      actor_name: ACTOR_NAME,
+      actor_type: ACTOR_TYPE,
+      introduce_actor: introduceActor,
+    });
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    setMessage("");
+    setIntroduceActor(false);
+    await refreshSelectedConversation();
+  }
+
+  async function handleAssignConversation() {
+    if (!selectedLeadId || !assignedCorretorId) {
+      return;
+    }
+
+    const result = await api.assignInboxConversation(selectedLeadId, {
+      assigned_corretor_id: assignedCorretorId,
+      assigned_by: ACTOR_NAME,
+      note: assignNote || undefined,
+    });
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    await refreshSelectedConversation();
+  }
+
+  async function handleStateChange() {
+    if (!selectedLeadId) {
+      return;
+    }
+
+    const result = await api.updateInboxConversationState(selectedLeadId, {
+      state: stateValue,
+      actor_name: ACTOR_NAME,
+      reason: stateReason || undefined,
+    });
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    setStateReason("");
+    await refreshSelectedConversation();
+  }
+
+  async function handleReturnToBot() {
+    if (!selectedLeadId) {
+      return;
+    }
+
+    const result = await api.returnInboxConversationToBot(selectedLeadId, {
+      actor_name: ACTOR_NAME,
+      reason: returnReason || undefined,
+    });
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    setReturnReason("");
+    await refreshSelectedConversation();
+  }
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="flex flex-col items-center gap-4">
           <div className="h-12 w-12 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
-          <p className="text-muted-foreground">Carregando conversas...</p>
+          <p className="text-muted-foreground">Carregando inbox humana...</p>
         </div>
       </div>
     );
@@ -98,225 +278,439 @@ export default function ConversationsPage() {
   return (
     <div className="space-y-8 animate-fade-in">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Conversas</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Inbox Humana</h1>
         <p className="text-muted-foreground">
-          Histórico de conversas com seus leads
+          Atendimento humano no mesmo numero do bot, dirigido por conversation_state
         </p>
       </div>
 
-      {!selectedLead ? (
-        <>
-          <Card className="glass border-border/50 animate-slide-up">
-            <CardContent className="pt-6">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por nome, email ou telefone..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-11 bg-secondary/50 border-border/50"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="glass border-border/50 animate-slide-up stagger-2">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <MessageSquare className="h-5 w-5 text-primary" />
-                    {filteredLeads.length} {filteredLeads.length === 1 ? "lead" : "leads"}
-                  </CardTitle>
-                  <CardDescription>
-                    Selecione um lead para ver o histórico de conversas
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {filteredLeads.length === 0 ? (
-                <div className="text-center py-12">
-                  <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-                  <p className="text-muted-foreground">Nenhum lead encontrado</p>
-                </div>
-              ) : (
-                <div className="rounded-xl border border-border/50 overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-secondary/30 border-border/50">
-                        <TableHead className="font-semibold">Nome</TableHead>
-                        <TableHead className="font-semibold">Email</TableHead>
-                        <TableHead className="font-semibold">Telefone</TableHead>
-                        <TableHead className="font-semibold">Status</TableHead>
-                        <TableHead className="text-right font-semibold">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredLeads.map((lead, index) => (
-                        <TableRow 
-                          key={lead.id}
-                          className="hover:bg-secondary/30 transition-colors cursor-pointer border-border/50 animate-slide-up"
-                          style={{ animationDelay: `${index * 30}ms` }}
-                          onClick={() => handleLeadClick(lead)}
-                        >
-                          <TableCell className="font-medium">
-                            <div className="flex items-center gap-3">
-                              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary/20 to-orange-600/20 flex items-center justify-center text-primary text-sm font-semibold">
-                                {(lead.nome_completo || 'SN').charAt(0).toUpperCase()}
-                              </div>
-                              {lead.nome_completo || 'Sem nome'}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">{lead.email || '-'}</TableCell>
-                          <TableCell className="text-muted-foreground">{lead.telefone || '-'}</TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant={statusConfig[lead.status]?.variant || "default"}
-                              className={statusConfig[lead.status]?.className}
-                            >
-                              {statusConfig[lead.status]?.label || lead.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleLeadClick(lead);
-                              }}
-                              className="hover:bg-primary/10 hover:text-primary"
-                            >
-                              Ver Conversas
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </>
-      ) : (
-        <div className="space-y-6 animate-fade-in">
+      <Card className="glass border-border/50">
+        <CardHeader>
+          <CardTitle>Filtros da Inbox</CardTitle>
+          <CardDescription>Consumo canonico de /api/v1/inbox/conversations</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <Input
+            placeholder="Busca local na pagina"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+          <Input
+            placeholder="conversation_state"
+            value={filters.state ?? ""}
+            onChange={(event) =>
+              setFilters({ ...filters, state: event.target.value || undefined, offset: 0 })
+            }
+          />
+          <Input
+            placeholder="owner_user_name"
+            value={filters.owner_user_name ?? ""}
+            onChange={(event) =>
+              setFilters({
+                ...filters,
+                owner_user_name: event.target.value || undefined,
+                offset: 0,
+              })
+            }
+          />
+          <Input
+            placeholder="assigned_corretor_id"
+            value={filters.assigned_corretor_id ?? ""}
+            onChange={(event) =>
+              setFilters({
+                ...filters,
+                assigned_corretor_id: event.target.value || undefined,
+                offset: 0,
+              })
+            }
+          />
+          <Input
+            placeholder="canal_origem"
+            value={filters.canal_origem ?? ""}
+            onChange={(event) =>
+              setFilters({
+                ...filters,
+                canal_origem: event.target.value || undefined,
+                offset: 0,
+              })
+            }
+          />
+          <Input
+            placeholder="sistema_origem"
+            value={filters.sistema_origem ?? ""}
+            onChange={(event) =>
+              setFilters({
+                ...filters,
+                sistema_origem: event.target.value || undefined,
+                offset: 0,
+              })
+            }
+          />
+          <Input
+            placeholder="status"
+            value={filters.status ?? ""}
+            onChange={(event) =>
+              setFilters({ ...filters, status: event.target.value || undefined, offset: 0 })
+            }
+          />
+          <Input
+            placeholder="fase"
+            value={filters.fase ?? ""}
+            onChange={(event) =>
+              setFilters({ ...filters, fase: event.target.value || undefined, offset: 0 })
+            }
+          />
           <Button
-            variant="ghost"
-            onClick={() => setSelectedLead(null)}
-            className="hover:bg-secondary"
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setSearch("");
+              setFilters({ limit: PAGE_SIZE, offset: 0 });
+            }}
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar para lista
+            <RotateCcw className="mr-2 h-4 w-4" />
+            Limpar filtros
           </Button>
+        </CardContent>
+      </Card>
 
-          <Card className="glass border-border/50 animate-slide-up">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="h-14 w-14 rounded-full bg-gradient-to-br from-primary to-orange-600 flex items-center justify-center text-primary-foreground text-xl font-bold">
-                    {(selectedLead.nome_completo || 'SN').charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <CardTitle>{selectedLead.nome_completo || 'Sem nome'}</CardTitle>
-                    <CardDescription className="flex items-center gap-2 mt-1">
-                      <span>{selectedLead.email || '-'}</span>
-                      <span>•</span>
-                      <span>{selectedLead.telefone || '-'}</span>
-                    </CardDescription>
-                  </div>
-                </div>
-                <Badge 
-                  variant={statusConfig[selectedLead.status]?.variant || "default"}
-                  className={statusConfig[selectedLead.status]?.className}
-                >
-                  {statusConfig[selectedLead.status]?.label || selectedLead.status}
-                </Badge>
+      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <Card className="glass border-border/50">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Conversas</CardTitle>
+                <CardDescription>
+                  Pagina {currentPage} de {totalPages}
+                </CardDescription>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  <span>Criado em: {new Date(selectedLead.created_at).toLocaleDateString('pt-BR')}</span>
-                </div>
-                {selectedLead.codigo_ref && (
-                  <div>
-                    Código: {selectedLead.codigo_ref}
-                  </div>
-                )}
+              <Badge variant="secondary">{meta.total} conversas</Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {visibleConversations.length === 0 ? (
+              <div className="py-12 text-center text-muted-foreground">
+                Nenhuma conversa encontrada.
               </div>
-            </CardContent>
-          </Card>
+            ) : (
+              <div className="overflow-hidden rounded-xl border border-border/50">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Lead</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead>Owner</TableHead>
+                      <TableHead>Ultima mensagem</TableHead>
+                      <TableHead className="text-right">Selecionar</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {visibleConversations.map((item) => (
+                      <TableRow
+                        key={item.lead_id}
+                        className={item.lead_id === selectedLeadId ? "bg-secondary/30" : ""}
+                      >
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="font-medium">
+                              {item.nome_completo || item.telefone}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {item.telefone}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {item.qualification_summary || "Sem resumo"}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={stateTone(item.conversation_state)}>
+                            {item.conversation_state || "-"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div>{item.owner_user_name || "-"}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {item.owner_user_type || "-"}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div>{item.last_message_preview || "-"}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {item.last_message_direction || "-"}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            onClick={() => setSelectedLeadId(item.lead_id)}
+                          >
+                            Abrir
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
 
-          <Card className="glass border-border/50 animate-slide-up stagger-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5 text-primary" />
-                Histórico de Conversas
-              </CardTitle>
-              <CardDescription>
-                {conversations.length} conversa{conversations.length !== 1 ? 's' : ''} encontrada{conversations.length !== 1 ? 's' : ''}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {conversations.length === 0 ? (
-                <div className="text-center py-12">
-                  <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-                  <p className="text-muted-foreground">Nenhuma conversa encontrada</p>
-                  <p className="text-sm text-muted-foreground/70 mt-1">
-                    As conversas aparecerão aqui quando forem registradas
-                  </p>
+            <Pagination className="mt-6 justify-end">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    text="Anterior"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      if (currentPage === 1) return;
+                      setFilters({
+                        ...filters,
+                        offset: getOffsetForPage(currentPage - 1, meta.limit),
+                      });
+                    }}
+                  />
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationLink href="#" isActive>
+                    {currentPage}
+                  </PaginationLink>
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    text="Proxima"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      if (currentPage >= totalPages) return;
+                      setFilters({
+                        ...filters,
+                        offset: getOffsetForPage(currentPage + 1, meta.limit),
+                      });
+                    }}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </CardContent>
+        </Card>
+
+        <Card className="glass border-border/50">
+          <CardHeader>
+            <CardTitle>Detalhe da Conversa</CardTitle>
+            <CardDescription>
+              {selectedConversation
+                ? selectedConversation.nome_completo || selectedConversation.telefone
+                : "Selecione uma conversa para operar a inbox"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!selectedLeadId ? (
+              <div className="py-12 text-muted-foreground">Nenhuma conversa selecionada.</div>
+            ) : detailLoading ? (
+              <div className="py-12 text-muted-foreground">Carregando detalhe da conversa...</div>
+            ) : !selectedConversation ? (
+              <div className="py-12 text-muted-foreground">Sem detalhe carregado.</div>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline" className={stateTone(selectedConversation.conversation_state)}>
+                    {selectedConversation.conversation_state}
+                  </Badge>
+                  <Badge variant="outline">{selectedConversation.status || "-"}</Badge>
+                  <Badge variant="outline">{selectedConversation.fase || "-"}</Badge>
+                  {selectedConversation.assigned_corretor_id && (
+                    <Badge variant="outline">
+                      Corretor: {selectedConversation.assigned_corretor_id}
+                    </Badge>
+                  )}
                 </div>
-              ) : (
-                <div className="space-y-6">
-                  {conversations.map((conv, index) => (
-                    <div
-                      key={conv.id}
-                      className="rounded-xl border border-border/50 p-4 space-y-4 hover:border-primary/30 transition-colors animate-slide-up"
-                      style={{ animationDelay: `${index * 100}ms` }}
-                    >
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Clock className="h-4 w-4" />
-                        {new Date(conv.started_at).toLocaleString('pt-BR')}
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="rounded-xl border border-border/50 p-4">
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Origem e tracking
+                    </div>
+                    <div className="mt-2 space-y-1 text-sm">
+                      <div>Canal: {selectedConversation.canal_origem || "-"}</div>
+                      <div>Sistema: {selectedConversation.sistema_origem || "-"}</div>
+                      <div>Tracked ref: {selectedConversation.tracked_codigo_ref || "-"}</div>
+                      <div>Link click ID: {selectedConversation.link_click_id || "-"}</div>
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-border/50 p-4">
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Owner
+                    </div>
+                    <div className="mt-2 space-y-1 text-sm">
+                      <div>Nome: {selectedConversation.owner_user_name || "-"}</div>
+                      <div>Tipo: {selectedConversation.owner_user_type || "-"}</div>
+                      <div>Atribuido por: {selectedConversation.assigned_by || "-"}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {selectedConversation.operational_status && (
+                  <div className="rounded-xl border border-border/50 p-4">
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Resumo operacional
+                    </div>
+                    <div className="mt-2 space-y-1 text-sm">
+                      <div>
+                        Acao recomendada:{" "}
+                        {selectedConversation.operational_status.recommended_action || "-"}
                       </div>
-                      <div className="space-y-4">
-                        <div className="flex gap-3">
-                          <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                          <div className="flex-1 bg-secondary/50 rounded-xl rounded-tl-none p-4">
-                            <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-                              <User className="h-3 w-3" />
-                              Cliente
-                            </div>
-                            <p className="text-sm">Conversa registrada com {conv.message_count} mensagens.</p>
-                          </div>
-                        </div>
-                        <div className="flex gap-3">
-                          <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                            <Bot className="h-4 w-4 text-primary" />
-                          </div>
-                          <div className="flex-1 bg-primary/10 rounded-xl rounded-tl-none p-4 border border-primary/20">
-                            <div className="text-xs text-primary mb-2 flex items-center gap-1">
-                              <Bot className="h-3 w-3" />
-                              Atus Bot
-                            </div>
-                            <p className="text-sm">
-                              Abra o detalhe por mensagens para ver o histórico real dessa conversa.
-                            </p>
-                          </div>
-                        </div>
+                      <div>
+                        Campos faltantes:{" "}
+                        {selectedConversation.operational_status.missing_fields.join(", ") || "-"}
+                      </div>
+                      <div>
+                        Ultimo bot: {selectedConversation.operational_status.last_bot_message || "-"}
                       </div>
                     </div>
-                  ))}
+                  </div>
+                )}
+
+                <div className="rounded-xl border border-border/50 p-4">
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                    <MessageSquare className="h-4 w-4" />
+                    Mensagens
+                  </div>
+                  <div className="mt-4 space-y-3 max-h-72 overflow-y-auto">
+                    {selectedConversation.messages.length > 0 ? (
+                      selectedConversation.messages.map((item) => (
+                        <div
+                          key={item.id || `${item.timestamp}-${item.content}`}
+                          className={`rounded-xl p-3 ${
+                            item.direction === "SAIDA"
+                              ? "bg-primary/10 border border-primary/20"
+                              : "bg-secondary/40 border border-border/50"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            {item.direction === "SAIDA" ? (
+                              <Bot className="h-3 w-3" />
+                            ) : (
+                              <UserRound className="h-3 w-3" />
+                            )}
+                            <span>{item.actor_name || item.actor_type || item.direction}</span>
+                            <span>·</span>
+                            <span>
+                              {item.timestamp
+                                ? new Date(item.timestamp).toLocaleString("pt-BR")
+                                : "-"}
+                            </span>
+                          </div>
+                          <div className="mt-2 text-sm">{item.content || "-"}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-sm text-muted-foreground">Nenhuma mensagem retornada pelo detalhe.</div>
+                    )}
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      )}
+
+                <div className="grid gap-4">
+                  <div className="rounded-xl border border-border/50 p-4 space-y-3">
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Enviar mensagem humana
+                    </div>
+                    <textarea
+                      value={message}
+                      onChange={(event) => setMessage(event.target.value)}
+                      className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      placeholder="Digite a mensagem da equipe humana..."
+                    />
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={introduceActor}
+                        onChange={(event) => setIntroduceActor(event.target.checked)}
+                      />
+                      Introduzir atendente nesta mensagem
+                    </label>
+                    <Button onClick={() => void handleSendMessage()}>
+                      <Send className="mr-2 h-4 w-4" />
+                      Enviar mensagem
+                    </Button>
+                  </div>
+
+                  <div className="rounded-xl border border-border/50 p-4 space-y-3">
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Atribuir para corretor
+                    </div>
+                    <select
+                      value={assignedCorretorId}
+                      onChange={(event) => setAssignedCorretorId(event.target.value)}
+                      className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    >
+                      <option value="">Selecione um corretor</option>
+                      {corretores.map((corretor) => (
+                        <option key={corretor.id} value={corretor.id}>
+                          {corretor.nome}
+                        </option>
+                      ))}
+                    </select>
+                    <Input
+                      placeholder="Nota de atribuicao"
+                      value={assignNote}
+                      onChange={(event) => setAssignNote(event.target.value)}
+                    />
+                    <Button variant="outline" onClick={() => void handleAssignConversation()}>
+                      Atribuir conversa
+                    </Button>
+                  </div>
+
+                  <div className="rounded-xl border border-border/50 p-4 space-y-3">
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Alterar estado da conversa
+                    </div>
+                    <select
+                      value={stateValue}
+                      onChange={(event) => setStateValue(event.target.value)}
+                      className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    >
+                      {INBOX_STATES.map((state) => (
+                        <option key={state} value={state}>
+                          {state}
+                        </option>
+                      ))}
+                    </select>
+                    <Input
+                      placeholder="Motivo da mudanca"
+                      value={stateReason}
+                      onChange={(event) => setStateReason(event.target.value)}
+                    />
+                    <Button variant="outline" onClick={() => void handleStateChange()}>
+                      Atualizar estado
+                    </Button>
+                  </div>
+
+                  <div className="rounded-xl border border-border/50 p-4 space-y-3">
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Devolver ao bot
+                    </div>
+                    <Input
+                      placeholder="Motivo do retorno ao bot"
+                      value={returnReason}
+                      onChange={(event) => setReturnReason(event.target.value)}
+                    />
+                    <Button variant="outline" onClick={() => void handleReturnToBot()}>
+                      <ShieldAlert className="mr-2 h-4 w-4" />
+                      Return to bot
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
