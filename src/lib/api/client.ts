@@ -1,14 +1,28 @@
 import {
-  ApiResponse,
+  AnalyticsOverview,
+  FlowMetrics,
+  FollowupMetrics,
+  LeadStats,
+  SlaMetrics,
+} from "@/types/dashboard";
+import { ApiResult, PaginatedResponse } from "@/types/api";
+import {
   Conversa,
   Corretor,
   Lead,
+  LeadFilterOptions,
   LeadFormValues,
+  LeadListFilters,
   Mensagem,
   Note,
   StatsData,
-  LeadFilterOptions,
 } from "@/types/leads";
+import {
+  buildInboundLeadPayload,
+  buildLeadFiltersQuery,
+  buildLeadUpdatePayload,
+  normalizeLead,
+} from "@/lib/api/leads";
 
 const API_BASE_URL = "";
 
@@ -19,18 +33,10 @@ class AtusAPI {
     };
   }
 
-  private extractData<T>(payload: unknown): T {
-    if (payload && typeof payload === "object" && "data" in payload) {
-      return (payload as { data: T }).data;
-    }
-
-    return payload as T;
-  }
-
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
-  ): Promise<ApiResponse<T>> {
+  ): Promise<ApiResult<T>> {
     try {
       const url = `${API_BASE_URL}${endpoint}`;
       const headers = {
@@ -57,7 +63,7 @@ class AtusAPI {
       }
 
       return {
-        data: payload === null ? undefined : this.extractData<T>(payload),
+        data: payload === null ? undefined : (payload as T),
         message:
           payload && typeof payload === "object" && "message" in payload
             ? (payload as { message?: string }).message
@@ -70,49 +76,145 @@ class AtusAPI {
     }
   }
 
-  async getLeads(filter?: LeadFilterOptions): Promise<ApiResponse<Lead[]>> {
-    const params = new URLSearchParams();
-    if (filter?.status) params.append("status", filter.status);
-    if (filter?.origem) params.append("origem", filter.origem);
-    if (filter?.corretor_id) params.append("corretor_id", filter.corretor_id);
-    if (filter?.dateFrom) params.append("dateFrom", filter.dateFrom);
-    if (filter?.dateTo) params.append("dateTo", filter.dateTo);
-    if (filter?.minRenda) params.append("minRenda", String(filter.minRenda));
-    if (filter?.maxRenda) params.append("maxRenda", String(filter.maxRenda));
-    if (filter?.temEntrada) params.append("temEntrada", String(filter.temEntrada));
-    if (filter?.temCarteira) params.append("temCarteira", String(filter.temCarteira));
-    if (filter?.search) params.append("search", filter.search);
-    if (filter?.sortBy) params.append("sortBy", filter.sortBy);
-    if (filter?.sortOrder) params.append("sortOrder", filter.sortOrder);
-    if (filter?.page) params.append("page", String(filter.page));
-    if (filter?.limit) params.append("limit", String(filter.limit));
+  async getPaginatedLeads(
+    filters: LeadListFilters = {}
+  ): Promise<ApiResult<PaginatedResponse<Lead>>> {
+    const query = buildLeadFiltersQuery(filters);
+    const response = await this.request<PaginatedResponse<Record<string, unknown>>>(
+      `/api/internal/leads${query.size ? `?${query.toString()}` : ""}`
+    );
 
-    return this.request<Lead[]>(`/api/v1/leads${params.size ? `?${params}` : ""}`);
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: {
+        data: response.data.data.map(normalizeLead),
+        meta: response.data.meta,
+      },
+      message: response.message,
+    };
   }
 
-  async getLeadById(id: string): Promise<ApiResponse<Lead>> {
-    return this.request<Lead>(`/api/v1/leads/${id}`);
+  async getLeads(filters: LeadFilterOptions = {}): Promise<ApiResult<Lead[]>> {
+    const response = await this.getPaginatedLeads(filters);
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data,
+      message: response.message,
+    };
   }
 
-  async updateLead(id: string, data: Partial<Lead>): Promise<ApiResponse<Lead>> {
-    return this.request<Lead>(`/api/v1/leads/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    });
+  async getLeadById(id: string): Promise<ApiResult<Lead>> {
+    const response = await this.request<{ data: Record<string, unknown> }>(
+      `/api/internal/leads/${id}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: normalizeLead(response.data.data),
+      message: response.message,
+    };
   }
 
-  async deleteLead(id: string): Promise<ApiResponse<void>> {
-    return this.request<void>(`/api/v1/leads/${id}`, {
+  async updateLead(id: string, values: LeadFormValues): Promise<ApiResult<Lead>> {
+    const response = await this.request<{ data: Record<string, unknown> }>(
+      `/api/internal/leads/${id}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(buildLeadUpdatePayload(values)),
+      }
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: normalizeLead(response.data.data),
+      message: response.message,
+    };
+  }
+
+  async deleteLead(id: string): Promise<ApiResult<void>> {
+    return this.request<void>(`/api/internal/leads/${id}`, {
       method: "DELETE",
     });
   }
 
+  async createLead(values: LeadFormValues): Promise<ApiResult<Lead>> {
+    const response = await this.request<{ data: Record<string, unknown> }>(
+      "/api/internal/inbound/leads",
+      {
+        method: "POST",
+        body: JSON.stringify(buildInboundLeadPayload(values)),
+      }
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: normalizeLead(response.data.data),
+      message: response.message,
+    };
+  }
+
+  async updateLeadPartial(
+    id: string,
+    data: Partial<Lead>
+  ): Promise<ApiResult<Lead>> {
+    const response = await this.request<{ data: Record<string, unknown> }>(
+      `/api/internal/leads/${id}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: normalizeLead(response.data.data),
+      message: response.message,
+    };
+  }
+
   // Conversations & Messages
-  async getLeadConversations(id: string): Promise<ApiResponse<Conversa[]>> {
+  async getLeadConversations(id: string): Promise<ApiResult<Conversa[]>> {
     return this.request<Conversa[]>(`/api/v1/leads/${id}/conversas`);
   }
 
-  async getConversationMessages(conversaId: string, limit = 50, before?: string): Promise<ApiResponse<{
+  async getConversationMessages(conversaId: string, limit = 50, before?: string): Promise<ApiResult<{
     data: Mensagem[];
     total: number;
     has_more: boolean;
@@ -123,7 +225,7 @@ class AtusAPI {
     return this.request(`/api/v1/conversas/${conversaId}/mensagens?${params.toString()}`);
   }
 
-  async sendWhatsAppMessage(id: string, mensagem: string, followUp = false): Promise<ApiResponse<{ success: boolean; message_id: string; status: string }>> {
+  async sendWhatsAppMessage(id: string, mensagem: string, followUp = false): Promise<ApiResult<{ success: boolean; message_id: string; status: string }>> {
     return this.request(`/api/v1/leads/${id}/send-message`, {
       method: "POST",
       body: JSON.stringify({ mensagem, follow_up: followUp }),
@@ -131,20 +233,20 @@ class AtusAPI {
   }
 
   // Follow-up Intervention
-  async interveneLead(id: string, type: "HUMAN_TAKEOVER" | "PAUSED" | "URGENT", reason?: string): Promise<ApiResponse<{ success: boolean; lead_id: string; status: string }>> {
+  async interveneLead(id: string, type: "HUMAN_TAKEOVER" | "PAUSED" | "URGENT", reason?: string): Promise<ApiResult<{ success: boolean; lead_id: string; status: string }>> {
     return this.request(`/api/v1/leads/${id}/intervene`, {
       method: "POST",
       body: JSON.stringify({ type, reason }),
     });
   }
 
-  async releaseLeadFollowup(id: string): Promise<ApiResponse<{ success: boolean; lead_id: string; status: string }>> {
+  async releaseLeadFollowup(id: string): Promise<ApiResult<{ success: boolean; lead_id: string; status: string }>> {
     return this.request(`/api/v1/leads/${id}/release-followup`, {
       method: "POST",
     });
   }
 
-  async getLeadFollowupStatus(id: string): Promise<ApiResponse<{
+  async getLeadFollowupStatus(id: string): Promise<ApiResult<{
     em_follow_up?: boolean;
     followup_rodadas?: number;
     followup_expira_em?: string | null;
@@ -156,100 +258,191 @@ class AtusAPI {
   }
 
   // Notes
-  async getLeadNotes(id: string): Promise<ApiResponse<Note[]>> {
+  async getLeadNotes(id: string): Promise<ApiResult<Note[]>> {
     return this.request<Note[]>(`/api/v1/leads/${id}/notes`);
   }
 
-  async createLeadNote(id: string, content: string, type: "observation" | "visit" | "follow_up" | "urgent"): Promise<ApiResponse<Note>> {
+  async createLeadNote(id: string, content: string, type: "observation" | "visit" | "follow_up" | "urgent"): Promise<ApiResult<Note>> {
     return this.request<Note>(`/api/v1/leads/${id}/notes`, {
       method: "POST",
       body: JSON.stringify({ content, type }),
     });
   }
 
-  async updateLeadNote(noteId: string, content: string): Promise<ApiResponse<Note>> {
+  async updateLeadNote(noteId: string, content: string): Promise<ApiResult<Note>> {
     return this.request<Note>(`/api/v1/notes/${noteId}`, {
       method: "PUT",
       body: JSON.stringify({ content }),
     });
   }
 
-  async deleteLeadNote(noteId: string): Promise<ApiResponse<void>> {
+  async deleteLeadNote(noteId: string): Promise<ApiResult<void>> {
     return this.request<void>(`/api/v1/notes/${noteId}`, {
       method: "DELETE",
     });
   }
 
   // Assignment
-  async assignLead(id: string, corretorId: string | null, notes?: string): Promise<ApiResponse<Lead>> {
-    // Falls back to direct lead update since specific route was dropped in favor of single PUT update
-    return this.request<Lead>(`/api/v1/leads/${id}`, {
-      method: "PUT",
-      body: JSON.stringify({ corretor_id: corretorId, observacoes: notes }),
+  async assignLead(id: string, corretorId: string | null, notes?: string): Promise<ApiResult<Lead>> {
+    return this.updateLeadPartial(id, {
+      corretor_id: corretorId,
+      observacoes: notes,
     });
   }
 
-  async updateLeadStatus(id: string, status: string, notes?: string): Promise<ApiResponse<Lead>> {
-    return this.request<Lead>(`/api/v1/leads/${id}/status`, {
-      method: "PUT",
-      body: JSON.stringify({ status, notes }),
+  async updateLeadStatus(id: string, status: string, notes?: string): Promise<ApiResult<Lead>> {
+    return this.updateLeadPartial(id, {
+      status,
+      observacoes: notes,
     });
   }
 
-  async getLeadsStats(): Promise<ApiResponse<StatsData>> {
-    return this.request<StatsData>("/api/v1/stats/leads");
+  async getLeadsStats(): Promise<ApiResult<StatsData>> {
+    const response = await this.request<{ data: LeadStats }>("/api/internal/stats/leads");
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data,
+      message: response.message,
+    };
   }
 
-  async getCorretores(): Promise<ApiResponse<Corretor[]>> {
-    return this.request<Corretor[]>("/api/v1/corretores");
+  async getCorretores(): Promise<ApiResult<Corretor[]>> {
+    const response = await this.request<{ data: Corretor[] }>("/api/v1/corretores");
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data,
+      message: response.message,
+    };
   }
 
-  async createCorretor(data: Omit<Corretor, "id">): Promise<ApiResponse<Corretor>> {
-    return this.request<Corretor>("/api/v1/corretores", {
+  async createCorretor(data: Omit<Corretor, "id">): Promise<ApiResult<Corretor>> {
+    const response = await this.request<{ data: Corretor }>("/api/v1/corretores", {
       method: "POST",
       body: JSON.stringify(data),
     });
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data,
+      message: response.message,
+    };
   }
 
-  async updateCorretor(id: string, data: Partial<Corretor>): Promise<ApiResponse<Corretor>> {
-    return this.request<Corretor>(`/api/v1/corretores/${id}`, {
+  async updateCorretor(id: string, data: Partial<Corretor>): Promise<ApiResult<Corretor>> {
+    const response = await this.request<{ data: Corretor }>(`/api/v1/corretores/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     });
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data,
+      message: response.message,
+    };
   }
 
-  async getLeadByPhone(telefone: string): Promise<ApiResponse<Lead>> {
+  async getLeadByPhone(telefone: string): Promise<ApiResult<Lead>> {
     return this.request<Lead>(`/api/mcp/lead/${telefone}`);
   }
 
-  async createLead(data: LeadFormValues): Promise<ApiResponse<Lead>> {
-    return this.request<Lead>("/api/mcp/lead", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-  }
-
-  async getStats(): Promise<ApiResponse<StatsData>> {
+  async getStats(): Promise<ApiResult<StatsData>> {
     return this.request<StatsData>("/api/mcp/stats");
   }
 
-  async getLeadFlowMetrics(): Promise<ApiResponse<{
-    por_status: Record<string, number>;
-    conversoes_semana: Array<{ dia: string; total: number }>;
-    por_origem: Record<string, number>;
-  }>> {
-    return this.request("/api/v1/metrics/flow");
+  async getLeadFlowMetrics(): Promise<ApiResult<FlowMetrics>> {
+    const response = await this.request<{ data: FlowMetrics }>("/api/internal/metrics/flow");
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data,
+      message: response.message,
+    };
   }
 
-  async getSLAMetrics(): Promise<ApiResponse<{
-    dentro_do_sla: number;
-    fora_do_sla: number;
-    tempo_medio_resposta_min: number;
-    por_origem: Record<string, { dentro: number; fora: number }>;
-  }>> {
-    return this.request("/api/v1/metrics/sla");
+  async getFollowupMetrics(): Promise<ApiResult<FollowupMetrics>> {
+    const response = await this.request<{ data: FollowupMetrics }>(
+      "/api/internal/metrics/followup"
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data,
+      message: response.message,
+    };
+  }
+
+  async getSLAMetrics(): Promise<ApiResult<SlaMetrics>> {
+    const response = await this.request<{ data: SlaMetrics }>("/api/internal/metrics/sla");
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data,
+      message: response.message,
+    };
+  }
+
+  async getAnalyticsOverview(): Promise<ApiResult<AnalyticsOverview>> {
+    const response = await this.request<{ data: AnalyticsOverview }>(
+      "/api/internal/analytics/overview"
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data,
+      message: response.message,
+    };
   }
 }
 
 export const api = new AtusAPI();
-export type { Lead, StatsData, Corretor, Conversa, ApiResponse };
+export type { Lead, StatsData, Corretor, Conversa, ApiResult };

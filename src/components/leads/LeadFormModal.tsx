@@ -81,12 +81,17 @@ export function LeadFormModal({
   }, [mergedValues, open]);
 
   const isCreateMode = mode === "create";
+  const currentStatus = values.status ?? "NOVO";
+  const rendaComprovada = values.renda_comprovada ?? 0;
+  const localizacao = values.localizacao ?? "";
+  const origem = values.origem ?? "";
+  const observacoes = values.observacoes ?? "";
   const statusTone =
-    values.status === "CONVERTIDO"
+    currentStatus === "CONVERTIDO"
       ? "text-green-300 border-green-500/30 bg-green-500/10"
-      : values.status === "PERDIDO"
+      : currentStatus === "PERDIDO"
         ? "text-red-300 border-red-500/30 bg-red-500/10"
-        : values.status === "EM_ATENDIMENTO"
+        : currentStatus === "EM_ATENDIMENTO"
           ? "text-blue-300 border-blue-500/30 bg-blue-500/10"
           : "text-amber-200 border-amber-500/30 bg-amber-500/10";
 
@@ -97,10 +102,10 @@ export function LeadFormModal({
       telefone: values.telefone.trim(),
       nome_completo: values.nome_completo.trim(),
       email: values.email.trim(),
-      localizacao: values.localizacao.trim(),
-      origem: values.origem.trim(),
+      localizacao: (values.localizacao ?? "").trim(),
+      origem: (values.origem ?? "").trim(),
       tipo_interesse: values.tipo_interesse.trim(),
-      observacoes: values.observacoes.trim(),
+      observacoes: (values.observacoes ?? "").trim(),
     });
   };
 
@@ -117,7 +122,7 @@ export function LeadFormModal({
                 </div>
                 <div className="space-y-3">
                   <div className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${statusTone}`}>
-                    {statusLabels[values.status]}
+                    {statusLabels[currentStatus]}
                   </div>
                   <DialogTitle className="text-2xl font-semibold tracking-tight text-white md:text-3xl">
                     {isCreateMode ? "Criar lead premium" : "Refinar lead premium"}
@@ -138,8 +143,8 @@ export function LeadFormModal({
                   Renda
                 </div>
                 <div className="text-lg font-semibold text-white">
-                  {values.renda_comprovada > 0
-                    ? values.renda_comprovada.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+                  {rendaComprovada > 0
+                    ? rendaComprovada.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
                     : "A definir"}
                 </div>
               </div>
@@ -155,7 +160,7 @@ export function LeadFormModal({
                   <Sparkles className="h-4 w-4 text-orange-400" />
                   Origem
                 </div>
-                <div className="text-lg font-semibold text-white">{values.origem || "Não informada"}</div>
+                <div className="text-lg font-semibold text-white">{origem || "Não informada"}</div>
               </div>
             </div>
           </div>
@@ -231,7 +236,7 @@ export function LeadFormModal({
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-zinc-200">Status</label>
                   <Select
-                    value={values.status}
+                    value={currentStatus}
                     onValueChange={(value) => setValues((current) => ({ ...current, status: value as LeadStatus }))}
                   >
                     <SelectTrigger className="w-full border-white/10 bg-secondary/50 focus:border-orange-500/50">
@@ -258,7 +263,7 @@ export function LeadFormModal({
                       type="number"
                       min="0"
                       step="0.01"
-                      value={values.renda_comprovada}
+                      value={rendaComprovada}
                       onChange={(event) =>
                         setValues((current) => ({
                           ...current,
@@ -278,7 +283,7 @@ export function LeadFormModal({
                     <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
                     <Input
                       id="lead-localizacao"
-                      value={values.localizacao}
+                      value={localizacao}
                       onChange={(event) => setValues((current) => ({ ...current, localizacao: event.target.value }))}
                       placeholder="Ex.: Cuiabá - MT"
                       className="border-white/10 bg-secondary/50 pl-10 focus:border-orange-500/50"
@@ -294,7 +299,7 @@ export function LeadFormModal({
                     <Sparkles className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
                     <Input
                       id="lead-origem"
-                      value={values.origem}
+                      value={origem}
                       onChange={(event) => setValues((current) => ({ ...current, origem: event.target.value }))}
                       placeholder="Ex.: Facebook Ads"
                       className="border-white/10 bg-secondary/50 pl-10 focus:border-orange-500/50"
@@ -333,7 +338,7 @@ export function LeadFormModal({
                 </label>
                 <textarea
                   id="lead-observacoes"
-                  value={values.observacoes}
+                      value={observacoes}
                   onChange={(event) => setValues((current) => ({ ...current, observacoes: event.target.value }))}
                   placeholder="Registre informações úteis sobre o momento do lead, objeções, contexto familiar e intenção de compra."
                   className="min-h-52 w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-zinc-100 outline-none transition-colors placeholder:text-zinc-500 focus:border-orange-500/50"
@@ -362,7 +367,7 @@ export function LeadFormModal({
                 <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
                   <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Posicionamento comercial</div>
                   <div className="mt-2 text-sm font-medium leading-6 text-zinc-100">
-                    {statusLabels[values.status]} · {values.tipo_interesse || "Interesse em definição"}
+                    {statusLabels[currentStatus]} · {values.tipo_interesse || "Interesse em definição"}
                   </div>
                 </div>
               </div>
