@@ -4,11 +4,10 @@ import {
   Corretor,
   Lead,
   LeadFormValues,
+  Mensagem,
+  Note,
   StatsData,
   LeadFilterOptions,
-  LeadCommunication,
-  LeadAssignment,
-  LeadFollowup,
 } from "@/types/leads";
 
 const API_BASE_URL = "";
@@ -114,7 +113,7 @@ class AtusAPI {
   }
 
   async getConversationMessages(conversaId: string, limit = 50, before?: string): Promise<ApiResponse<{
-    data: any[];
+    data: Mensagem[];
     total: number;
     has_more: boolean;
   }>> {
@@ -145,24 +144,31 @@ class AtusAPI {
     });
   }
 
-  async getLeadFollowupStatus(id: string): Promise<ApiResponse<any>> {
+  async getLeadFollowupStatus(id: string): Promise<ApiResponse<{
+    em_follow_up?: boolean;
+    followup_rodadas?: number;
+    followup_expira_em?: string | null;
+    intervention_type?: string;
+    active?: boolean;
+    is_paused?: boolean;
+  }>> {
     return this.request(`/api/v1/leads/${id}/follow-up-status`);
   }
 
   // Notes
-  async getLeadNotes(id: string): Promise<ApiResponse<any[]>> {
-    return this.request<any[]>(`/api/v1/leads/${id}/notes`);
+  async getLeadNotes(id: string): Promise<ApiResponse<Note[]>> {
+    return this.request<Note[]>(`/api/v1/leads/${id}/notes`);
   }
 
-  async createLeadNote(id: string, content: string, type: "observation" | "visit" | "follow_up" | "urgent"): Promise<ApiResponse<any>> {
-    return this.request<any>(`/api/v1/leads/${id}/notes`, {
+  async createLeadNote(id: string, content: string, type: "observation" | "visit" | "follow_up" | "urgent"): Promise<ApiResponse<Note>> {
+    return this.request<Note>(`/api/v1/leads/${id}/notes`, {
       method: "POST",
       body: JSON.stringify({ content, type }),
     });
   }
 
-  async updateLeadNote(noteId: string, content: string): Promise<ApiResponse<any>> {
-    return this.request<any>(`/api/v1/notes/${noteId}`, {
+  async updateLeadNote(noteId: string, content: string): Promise<ApiResponse<Note>> {
+    return this.request<Note>(`/api/v1/notes/${noteId}`, {
       method: "PUT",
       body: JSON.stringify({ content }),
     });
@@ -175,7 +181,7 @@ class AtusAPI {
   }
 
   // Assignment
-  async assignLead(id: string, corretorId: string, notes?: string): Promise<ApiResponse<Lead>> {
+  async assignLead(id: string, corretorId: string | null, notes?: string): Promise<ApiResponse<Lead>> {
     // Falls back to direct lead update since specific route was dropped in favor of single PUT update
     return this.request<Lead>(`/api/v1/leads/${id}`, {
       method: "PUT",

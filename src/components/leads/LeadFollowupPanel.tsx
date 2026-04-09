@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Calendar, Bot, User, CheckCircle, Clock, PauseCircle, PlayCircle } from "lucide-react";
+import { Bot, User, PauseCircle, PlayCircle } from "lucide-react";
 import { api } from "@/lib/api/client";
 import type { Note } from "@/types/leads";
 
@@ -18,13 +17,20 @@ interface LeadFollowupPanelProps {
 
 export function LeadFollowupPanel({ leadId, open, onClose, onFollowupChange }: LeadFollowupPanelProps) {
   const [notes, setNotes] = useState<Note[]>([]);
-  const [followupStatus, setFollowupStatus] = useState<any>(null);
+  const [followupStatus, setFollowupStatus] = useState<{
+    em_follow_up?: boolean;
+    followup_rodadas?: number;
+    followup_expira_em?: string | null;
+    intervention_type?: string;
+    active?: boolean;
+    is_paused?: boolean;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [addingNote, setAddingNote] = useState(false);
   const [changingStatus, setChangingStatus] = useState(false);
   const [newNoteContent, setNewNoteContent] = useState("");
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       // Fetch status
@@ -46,13 +52,13 @@ export function LeadFollowupPanel({ leadId, open, onClose, onFollowupChange }: L
     } finally {
       setLoading(false);
     }
-  };
+  }, [leadId]);
 
   useEffect(() => {
     if (open) {
       loadData();
     }
-  }, [open, leadId]);
+  }, [loadData, open]);
 
   const handleIntervene = async () => {
     try {
@@ -104,7 +110,6 @@ export function LeadFollowupPanel({ leadId, open, onClose, onFollowupChange }: L
     }
   };
 
-  const isBotActive = !followupStatus?.active && !followupStatus?.is_paused; // Or whatever logic represents "Bot is handling it" vs "Human is handling it". Assume `active` means Follow-up by human is active. Let's rely on standard UI assumptions:
   const isHumanTakeover = followupStatus?.em_follow_up || followupStatus?.active || !!followupStatus?.intervention_type; 
 
   return (

@@ -279,7 +279,7 @@ export default function ConversationsPage() {
                     >
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Clock className="h-4 w-4" />
-                        {new Date(conv.created_at).toLocaleString('pt-BR')}
+                        {new Date(conv.started_at).toLocaleString('pt-BR')}
                       </div>
                       <div className="space-y-4">
                         <div className="flex gap-3">
@@ -291,7 +291,7 @@ export default function ConversationsPage() {
                               <User className="h-3 w-3" />
                               Cliente
                             </div>
-                            <p className="text-sm">{conv.mensagem || 'Sem mensagem'}</p>
+                            <p className="text-sm">Conversa registrada com {conv.message_count} mensagens.</p>
                           </div>
                         </div>
                         <div className="flex gap-3">
@@ -303,7 +303,9 @@ export default function ConversationsPage() {
                               <Bot className="h-3 w-3" />
                               Atus Bot
                             </div>
-                            <p className="text-sm">{conv.resposta || 'Sem resposta'}</p>
+                            <p className="text-sm">
+                              Abra o detalhe por mensagens para ver o histórico real dessa conversa.
+                            </p>
                           </div>
                         </div>
                       </div>

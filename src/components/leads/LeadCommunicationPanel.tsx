@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { MessageSquare, Send, CheckCircle, Clock } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { MessageSquare, Send } from "lucide-react";
 import { api } from "@/lib/api/client";
-import type { Conversa } from "@/types/leads";
+import type { Conversa, Mensagem } from "@/types/leads";
 
 interface LeadCommunicationPanelProps {
   leadId: string;
@@ -18,14 +18,14 @@ interface LeadCommunicationPanelProps {
 export function LeadCommunicationPanel({ leadId, open, onClose }: LeadCommunicationPanelProps) {
   const [conversations, setConversations] = useState<Conversa[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversa | null>(null);
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<Mensagem[]>([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
   const [content, setContent] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const loadConversations = async (autoSelectLatest = false) => {
+  const loadConversations = useCallback(async (autoSelectLatest = false) => {
     try {
       setLoadingConversations(true);
       const response = await api.getLeadConversations(leadId);
@@ -40,9 +40,9 @@ export function LeadCommunicationPanel({ leadId, open, onClose }: LeadCommunicat
     } finally {
       setLoadingConversations(false);
     }
-  };
+  }, [leadId]);
 
-  const loadMessages = async (conversaId: string) => {
+  const loadMessages = useCallback(async (conversaId: string) => {
     try {
       setLoadingMessages(true);
       const response = await api.getConversationMessages(conversaId);
@@ -56,7 +56,7 @@ export function LeadCommunicationPanel({ leadId, open, onClose }: LeadCommunicat
     } finally {
       setLoadingMessages(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -67,7 +67,7 @@ export function LeadCommunicationPanel({ leadId, open, onClose }: LeadCommunicat
       setMessages([]);
       setContent("");
     }
-  }, [open, leadId]);
+  }, [leadId, loadConversations, open]);
 
   useEffect(() => {
     if (selectedConversation) {
@@ -75,7 +75,7 @@ export function LeadCommunicationPanel({ leadId, open, onClose }: LeadCommunicat
     } else {
       setMessages([]);
     }
-  }, [selectedConversation]);
+  }, [loadMessages, selectedConversation]);
 
   useEffect(() => {
     // Scroll to bottom when messages change

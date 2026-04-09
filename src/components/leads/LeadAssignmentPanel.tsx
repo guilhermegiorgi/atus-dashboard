@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -29,7 +29,7 @@ export function LeadAssignmentPanel({ leadId, open, onClose, onAssignmentChange 
   const [creatingCorretor, setCreatingCorretor] = useState(false);
   const [newCorretor, setNewCorretor] = useState({ nome: "", telefone: "", email: "", especialidade: "" });
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [leadResponse, corretoresResponse] = await Promise.all([
@@ -49,7 +49,7 @@ export function LeadAssignmentPanel({ leadId, open, onClose, onAssignmentChange 
     } finally {
       setLoading(false);
     }
-  };
+  }, [leadId]);
 
   useEffect(() => {
     if (open) {
@@ -57,7 +57,7 @@ export function LeadAssignmentPanel({ leadId, open, onClose, onAssignmentChange 
       setShowCreateForm(false);
       setNewCorretor({ nome: "", telefone: "", email: "", especialidade: "" });
     }
-  }, [open, leadId]);
+  }, [open, loadData]);
 
   const handleAssign = async () => {
     if (!selectedCorretorId) return;
@@ -65,7 +65,7 @@ export function LeadAssignmentPanel({ leadId, open, onClose, onAssignmentChange 
     try {
       setAssigning(true);
       const targetId = selectedCorretorId === "unassigned" ? null : selectedCorretorId;
-      const response = await api.assignLead(leadId, targetId as any, notes);
+      const response = await api.assignLead(leadId, targetId, notes);
 
       if (response.data) {
         await loadData();
