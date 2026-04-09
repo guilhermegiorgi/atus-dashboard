@@ -1,111 +1,97 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { api, Lead } from "@/lib/api/client";
-import { Clock, ArrowRight, CheckCircle2, AlertCircle, TrendingUp, Users, Target } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Clock, AlertCircle, RefreshCw, Eye, MessageSquare, AlertTriangle } from "lucide-react";
+import { api, Lead, LeadOperationalStatus } from "@/lib/api/client";
+import { LeadCommunicationPanel } from "@/components/leads/LeadCommunicationPanel";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-export default function PipelinePage() {
+export default function FollowupQueuePage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const [totalLeads, setTotalLeads] = useState(0);
+  const [page, setPage] = useState(1);
+  const limit = 50;
+  const [expiredOnly, setExpiredOnly] = useState(false);
+  const [contaminatedOnly, setContaminatedOnly] = useState(false);
 
-  useEffect(() => {
-    fetchLeads();
-  }, []);
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const [opStatus, setOpStatus] = useState<LeadOperationalStatus | null>(null);
+  const [loadingOpStatus, setLoadingOpStatus] = useState(false);
 
-  const fetchLeads = async () => {
+  const [isCommunicating, setIsCommunicating] = useState(false);
+
+  const loadQueue = useCallback(async () => {
     try {
-      const response = await api.getLeads();
+      setLoading(true);
+      setError(null);
+      const offset = (page - 1) * limit;
+      
+      const response = await api.getFollowupQueue({ limit, offset, expired_only: expiredOnly, only_contaminated: contaminatedOnly });
       
       if (response.error) {
         setError(response.error);
-      } else if (response.data) {
-        setLeads(Array.isArray(response.data) ? response.data : []);
+        return;
+      }
+      
+      const leadsData = Array.isArray(response.data) ? response.data : [];
+      setLeads(leadsData);
+      
+      if (response.meta && typeof response.meta.total === 'number') {
+        setTotalLeads(response.meta.total);
+      } else {
+        setTotalLeads(leadsData.length);
       }
     } catch {
-      setError("Erro ao carregar leads");
+      setError("Erro ao carregar fila operacional");
     } finally {
       setLoading(false);
     }
+  }, [page, limit, expiredOnly, contaminatedOnly]);
+
+  useEffect(() => {
+    void loadQueue();
+  }, [loadQueue]);
+
+  const handleOpenOpStatus = async (leadId: string) => {
+    setSelectedLeadId(leadId);
+    setOpStatus(null);
+    setLoadingOpStatus(true);
+    try {
+      const response = await api.getOperationalStatus(leadId);
+      if (response.data) {
+        setOpStatus(response.data);
+      }
+    } catch {
+      alert("Erro ao carregar status operacional.");
+    } finally {
+      setLoadingOpStatus(false);
+    }
   };
 
-  const stages = leads.length > 0 ? [
-    {
-      name: "Novos",
-      status: "NOVO",
-      icon: Clock,
-      color: "yellow",
-      bgColor: "bg-yellow-500/10",
-      borderColor: "border-yellow-500/30",
-      textColor: "text-yellow-400",
-      progressClass: "bg-yellow-500",
-      count: leads.filter((lead: Lead) => lead.status === "NOVO").length,
-    },
-    {
-      name: "Em Atendimento",
-      status: "EM_ATENDIMENTO",
-      icon: AlertCircle,
-      color: "blue",
-      bgColor: "bg-blue-500/10",
-      borderColor: "border-blue-500/30",
-      textColor: "text-blue-400",
-      progressClass: "bg-blue-500",
-      count: leads.filter((lead: Lead) => lead.status === "EM_ATENDIMENTO").length,
-    },
-    {
-      name: "Convertidos",
-      status: "CONVERTIDO",
-      icon: CheckCircle2,
-      color: "green",
-      bgColor: "bg-green-500/10",
-      borderColor: "border-green-500/30",
-      textColor: "text-green-400",
-      progressClass: "bg-green-500",
-      count: leads.filter((lead: Lead) => lead.status === "CONVERTIDO").length,
-    },
-    {
-      name: "Perdidos",
-      status: "PERDIDO",
-      icon: TrendingUp,
-      color: "red",
-      bgColor: "bg-red-500/10",
-      borderColor: "border-red-500/30",
-      textColor: "text-red-400",
-      progressClass: "bg-red-500",
-      count: leads.filter((lead: Lead) => lead.status === "PERDIDO").length,
-    },
-  ] : [];
-
-  const conversionRate = leads.length > 0 
-    ? ((leads.filter((lead: Lead) => lead.status === "CONVERTIDO").length / leads.length) * 100).toFixed(1)
-    : "0.0";
-
-  const totalValue = leads.reduce((sum: number, lead: Lead) => {
-    if (lead.status !== "CONVERTIDO") {
-      return sum;
+  const handleReleaseFollowup = async (leadId: string) => {
+    try {
+      await api.releaseLeadFollowup(leadId);
+      alert("Follow-up liberado com sucesso.");
+      setSelectedLeadId(null);
+      await loadQueue();
+    } catch {
+      alert("Falha ao liberar follow-up.");
     }
+  };
 
-    return sum + Math.max(lead.fixa_preco_max || 0, lead.fixa_preco_min || 0, 0);
-  }, 0);
-
-  if (loading) {
+  if (loading && leads.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="flex flex-col items-center gap-4">
           <div className="h-12 w-12 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
-          <p className="text-muted-foreground">Carregando pipeline...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-destructive text-center">
-          <p className="font-semibold">Erro ao carregar</p>
-          <p className="text-sm">{error}</p>
+          <p className="text-muted-foreground">Carregando fila operacional...</p>
         </div>
       </div>
     );
@@ -114,175 +100,219 @@ export default function PipelinePage() {
   return (
     <div className="space-y-8 animate-fade-in">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Pipeline</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Fila Operacional / Follow-up</h1>
         <p className="text-muted-foreground">
-          Acompanhe o progresso dos seus leads pelo funil de vendas
+          Gestão de leads emperrados no funil que exigem intervenção manual do analista
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="glass border-border/50 animate-slide-up">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Taxa de Conversão
-            </CardTitle>
-            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Target className="h-5 w-5 text-primary" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-primary">{conversionRate}%</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Percentual de conversão
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="glass border-border/50 animate-slide-up stagger-2">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Valor em Conversão
-            </CardTitle>
-            <div className="h-10 w-10 rounded-xl bg-green-500/10 flex items-center justify-center">
-              <CheckCircle2 className="h-5 w-5 text-green-400" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
-              {totalValue > 0
-                ? `R$ ${totalValue.toLocaleString("pt-BR")}`
-                : "Sem valor informado"}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Soma do potencial informado nos leads convertidos
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="glass border-border/50 animate-slide-up stagger-3">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total de Leads
-            </CardTitle>
-            <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
-              <Users className="h-5 w-5 text-blue-400" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{leads.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Leads no pipeline
-            </p>
-          </CardContent>
-        </Card>
+      <div className="flex gap-4 border-b border-border/50 pb-4">
+        <Button 
+          variant={!expiredOnly && !contaminatedOnly ? "default" : "outline"}
+          onClick={() => { setExpiredOnly(false); setContaminatedOnly(false); setPage(1); }}
+        >
+          Todos Operacionais
+        </Button>
+        <Button 
+          variant={expiredOnly ? "default" : "outline"}
+          onClick={() => { setExpiredOnly(true); setContaminatedOnly(false); setPage(1); }}
+          className={expiredOnly ? "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30" : ""}
+        >
+          <Clock className="w-4 h-4 mr-2" />
+          SLA Expirado
+        </Button>
+        <Button 
+          variant={contaminatedOnly ? "default" : "outline"}
+          onClick={() => { setContaminatedOnly(true); setExpiredOnly(false); setPage(1); }}
+          className={contaminatedOnly ? "bg-red-500/20 text-red-400 hover:bg-red-500/30" : ""}
+        >
+          <AlertTriangle className="w-4 h-4 mr-2" />
+          Contaminados
+        </Button>
+        <Button variant="ghost" onClick={loadQueue}>
+          <RefreshCw className="w-4 h-4 mr-2" /> Atualizar
+        </Button>
       </div>
 
-      <div className="relative">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {stages.map((stage, index) => (
-            <div key={stage.name} className="relative">
-              <Card 
-                className={`glass ${stage.borderColor} hover:${stage.borderColor.replace('/30', '/50')} transition-all duration-300 animate-slide-up`}
-                style={{ animationDelay: `${(index + 3) * 100}ms` }}
-              >
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium flex items-center gap-2">
-                      <div className={`h-8 w-8 rounded-lg ${stage.bgColor} flex items-center justify-center`}>
-                        <stage.icon className={`h-4 w-4 ${stage.textColor}`} />
-                      </div>
-                      {stage.name}
-                    </CardTitle>
+      {error && (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/10 text-destructive px-4 py-3 text-sm">
+          {error}
+        </div>
+      )}
+
+      <Card className="glass border-border/50 animate-slide-up">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-primary" />
+              Leads Pendentes de Operação
+            </CardTitle>
+            <Badge variant="secondary">
+              {totalLeads} {totalLeads === 1 ? 'pendente' : 'pendentes'}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {leads.length === 0 ? (
+            <div className="text-center py-12">
+              <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+              <p className="text-muted-foreground">Nenhum lead pendente de operação nesta fila.</p>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-border/50 overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-secondary/30 border-border/50">
+                    <TableHead className="font-semibold">Nome</TableHead>
+                    <TableHead className="font-semibold">Contato</TableHead>
+                    <TableHead className="font-semibold">Último Contato</TableHead>
+                    <TableHead className="text-right font-semibold">Ação</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {leads.map((lead, index) => (
+                    <TableRow 
+                      key={lead.id}
+                      className="hover:bg-secondary/30 transition-colors border-border/50 animate-slide-up"
+                      style={{ animationDelay: `${index * 20}ms` }}
+                    >
+                      <TableCell className="font-medium">
+                        {lead.nome_completo || 'Sem Nome'}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {lead.telefone || '-'}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {lead.updated_at ? new Date(lead.updated_at).toLocaleString("pt-BR") : '-'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="bg-primary/10 text-primary hover:bg-primary hover:text-white"
+                          onClick={() => handleOpenOpStatus(lead.id)}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          Detalhes da Operação
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+
+          {totalLeads > 0 && (
+            <div className="flex items-center justify-between pt-4 border-t border-border/50">
+              <div className="text-sm text-muted-foreground">
+                Página {page}
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page <= 1 || loading}
+                >
+                  Anterior
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => p + 1)}
+                  disabled={leads.length < limit || loading}
+                >
+                  Próxima
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={!!selectedLeadId && !isCommunicating} onOpenChange={(open) => !open && setSelectedLeadId(null)}>
+        <DialogContent className="sm:max-w-[600px] border-border/50 glass">
+          <DialogHeader>
+            <DialogTitle>Status Operacional do Lead</DialogTitle>
+            <DialogDescription>Dados processados pelo backend na fila de follow-up</DialogDescription>
+          </DialogHeader>
+
+          {loadingOpStatus ? (
+            <div className="py-8 text-center text-muted-foreground">Carregando métricas operacionais...</div>
+          ) : opStatus ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <span className="text-xs text-muted-foreground">Fase</span>
+                  <div className="font-medium">{opStatus.fase}</div>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-xs text-muted-foreground">Status / Intervenção</span>
+                  <div className="font-medium gap-2 flex items-center">
+                    <Badge variant="outline">{opStatus.status}</Badge>
+                    {opStatus.intervention_type !== "NONE" && <Badge variant="destructive">{opStatus.intervention_type}</Badge>}
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-4xl font-bold mb-3">{stage.count}</div>
-                  <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${stage.progressClass} transition-all duration-500`}
-                      style={{
-                        width: `${leads.length > 0 ? (stage.count / leads.length) * 100 : 0}%`,
-                      }}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {leads.length > 0 ? ((stage.count / leads.length) * 100).toFixed(1) : 0}% do total
-                  </p>
-                </CardContent>
-              </Card>
-              {index < stages.length - 1 && (
-                <div className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10">
-                  <div className="h-8 w-8 rounded-full bg-background border border-border/50 flex items-center justify-center">
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </div>
+
+              {opStatus.is_contaminated && (
+                <div className="bg-red-500/10 border border-red-500/30 text-red-500 rounded-xl p-3 text-sm flex gap-2">
+                  <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+                  <div>
+                    <strong className="block">Este lead está contaminado.</strong>
+                    Ele requer intervenção humana antes que o bot possa continuar ou o negócio deve ser marcado como perdido/desqualificado.
                   </div>
                 </div>
               )}
-            </div>
-          ))}
-        </div>
-      </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {stages.map((stage, index) => (
-          <Card 
-            key={stage.name}
-            className={`glass ${stage.borderColor} animate-slide-up`}
-            style={{ animationDelay: `${(index + 7) * 100}ms` }}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <div className={`h-8 w-8 rounded-lg ${stage.bgColor} flex items-center justify-center`}>
-                  <stage.icon className={`h-4 w-4 ${stage.textColor}`} />
-                </div>
-                {stage.name}
-              </CardTitle>
-              <CardDescription>
-                {stage.count} lead{stage.count !== 1 ? 's' : ''}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {stage.count === 0 ? (
-                <div className="text-center py-8">
-                  <stage.icon className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
-                  <p className="text-sm text-muted-foreground">Nenhum lead nesta etapa</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {leads
-                    .filter(lead => lead.status === stage.status)
-                    .slice(0, 5)
-                    .map(lead => (
-                      <div
-                        key={lead.id}
-                        className="flex items-center justify-between p-3 rounded-xl bg-secondary/30 hover:bg-secondary/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`h-8 w-8 rounded-full ${stage.bgColor} flex items-center justify-center text-sm font-semibold ${stage.textColor}`}>
-                            {(lead.nome_completo || 'SN').charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="font-medium text-sm">{lead.nome_completo || 'Sem nome'}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {lead.email || lead.telefone || '-'}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right text-xs text-muted-foreground">
-                          {new Date(lead.created_at).toLocaleDateString('pt-BR')}
-                        </div>
-                      </div>
-                    ))}
-                  {stage.count > 5 && (
-                    <p className="text-xs text-muted-foreground text-center pt-2">
-                      +{stage.count - 5} leads não mostrados
-                    </p>
+              <div className="bg-secondary/30 rounded-xl p-3 border border-border/50">
+                <div className="text-xs font-semibold uppercase tracking-wider mb-2 text-muted-foreground">Resumo de Qualificação</div>
+                <div className="text-sm">{opStatus.qualification_summary || 'Nenhum resumo disponível.'}</div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-secondary/30 rounded-xl p-3 border border-border/50">
+                  <div className="text-xs font-semibold uppercase tracking-wider mb-2 text-muted-foreground">Campos Pendentes</div>
+                  {opStatus.missing_fields && opStatus.missing_fields.length > 0 ? (
+                    <ul className="text-sm list-disc pl-4 space-y-1">
+                      {opStatus.missing_fields.map((field: string) => <li key={field}>{field}</li>)}
+                    </ul>
+                  ) : (
+                    <div className="text-sm text-green-400">Todos os campos coletados.</div>
                   )}
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                
+                <div className="bg-secondary/30 rounded-xl p-3 border border-border/50">
+                  <div className="text-xs font-semibold uppercase tracking-wider mb-2 text-muted-foreground">Ação Recomendada</div>
+                  <div className="text-sm font-medium text-blue-400">{opStatus.recommended_action || '-'}</div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 justify-end pt-4 mt-4 border-t border-border/50">
+                <Button variant="outline" onClick={() => handleReleaseFollowup(opStatus.lead_id)}>
+                  Liberar do Follow-up
+                </Button>
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setIsCommunicating(true)}>
+                  <MessageSquare className="h-4 w-4 mr-2" /> Falar com Lead
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="py-8 text-center text-muted-foreground">Não foi possível carregar os detalhes.</div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {selectedLeadId && (
+        <LeadCommunicationPanel
+          leadId={selectedLeadId}
+          open={isCommunicating}
+          onClose={() => {
+            setIsCommunicating(false);
+          }}
+        />
+      )}
     </div>
   );
 }

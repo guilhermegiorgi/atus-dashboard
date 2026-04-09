@@ -26,9 +26,13 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [totalLeads, setTotalLeads] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<LeadFilterOptions>({});
+  const [filters, setFilters] = useState<LeadFilterOptions>({
+    page: 1,
+    limit: 50,
+  });
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -50,14 +54,13 @@ export default function LeadsPage() {
       }
 
       const leadsData = Array.isArray(response.data) ? response.data : [];
-      const orderedLeads = [...leadsData].sort((firstLead, secondLead) => {
-        const firstDate = new Date(firstLead.updated_at || firstLead.created_at).getTime();
-        const secondDate = new Date(secondLead.updated_at || secondLead.created_at).getTime();
-
-        return secondDate - firstDate;
-      });
-
-      setLeads(orderedLeads);
+      
+      setLeads(leadsData);
+      if (response.meta && typeof response.meta.total === 'number') {
+        setTotalLeads(response.meta.total);
+      } else {
+        setTotalLeads(leadsData.length);
+      }
     } catch {
       setError("Erro ao carregar leads");
     } finally {
@@ -320,8 +323,8 @@ export default function LeadsPage() {
                     <TableHead className="font-semibold">Nome</TableHead>
                     <TableHead className="font-semibold">Telefone</TableHead>
                     <TableHead className="font-semibold">Email</TableHead>
-                    <TableHead className="font-semibold">Status</TableHead>
-                    <TableHead className="font-semibold">Renda</TableHead>
+                    <TableHead className="font-semibold">Origem e Referência</TableHead>
+                    <TableHead className="font-semibold">Status / Fila</TableHead>
                     <TableHead className="text-right font-semibold">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -347,17 +350,30 @@ export default function LeadsPage() {
                         {lead.email || '-'}
                       </TableCell>
                       <TableCell>
-                        <Badge 
-                          variant={statusConfig[lead.status]?.variant || "default"}
-                          className={statusConfig[lead.status]?.className}
-                        >
-                          {statusConfig[lead.status]?.label || lead.status}
-                        </Badge>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm font-medium">{lead.origem || '-'}</span>
+                          {(lead.codigo_ref || lead.link_click_id) && (
+                            <span className="text-xs text-muted-foreground flex gap-1 items-center">
+                              {lead.codigo_ref && <Badge variant="outline" className="text-[10px] h-4 leading-none px-1 py-0">{lead.codigo_ref}</Badge>}
+                              {lead.link_click_id && <span className="truncate max-w-[80px]" title={lead.link_click_id}>ID: {lead.link_click_id}</span>}
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-muted-foreground">
-                          R$ {(lead.renda_comprovada || 0).toLocaleString('pt-BR')}
-                        </span>
+                        <div className="flex flex-col items-start gap-1">
+                          <Badge 
+                            variant={statusConfig[lead.status]?.variant || "default"}
+                            className={statusConfig[lead.status]?.className}
+                          >
+                            {statusConfig[lead.status]?.label || lead.status}
+                          </Badge>
+                          {lead.intervention_type && lead.intervention_type !== "NONE" && (
+                            <Badge variant="secondary" className="bg-purple-500/10 text-purple-400 border-purple-500/30 text-[10px] h-4 leading-none px-1 py-0 shadow-sm">
+                              {lead.intervention_type}
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
@@ -410,6 +426,35 @@ export default function LeadsPage() {
                   ))}
                 </TableBody>
               </Table>
+            </div>
+          )}
+          
+          {totalLeads > 0 && (
+            <div className="flex items-center justify-between pt-4 border-t border-border/50">
+              <div className="text-sm text-muted-foreground">
+                Exibindo <span className="font-medium text-foreground">{leads.length}</span> de <span className="font-medium text-foreground">{totalLeads}</span> leads totais
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setFilters(f => ({ ...f, page: Math.max(1, (f.page || 1) - 1) }))}
+                  disabled={(filters.page || 1) <= 1 || loading}
+                >
+                  Anterior
+                </Button>
+                <div className="text-sm font-medium px-2 py-1 bg-secondary/30 rounded-md">
+                  Página {filters.page || 1}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setFilters(f => ({ ...f, page: (f.page || 1) + 1 }))}
+                  disabled={leads.length < (filters.limit || 50) || loading}
+                >
+                  Próxima
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>

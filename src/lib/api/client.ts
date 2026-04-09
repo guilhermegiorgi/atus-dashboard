@@ -7,6 +7,11 @@ import {
   StatsData,
   LeadFilterOptions,
   Note,
+  ApiResponseMeta,
+  InboxConversationSummary,
+  LeadOperationalStatus,
+  AnalyticsGroupedRow,
+  AnalyticsLeadRow,
 } from "@/types/leads";
 
 const API_BASE_URL = "";
@@ -57,6 +62,9 @@ class AtusAPI {
 
       return {
         data: payload === null ? undefined : this.extractData<T>(payload),
+        meta: payload && typeof payload === "object" && "meta" in payload
+          ? (payload as { meta?: ApiResponseMeta }).meta
+          : undefined,
         message:
           payload && typeof payload === "object" && "message" in payload
             ? (payload as { message?: string }).message
@@ -241,7 +249,98 @@ class AtusAPI {
   }>> {
     return this.request("/api/v1/metrics/sla");
   }
+
+  // Follow-up Queue Operational
+  async getFollowupQueue(
+    filter?: { limit?: number; offset?: number; expired_only?: boolean; only_contaminated?: boolean; triage_state?: string }
+  ): Promise<ApiResponse<Lead[]>> {
+    const params = new URLSearchParams();
+    if (filter?.limit) params.append("limit", String(filter.limit));
+    if (filter?.offset) params.append("offset", String(filter.offset));
+    if (filter?.expired_only) params.append("expired_only", "true");
+    if (filter?.only_contaminated) params.append("only_contaminated", "true");
+    if (filter?.triage_state) params.append("triage_state", filter.triage_state);
+
+    return this.request<Lead[]>(`/api/v1/leads/followup-queue${params.size ? `?${params}` : ""}`);
+  }
+
+  async getOperationalStatus(id: string): Promise<ApiResponse<LeadOperationalStatus>> {
+    return this.request<LeadOperationalStatus>(`/api/v1/leads/${id}/operational-status`);
+  }
+
+  // Inbox Humana
+  async getInboxConversations(limit = 100, offset = 0, state?: string): Promise<ApiResponse<InboxConversationSummary[]>> {
+    const params = new URLSearchParams();
+    params.append("limit", String(limit));
+    params.append("offset", String(offset));
+    if (state) params.append("state", state);
+    return this.request<InboxConversationSummary[]>(`/api/v1/inbox/conversations?${params.toString()}`);
+  }
+
+  async getInboxConversationDetails(leadId: string): Promise<ApiResponse<InboxConversationSummary>> {
+    return this.request<InboxConversationSummary>(`/api/v1/inbox/conversations/${leadId}`);
+  }
+
+  async assignInboxConversation(leadId: string, corretorId: string | null): Promise<ApiResponse<void>> {
+    return this.request<void>(`/api/v1/inbox/conversations/${leadId}/assign`, {
+      method: "POST",
+      body: JSON.stringify({ corretor_id: corretorId }),
+    });
+  }
+
+  async setInboxConversationState(leadId: string, state: string): Promise<ApiResponse<void>> {
+    return this.request<void>(`/api/v1/inbox/conversations/${leadId}/state`, {
+      method: "POST",
+      body: JSON.stringify({ state }),
+    });
+  }
+
+  async returnInboxConversationToBot(leadId: string): Promise<ApiResponse<void>> {
+    return this.request<void>(`/api/v1/inbox/conversations/${leadId}/return-to-bot`, {
+      method: "POST",
+    });
+  }
+
+  // Analytics
+  async getAnalyticsOverview(dateFrom?: string, dateTo?: string): Promise<ApiResponse<Record<string, unknown>>> {
+    const params = new URLSearchParams();
+    if (dateFrom) params.append("date_from", dateFrom);
+    if (dateTo) params.append("date_to", dateTo);
+    return this.request<Record<string, unknown>>(`/api/v1/analytics/overview${params.size ? `?${params}` : ""}`);
+  }
+
+  async getAnalyticsGrouped(
+    dimension: "sources" | "campaigns" | "corretors",
+    dateFrom?: string, 
+    dateTo?: string
+  ): Promise<ApiResponse<AnalyticsGroupedRow[]>> {
+    const params = new URLSearchParams();
+    if (dateFrom) params.append("date_from", dateFrom);
+    if (dateTo) params.append("date_to", dateTo);
+    return this.request<AnalyticsGroupedRow[]>(`/api/v1/analytics/${dimension}${params.size ? `?${params}` : ""}`);
+  }
+
+  async getAnalyticsRankings(
+    type: "origins" | "campaigns" | "corretors" | "triage-ready" | "lead-scores",
+    limit = 20,
+    offset = 0
+  ): Promise<ApiResponse<unknown[]>> {
+    const params = new URLSearchParams();
+    params.append("limit", String(limit));
+    params.append("offset", String(offset));
+    return this.request<unknown[]>(`/api/v1/analytics/rankings/${type}?${params.toString()}`);
+  }
+
+  async getAnalyticsLeads(limit = 20, offset = 0, filters?: Record<string, string>): Promise<ApiResponse<AnalyticsLeadRow[]>> {
+    const params = new URLSearchParams();
+    params.append("limit", String(limit));
+    params.append("offset", String(offset));
+    if (filters) {
+      Object.entries(filters).forEach(([k, v]) => params.append(k, v));
+    }
+    return this.request<AnalyticsLeadRow[]>(`/api/v1/analytics/leads?${params.toString()}`);
+  }
 }
 
 export const api = new AtusAPI();
-export type { Lead, StatsData, Corretor, Conversa, ApiResponse };
+export type { Lead, StatsData, Corretor, Conversa, ApiResponse, InboxConversationSummary, LeadOperationalStatus };

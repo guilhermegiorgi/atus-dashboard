@@ -16,7 +16,7 @@ export default function DashboardPage() {
     const fetchData = async () => {
       try {
         const [leadsResponse, statsResponse] = await Promise.all([
-          api.getLeads(),
+          api.getLeads({ limit: 5 }), // Respect pagination and list only most recents
           api.getLeadsStats()
         ]);
 
@@ -66,9 +66,9 @@ export default function DashboardPage() {
     );
   }
 
-  const total = stats?.total || leads.length;
-  const novos = stats?.novos || leads.filter(l => l.status === 'NOVO').length;
-  const converted = stats?.convertidos || leads.filter(l => l.status === 'CONVERTIDO').length;
+  const total = stats?.total || 0;
+  const novos = stats?.novos || 0;
+  const converted = stats?.convertidos || 0;
   const conversionRate = total > 0 ? ((converted / total) * 100).toFixed(1) : '0';
 
   const statsCards = [
@@ -114,7 +114,7 @@ export default function DashboardPage() {
     },
   ];
 
-  const recentLeads = leads.slice(0, 5);
+  const recentLeads = leads;
 
   return (
     <div className="space-y-8 animate-fade-in">
