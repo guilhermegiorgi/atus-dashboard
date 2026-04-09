@@ -41,3 +41,53 @@ export interface AnalyticsOverview {
   taxa_conversao_operacional: number;
   taxa_conversao_comercial: number;
 }
+
+export interface OperationalQueueItem {
+  lead_id: string;
+  telefone: string;
+  canal_origem: string;
+  sistema_origem: string;
+  campanha_origem: string;
+  tracked_codigo_ref: string;
+  intervention_type: string;
+  fase: string;
+  status: string;
+  next_field: string;
+  missing_fields: string[];
+  confirmation_pending: boolean;
+  is_contaminated: boolean;
+  recommended_action: string;
+  qualification_summary: string;
+  last_bot_message: string;
+  last_lead_message: string;
+  last_message_direction: string;
+}
+
+export type OperationalStatus = OperationalQueueItem;
+
+export interface LeadAction {
+  id: string;
+  lead_id: string;
+  action: string;
+  status: string;
+  actor: string;
+  details: string;
+  created_at: string;
+}
+
+export interface FollowupQueueFilters {
+  limit?: number;
+  offset?: number;
+  status?: string;
+  fase?: string;
+  em_follow_up?: boolean;
+  tipo_interesse?: string;
+  has_nome?: boolean;
+  has_email?: boolean;
+  expired_only?: boolean;
+  only_contaminated?: boolean;
+  canal_origem?: string;
+  sistema_origem?: string;
+  triage_state?: string;
+  search?: string;
+}

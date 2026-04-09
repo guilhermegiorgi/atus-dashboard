@@ -2,7 +2,11 @@ import {
   AnalyticsOverview,
   FlowMetrics,
   FollowupMetrics,
+  FollowupQueueFilters,
+  LeadAction,
   LeadStats,
+  OperationalQueueItem,
+  OperationalStatus,
   SlaMetrics,
 } from "@/types/dashboard";
 import { ApiResult, PaginatedResponse } from "@/types/api";
@@ -23,6 +27,11 @@ import {
   buildLeadUpdatePayload,
   normalizeLead,
 } from "@/lib/api/leads";
+import {
+  buildFollowupQueueQuery,
+  normalizeOperationalQueueItem,
+  normalizeOperationalStatus,
+} from "@/lib/pipeline/queue";
 
 const API_BASE_URL = "";
 
@@ -405,6 +414,74 @@ class AtusAPI {
 
     return {
       data: response.data.data,
+      message: response.message,
+    };
+  }
+
+  async getFollowupQueue(
+    filters: FollowupQueueFilters = {}
+  ): Promise<ApiResult<PaginatedResponse<OperationalQueueItem>>> {
+    const query = buildFollowupQueueQuery(filters);
+    const response = await this.request<
+      PaginatedResponse<Record<string, unknown>>
+    >(`/api/internal/leads/followup-queue${query.size ? `?${query.toString()}` : ""}`);
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: {
+        data: response.data.data.map(normalizeOperationalQueueItem),
+        meta: response.data.meta,
+      },
+      message: response.message,
+    };
+  }
+
+  async getLeadOperationalStatus(id: string): Promise<ApiResult<OperationalStatus>> {
+    const response = await this.request<{ data: Record<string, unknown> }>(
+      `/api/internal/leads/${id}/operational-status`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: normalizeOperationalStatus(response.data.data),
+      message: response.message,
+    };
+  }
+
+  async getLeadActions(
+    id: string,
+    limit = 20,
+    offset = 0
+  ): Promise<ApiResult<PaginatedResponse<LeadAction>>> {
+    const params = new URLSearchParams({
+      limit: String(limit),
+      offset: String(offset),
+    });
+    const response = await this.request<PaginatedResponse<LeadAction>>(
+      `/api/internal/leads/${id}/actions?${params.toString()}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data,
       message: response.message,
     };
   }
