@@ -112,10 +112,16 @@ describe("LeadDetailModal", () => {
       <LeadDetailModal lead={lead} open onClose={() => {}} onEdit={() => {}} />
     );
 
+    const dialogContent = document.querySelector('[data-slot="dialog-content"]');
+
+    expect(dialogContent?.className).toContain("w-[min(96vw,1600px)]");
+    expect(dialogContent?.className).toContain("h-[90vh]");
+    expect(dialogContent?.className).toContain("overflow-hidden");
+
     await waitFor(() => {
-    expect(screen.getByText("Estado operacional")).toBeInTheDocument();
+      expect(screen.getByText("Estado operacional")).toBeInTheDocument();
       expect(screen.getByText("start_followup")).toBeInTheDocument();
-      expect(screen.getByText("TRIAGE_HUMAN")).toBeInTheDocument();
+      expect(screen.getAllByText("TRIAGE_HUMAN").length).toBeGreaterThan(0);
       expect(screen.getByText("START_FOLLOWUP")).toBeInTheDocument();
       expect(screen.getByText("Ola, preciso de ajuda")).toBeInTheDocument();
     });

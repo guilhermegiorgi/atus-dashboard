@@ -15,6 +15,12 @@ describe("LeadFormModal", () => {
       />
     );
 
+    const dialogContent = document.querySelector('[data-slot="dialog-content"]');
+
+    expect(dialogContent?.className).toContain("w-[min(94vw,1400px)]");
+    expect(dialogContent?.className).toContain("h-[88vh]");
+    expect(dialogContent?.className).toContain("overflow-hidden");
+
     fireEvent.change(screen.getByLabelText("Nome completo"), {
       target: { value: "Maria Silva" },
     });

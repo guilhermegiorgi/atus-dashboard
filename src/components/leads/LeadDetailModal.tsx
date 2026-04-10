@@ -186,12 +186,43 @@ export function LeadDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-6xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{lead.nome_completo || "Lead sem nome"}</DialogTitle>
-          <DialogDescription>
-            Detalhe canônico do lead com estado operacional, humano, auditoria e conversa
-          </DialogDescription>
+      <DialogContent className="w-[min(96vw,1600px)] h-[90vh] max-w-none overflow-hidden p-0 sm:max-w-none">
+        <DialogHeader className="shrink-0 border-b border-border/50 px-6 py-5">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+            <div className="space-y-2">
+              <DialogTitle>{lead.nome_completo || "Lead sem nome"}</DialogTitle>
+              <DialogDescription>
+                Detalhe canônico do lead com estado operacional, humano, auditoria e conversa
+              </DialogDescription>
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline">{lead.status || "-"}</Badge>
+                <Badge variant="outline">
+                  {lead.fase || operationalStatus?.fase || "Sem fase"}
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className={toneForState(
+                    humanIntervention?.conversation_state || lead.conversation_state
+                  )}
+                >
+                  {humanIntervention?.conversation_state ||
+                    lead.conversation_state ||
+                    "Sem conversation_state"}
+                </Badge>
+                <Badge variant="outline">
+                  {humanIntervention?.intervention_type ||
+                    lead.intervention_type ||
+                    "Sem intervention_type"}
+                </Badge>
+              </div>
+            </div>
+
+            <div className="grid gap-2 text-sm text-muted-foreground xl:min-w-[260px]">
+              <div>Telefone: {lead.telefone || "-"}</div>
+              <div>Atualizado em: {formatDateTime(lead.updated_at)}</div>
+              <div>Tracked ref: {lead.tracked_codigo_ref || operationalStatus?.tracked_codigo_ref || "-"}</div>
+            </div>
+          </div>
         </DialogHeader>
 
         {loading ? (
@@ -202,190 +233,203 @@ export function LeadDetailModal({
             </div>
           </div>
         ) : error ? (
-          <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+          <div className="m-6 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
             {error}
           </div>
         ) : (
-          <div className="grid gap-6 xl:grid-cols-2">
-            <section className="space-y-4 rounded-xl border border-border/50 p-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Cadastro
-              </h3>
-              <div><strong>Telefone:</strong> {lead.telefone || "-"}</div>
-              <div><strong>Email:</strong> {lead.email || "-"}</div>
-              <div><strong>Status:</strong> {lead.status || "-"}</div>
-              <div><strong>Fase:</strong> {lead.fase || operationalStatus?.fase || "-"}</div>
-              <div><strong>Tipo de interesse:</strong> {lead.tipo_interesse || "-"}</div>
-              <div><strong>Estado civil:</strong> {lead.estado_civil || "-"}</div>
-              <div><strong>Renda comprovada:</strong> {lead.renda_comprovada ?? 0}</div>
-              <div><strong>Entrada:</strong> {lead.entrada ?? 0}</div>
-              <div><strong>Observações:</strong> {lead.observacoes || "-"}</div>
-            </section>
-
-            <section className="space-y-4 rounded-xl border border-border/50 p-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Origem e Tracking
-              </h3>
-              <div><strong>Canal:</strong> {lead.canal_origem || operationalStatus?.canal_origem || "-"}</div>
-              <div><strong>Sistema:</strong> {lead.sistema_origem || operationalStatus?.sistema_origem || "-"}</div>
-              <div><strong>Campanha:</strong> {lead.campanha_origem || operationalStatus?.campanha_origem || "-"}</div>
-              <div><strong>Tracked ref:</strong> {lead.tracked_codigo_ref || operationalStatus?.tracked_codigo_ref || "-"}</div>
-              <div><strong>Link click ID:</strong> {lead.link_click_id || "-"}</div>
-              <div><strong>External lead ID:</strong> {lead.external_lead_id || "-"}</div>
-              <div><strong>Resumo de qualificação:</strong> {lead.resumo_qualificacao || operationalStatus?.qualification_summary || "-"}</div>
-            </section>
-
-            <section className="space-y-4 rounded-xl border border-border/50 p-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Estado operacional
-              </h3>
-              {operationalStatus ? (
-                <>
-                  <div><strong>Next field:</strong> {truthyLabel(operationalStatus.next_field)}</div>
-                  <div><strong>Recommended action:</strong> {truthyLabel(operationalStatus.recommended_action)}</div>
-                  <div><strong>Qualification summary:</strong> {truthyLabel(operationalStatus.qualification_summary)}</div>
-                  <div><strong>Last bot message:</strong> {truthyLabel(operationalStatus.last_bot_message)}</div>
-                  <div><strong>Last lead message:</strong> {truthyLabel(operationalStatus.last_lead_message)}</div>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="outline">
-                      {operationalStatus.confirmation_pending ? "Confirmação pendente" : "Sem confirmação pendente"}
-                    </Badge>
-                    <Badge variant="outline">
-                      {operationalStatus.is_contaminated ? "Contaminado" : "Não contaminado"}
-                    </Badge>
-                    {operationalStatus.missing_fields.map((field) => (
-                      <Badge key={field} variant="outline" className="border-amber-500/20 bg-amber-500/10 text-amber-300">
-                        {field}
-                      </Badge>
-                    ))}
+          <div className="min-h-0 flex-1 overflow-hidden px-6 py-6">
+            <div className="grid h-full min-h-0 gap-6 xl:grid-cols-[minmax(380px,0.95fr)_minmax(620px,1.45fr)]">
+              <div className="min-h-0 space-y-6 overflow-y-auto pr-2">
+                <section className="space-y-4 rounded-2xl border border-border/50 bg-background/50 p-5">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                    Cadastro
+                  </h3>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div><strong>Telefone:</strong> {lead.telefone || "-"}</div>
+                    <div><strong>Email:</strong> {lead.email || "-"}</div>
+                    <div><strong>Status:</strong> {lead.status || "-"}</div>
+                    <div><strong>Fase:</strong> {lead.fase || operationalStatus?.fase || "-"}</div>
+                    <div><strong>Tipo de interesse:</strong> {lead.tipo_interesse || "-"}</div>
+                    <div><strong>Estado civil:</strong> {lead.estado_civil || "-"}</div>
+                    <div><strong>Renda comprovada:</strong> {lead.renda_comprovada ?? 0}</div>
+                    <div><strong>Entrada:</strong> {lead.entrada ?? 0}</div>
+                    <div className="md:col-span-2"><strong>Observações:</strong> {lead.observacoes || "-"}</div>
                   </div>
-                </>
-              ) : (
-                <p className="text-sm text-muted-foreground">Sem status operacional disponível.</p>
-              )}
-            </section>
+                </section>
 
-            <section className="space-y-4 rounded-xl border border-border/50 p-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Atendimento humano
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="outline" className={toneForState(humanIntervention?.conversation_state || lead.conversation_state)}>
-                  {humanIntervention?.conversation_state || lead.conversation_state || "Sem conversation_state"}
-                </Badge>
-                <Badge variant="outline">
-                  {humanIntervention?.intervention_type || lead.intervention_type || "Sem intervention_type"}
-                </Badge>
-                <Badge variant="outline">
-                  {humanIntervention?.em_follow_up ?? lead.em_follow_up ? "Follow-up ativo" : "Sem follow-up ativo"}
-                </Badge>
+                <section className="space-y-4 rounded-2xl border border-border/50 bg-background/50 p-5">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                    Origem e Tracking
+                  </h3>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div><strong>Canal:</strong> {lead.canal_origem || operationalStatus?.canal_origem || "-"}</div>
+                    <div><strong>Sistema:</strong> {lead.sistema_origem || operationalStatus?.sistema_origem || "-"}</div>
+                    <div><strong>Campanha:</strong> {lead.campanha_origem || operationalStatus?.campanha_origem || "-"}</div>
+                    <div><strong>Tracked ref:</strong> {lead.tracked_codigo_ref || operationalStatus?.tracked_codigo_ref || "-"}</div>
+                    <div><strong>Link click ID:</strong> {lead.link_click_id || "-"}</div>
+                    <div><strong>External lead ID:</strong> {lead.external_lead_id || "-"}</div>
+                    <div className="md:col-span-2"><strong>Resumo de qualificação:</strong> {lead.resumo_qualificacao || operationalStatus?.qualification_summary || "-"}</div>
+                  </div>
+                </section>
+
+                <section className="space-y-4 rounded-2xl border border-border/50 bg-background/50 p-5">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                    Estado operacional
+                  </h3>
+                  {operationalStatus ? (
+                    <>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <div><strong>Next field:</strong> {truthyLabel(operationalStatus.next_field)}</div>
+                        <div><strong>Recommended action:</strong> {truthyLabel(operationalStatus.recommended_action)}</div>
+                        <div className="md:col-span-2"><strong>Qualification summary:</strong> {truthyLabel(operationalStatus.qualification_summary)}</div>
+                        <div><strong>Last bot message:</strong> {truthyLabel(operationalStatus.last_bot_message)}</div>
+                        <div><strong>Last lead message:</strong> {truthyLabel(operationalStatus.last_lead_message)}</div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="outline">
+                          {operationalStatus.confirmation_pending ? "Confirmação pendente" : "Sem confirmação pendente"}
+                        </Badge>
+                        <Badge variant="outline">
+                          {operationalStatus.is_contaminated ? "Contaminado" : "Não contaminado"}
+                        </Badge>
+                        {operationalStatus.missing_fields.map((field) => (
+                          <Badge key={field} variant="outline" className="border-amber-500/20 bg-amber-500/10 text-amber-300">
+                            {field}
+                          </Badge>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Sem status operacional disponível.</p>
+                  )}
+                </section>
+
+                <section className="space-y-4 rounded-2xl border border-border/50 bg-background/50 p-5">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                    Atendimento humano
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline" className={toneForState(humanIntervention?.conversation_state || lead.conversation_state)}>
+                      {humanIntervention?.conversation_state || lead.conversation_state || "Sem conversation_state"}
+                    </Badge>
+                    <Badge variant="outline">
+                      {humanIntervention?.intervention_type || lead.intervention_type || "Sem intervention_type"}
+                    </Badge>
+                    <Badge variant="outline">
+                      {humanIntervention?.em_follow_up ?? lead.em_follow_up ? "Follow-up ativo" : "Sem follow-up ativo"}
+                    </Badge>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div><strong>Intervention at:</strong> {formatDateTime(humanIntervention?.intervention_at || lead.intervention_at)}</div>
+                    <div><strong>Intervention by:</strong> {truthyLabel(humanIntervention?.intervention_by)}</div>
+                  </div>
+                </section>
               </div>
-              <div><strong>Intervention at:</strong> {formatDateTime(humanIntervention?.intervention_at || lead.intervention_at)}</div>
-              <div><strong>Intervention by:</strong> {truthyLabel(humanIntervention?.intervention_by)}</div>
-              <div><strong>Atualizado em:</strong> {formatDateTime(lead.updated_at)}</div>
-            </section>
 
-            <section className="space-y-4 rounded-xl border border-border/50 p-4 xl:col-span-2">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Auditoria
-              </h3>
-              {actions.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nenhuma ação registrada.</p>
-              ) : (
-                <div className="space-y-3">
-                  {actions.map((action) => (
-                    <div
-                      key={action.id}
-                      className="rounded-xl border border-border/50 bg-secondary/20 p-3"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="font-medium">{action.action}</div>
-                        <Badge variant="outline">{action.status}</Badge>
-                      </div>
-                      <div className="mt-1 text-sm text-muted-foreground">
-                        Ator: {action.actor || "-"} | {formatDateTime(action.created_at)}
-                      </div>
-                      <div className="mt-2 text-sm break-all">{action.details || "-"}</div>
+              <div className="grid min-h-0 gap-6 xl:grid-rows-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+                <section className="grid min-h-0 gap-4 rounded-2xl border border-border/50 bg-background/50 p-5">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                    Conversa
+                  </h3>
+                  <div className="grid min-h-0 gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+                    <div className="min-h-0 space-y-2 overflow-y-auto pr-1">
+                      {conversations.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">Nenhuma conversa disponível.</p>
+                      ) : (
+                        conversations.map((conversation) => (
+                          <button
+                            key={conversation.id}
+                            type="button"
+                            onClick={() => setSelectedConversationId(conversation.id)}
+                            className={`w-full rounded-xl border p-3 text-left transition-colors ${
+                              selectedConversationId === conversation.id
+                                ? "border-primary/30 bg-primary/10"
+                                : "border-border/50 bg-secondary/20"
+                            }`}
+                          >
+                            <div className="font-medium">{conversation.status || "Sem status"}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {formatDateTime(conversation.started_at)}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {conversation.message_count} mensagem(ns)
+                            </div>
+                          </button>
+                        ))
+                      )}
                     </div>
-                  ))}
-                </div>
-              )}
-            </section>
 
-            <section className="space-y-4 rounded-xl border border-border/50 p-4 xl:col-span-2">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Conversa
-              </h3>
-              <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
-                <div className="space-y-2">
-                  {conversations.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Nenhuma conversa disponível.</p>
-                  ) : (
-                    conversations.map((conversation) => (
-                      <button
-                        key={conversation.id}
-                        type="button"
-                        onClick={() => setSelectedConversationId(conversation.id)}
-                        className={`w-full rounded-xl border p-3 text-left transition-colors ${
-                          selectedConversationId === conversation.id
-                            ? "border-primary/30 bg-primary/10"
-                            : "border-border/50 bg-secondary/20"
-                        }`}
-                      >
-                        <div className="font-medium">{conversation.status || "Sem status"}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {formatDateTime(conversation.started_at)}
+                    <div className="flex min-h-0 flex-col rounded-xl border border-border/50 bg-secondary/20 p-4">
+                      {selectedConversation ? (
+                        <div className="shrink-0 text-sm text-muted-foreground">
+                          Conversa iniciada em {formatDateTime(selectedConversation.started_at)}
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          {conversation.message_count} mensagem(ns)
-                        </div>
-                      </button>
-                    ))
-                  )}
-                </div>
+                      ) : (
+                        <div className="shrink-0 text-sm text-muted-foreground">Selecione uma conversa.</div>
+                      )}
 
-                <div className="space-y-3 rounded-xl border border-border/50 bg-secondary/20 p-4">
-                  {selectedConversation ? (
-                    <div className="text-sm text-muted-foreground">
-                      Conversa iniciada em {formatDateTime(selectedConversation.started_at)}
+                      {messagesLoading ? (
+                        <div className="mt-4 text-sm text-muted-foreground">Carregando mensagens...</div>
+                      ) : messages.length === 0 ? (
+                        <div className="mt-4 text-sm text-muted-foreground">Sem mensagens nesta conversa.</div>
+                      ) : (
+                        <div className="mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+                          {messages.map((message) => (
+                            <div
+                              key={message.id}
+                              className={`rounded-xl border p-3 ${
+                                message.direcao === "SAIDA"
+                                  ? "border-primary/20 bg-primary/10"
+                                  : "border-border/50 bg-background"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-4 text-xs text-muted-foreground">
+                                <span>{message.direcao}</span>
+                                <span>{formatDateTime(message.timestamp)}</span>
+                              </div>
+                              <div className="mt-2 whitespace-pre-wrap text-sm">
+                                {message.conteudo || "-"}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <div className="text-sm text-muted-foreground">Selecione uma conversa.</div>
-                  )}
+                  </div>
+                </section>
 
-                  {messagesLoading ? (
-                    <div className="text-sm text-muted-foreground">Carregando mensagens...</div>
-                  ) : messages.length === 0 ? (
-                    <div className="text-sm text-muted-foreground">Sem mensagens nesta conversa.</div>
+                <section className="min-h-0 space-y-4 rounded-2xl border border-border/50 bg-background/50 p-5">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                    Auditoria
+                  </h3>
+                  {actions.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Nenhuma ação registrada.</p>
                   ) : (
-                    <div className="space-y-3">
-                      {messages.map((message) => (
+                    <div className="min-h-0 space-y-3 overflow-y-auto pr-1">
+                      {actions.map((action) => (
                         <div
-                          key={message.id}
-                          className={`rounded-xl border p-3 ${
-                            message.direcao === "SAIDA"
-                              ? "border-primary/20 bg-primary/10"
-                              : "border-border/50 bg-background"
-                          }`}
+                          key={action.id}
+                          className="rounded-xl border border-border/50 bg-secondary/20 p-3"
                         >
-                          <div className="flex items-center justify-between gap-4 text-xs text-muted-foreground">
-                            <span>{message.direcao}</span>
-                            <span>{formatDateTime(message.timestamp)}</span>
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="font-medium">{action.action}</div>
+                            <Badge variant="outline">{action.status}</Badge>
                           </div>
-                          <div className="mt-2 text-sm whitespace-pre-wrap">
-                            {message.conteudo || "-"}
+                          <div className="mt-1 text-sm text-muted-foreground">
+                            Ator: {action.actor || "-"} | {formatDateTime(action.created_at)}
                           </div>
+                          <div className="mt-2 break-all text-sm">{action.details || "-"}</div>
                         </div>
                       ))}
                     </div>
                   )}
-                </div>
+                </section>
               </div>
-            </section>
+            </div>
           </div>
         )}
 
-        <DialogFooter>
+        <DialogFooter className="shrink-0 border-t border-border/50 px-6 py-4">
           <Button variant="outline" onClick={onClose}>Fechar</Button>
           <Button onClick={() => onEdit(lead)}>Editar</Button>
         </DialogFooter>
