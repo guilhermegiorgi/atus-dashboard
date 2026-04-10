@@ -1,92 +1,177 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Clock, AlertCircle, RefreshCw, Eye, MessageSquare, AlertTriangle } from "lucide-react";
-import { api, Lead, LeadOperationalStatus } from "@/lib/api/client";
-import { LeadCommunicationPanel } from "@/components/leads/LeadCommunicationPanel";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
+  AlertTriangle,
+  ArrowRight,
+  Bot,
+  CheckCircle2,
+  Clock,
+  RotateCcw,
+  ShieldAlert,
+} from "lucide-react";
+import { api } from "@/lib/api/client";
+import {
+  FollowupMetrics,
+  FollowupQueueFilters,
+  LeadAction,
+  OperationalQueueItem,
+  OperationalStatus,
+} from "@/types/dashboard";
+import { getOffsetForPage } from "@/lib/leads/query-state";
 
-export default function FollowupQueuePage() {
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
-  const [totalLeads, setTotalLeads] = useState(0);
-  const [page, setPage] = useState(1);
-  const limit = 50;
-  const [expiredOnly, setExpiredOnly] = useState(false);
-  const [contaminatedOnly, setContaminatedOnly] = useState(false);
+const PAGE_SIZE = 20;
 
+const EMPTY_METRICS: FollowupMetrics = {
+  expired_followups: 0,
+  active_followups: 0,
+  followups_sent_today: 0,
+  followup_responses_today: 0,
+  stuck_followups: 0,
+  contaminated_leads: 0,
+  sent_last_7_days: 0,
+  responses_last_7_days: 0,
+};
+
+function actionLabel(action: string) {
+  switch (action) {
+    case "START_FOLLOWUP":
+      return "Iniciou follow-up";
+    case "RESET_FOLLOWUP":
+      return "Resetou follow-up";
+    case "MANUAL_UPDATE":
+      return "Atualizacao manual";
+    default:
+      return action;
+  }
+}
+
+function recommendedActionLabel(action: string) {
+  switch (action) {
+    case "start_followup":
+      return "Iniciar follow-up";
+    case "continue_waiting":
+      return "Continuar aguardando";
+    case "reset_then_followup":
+      return "Resetar e retomar";
+    case "manual_review":
+      return "Revisao manual";
+    case "human_takeover_active":
+      return "Takeover humano";
+    default:
+      return action || "-";
+  }
+}
+
+function actionTone(action: string) {
+  switch (action) {
+    case "start_followup":
+      return "border-green-500/20 bg-green-500/10 text-green-400";
+    case "reset_then_followup":
+      return "border-amber-500/20 bg-amber-500/10 text-amber-300";
+    case "manual_review":
+      return "border-orange-500/20 bg-orange-500/10 text-orange-300";
+    case "human_takeover_active":
+      return "border-blue-500/20 bg-blue-500/10 text-blue-300";
+    default:
+      return "border-border/50 bg-secondary/30 text-foreground";
+  }
+}
+
+export default function PipelinePage() {
+  const [filters, setFilters] = useState<FollowupQueueFilters>({
+    limit: PAGE_SIZE,
+    offset: 0,
+  });
+  const [queue, setQueue] = useState<OperationalQueueItem[]>([]);
+  const [meta, setMeta] = useState({ total: 0, limit: PAGE_SIZE, offset: 0 });
+  const [metrics, setMetrics] = useState<FollowupMetrics>(EMPTY_METRICS);
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
-  const [opStatus, setOpStatus] = useState<LeadOperationalStatus | null>(null);
-  const [loadingOpStatus, setLoadingOpStatus] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<OperationalStatus | null>(null);
+  const [selectedActions, setSelectedActions] = useState<LeadAction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const [isCommunicating, setIsCommunicating] = useState(false);
+  const requestFingerprint = JSON.stringify(filters);
 
-  const loadQueue = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const offset = (page - 1) * limit;
-      
-      const response = await api.getFollowupQueue({ limit, offset, expired_only: expiredOnly, only_contaminated: contaminatedOnly });
-      
-      if (response.error) {
-        setError(response.error);
-        return;
-      }
-      
-      const leadsData = Array.isArray(response.data) ? response.data : [];
-      setLeads(leadsData);
-      
-      if (response.meta && typeof response.meta.total === 'number') {
-        setTotalLeads(response.meta.total);
-      } else {
-        setTotalLeads(leadsData.length);
-      }
-    } catch {
-      setError("Erro ao carregar fila operacional");
-    } finally {
+  const loadQueue = useCallback(async (currentFilters: FollowupQueueFilters) => {
+    setLoading(true);
+    setError(null);
+
+    const [queueResult, metricsResult] = await Promise.all([
+      api.getFollowupQueue(currentFilters),
+      api.getFollowupMetrics(),
+    ]);
+
+    const firstError = queueResult.error ?? metricsResult.error ?? null;
+
+    if (firstError || !queueResult.data) {
+      setError(firstError ?? "Erro ao carregar fila operacional");
       setLoading(false);
+      return;
     }
-  }, [page, limit, expiredOnly, contaminatedOnly]);
+
+    setQueue(queueResult.data.data);
+    setMeta(queueResult.data.meta);
+    setMetrics(metricsResult.data ?? EMPTY_METRICS);
+    setLoading(false);
+  }, []);
+
+  const loadLeadDetails = useCallback(async (leadId: string) => {
+    setDetailLoading(true);
+
+    const [statusResult, actionsResult] = await Promise.all([
+      api.getLeadOperationalStatus(leadId),
+      api.getLeadActions(leadId, 20, 0),
+    ]);
+
+    if (statusResult.error || actionsResult.error) {
+      setError(statusResult.error ?? actionsResult.error ?? "Erro ao carregar detalhe operacional");
+      setDetailLoading(false);
+      return;
+    }
+
+    setSelectedStatus(statusResult.data ?? null);
+    setSelectedActions(actionsResult.data?.data ?? []);
+    setDetailLoading(false);
+  }, []);
 
   useEffect(() => {
-    void loadQueue();
-  }, [loadQueue]);
+    void loadQueue(filters);
+  }, [filters, loadQueue, requestFingerprint]);
 
-  const handleOpenOpStatus = async (leadId: string) => {
-    setSelectedLeadId(leadId);
-    setOpStatus(null);
-    setLoadingOpStatus(true);
-    try {
-      const response = await api.getOperationalStatus(leadId);
-      if (response.data) {
-        setOpStatus(response.data);
-      }
-    } catch {
-      alert("Erro ao carregar status operacional.");
-    } finally {
-      setLoadingOpStatus(false);
+  useEffect(() => {
+    if (!selectedLeadId) {
+      setSelectedStatus(null);
+      setSelectedActions([]);
+      return;
     }
-  };
 
-  const handleReleaseFollowup = async (leadId: string) => {
-    try {
-      await api.releaseLeadFollowup(leadId);
-      alert("Follow-up liberado com sucesso.");
-      setSelectedLeadId(null);
-      await loadQueue();
-    } catch {
-      alert("Falha ao liberar follow-up.");
-    }
-  };
+    void loadLeadDetails(selectedLeadId);
+  }, [selectedLeadId, loadLeadDetails]);
 
-  if (loading && leads.length === 0) {
+  const totalPages = Math.max(1, Math.ceil(meta.total / meta.limit));
+  const currentPage = Math.floor(meta.offset / meta.limit) + 1;
+  const selectedRow = useMemo(
+    () => queue.find((item) => item.lead_id === selectedLeadId) ?? null,
+    [queue, selectedLeadId]
+  );
+
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="flex flex-col items-center gap-4">
@@ -97,103 +182,276 @@ export default function FollowupQueuePage() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-destructive text-center">
+          <p className="font-semibold">Erro ao carregar</p>
+          <p className="text-sm">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 animate-fade-in">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Fila Operacional / Follow-up</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Fila Operacional</h1>
         <p className="text-muted-foreground">
-          Gestão de leads emperrados no funil que exigem intervenção manual do analista
+          Leads travados, contaminados ou prontos para retomada automatica
         </p>
       </div>
 
-      <div className="flex gap-4 border-b border-border/50 pb-4">
-        <Button 
-          variant={!expiredOnly && !contaminatedOnly ? "default" : "outline"}
-          onClick={() => { setExpiredOnly(false); setContaminatedOnly(false); setPage(1); }}
-        >
-          Todos Operacionais
-        </Button>
-        <Button 
-          variant={expiredOnly ? "default" : "outline"}
-          onClick={() => { setExpiredOnly(true); setContaminatedOnly(false); setPage(1); }}
-          className={expiredOnly ? "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30" : ""}
-        >
-          <Clock className="w-4 h-4 mr-2" />
-          SLA Expirado
-        </Button>
-        <Button 
-          variant={contaminatedOnly ? "default" : "outline"}
-          onClick={() => { setContaminatedOnly(true); setExpiredOnly(false); setPage(1); }}
-          className={contaminatedOnly ? "bg-red-500/20 text-red-400 hover:bg-red-500/30" : ""}
-        >
-          <AlertTriangle className="w-4 h-4 mr-2" />
-          Contaminados
-        </Button>
-        <Button variant="ghost" onClick={loadQueue}>
-          <RefreshCw className="w-4 h-4 mr-2" /> Atualizar
-        </Button>
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <Card className="glass border-border/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Na fila
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{meta.total}</div>
+            <p className="mt-1 text-xs text-muted-foreground">Total paginado da fila operacional</p>
+          </CardContent>
+        </Card>
+        <Card className="glass border-border/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Expirados
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-amber-300">{metrics.expired_followups}</div>
+            <p className="mt-1 text-xs text-muted-foreground">Precisam de retomada imediata</p>
+          </CardContent>
+        </Card>
+        <Card className="glass border-border/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Contaminados
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-orange-300">{metrics.contaminated_leads}</div>
+            <p className="mt-1 text-xs text-muted-foreground">Exigem revisao antes de lote</p>
+          </CardContent>
+        </Card>
+        <Card className="glass border-border/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Respostas Hoje
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-400">{metrics.followup_responses_today}</div>
+            <p className="mt-1 text-xs text-muted-foreground">Retornos capturados pelo follow-up</p>
+          </CardContent>
+        </Card>
       </div>
 
-      {error && (
-        <div className="rounded-xl border border-destructive/30 bg-destructive/10 text-destructive px-4 py-3 text-sm">
-          {error}
-        </div>
-      )}
+      <Card className="glass border-border/50">
+        <CardHeader>
+          <CardTitle>Filtros</CardTitle>
+          <CardDescription>Use apenas os filtros canonicos da fila operacional</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <Input
+            placeholder="Status"
+            value={filters.status ?? ""}
+            onChange={(event) =>
+              setFilters({
+                ...filters,
+                status: event.target.value || undefined,
+                offset: 0,
+              })
+            }
+          />
+          <Input
+            placeholder="Fase"
+            value={filters.fase ?? ""}
+            onChange={(event) =>
+              setFilters({
+                ...filters,
+                fase: event.target.value || undefined,
+                offset: 0,
+              })
+            }
+          />
+          <Input
+            placeholder="Tipo de interesse"
+            value={filters.tipo_interesse ?? ""}
+            onChange={(event) =>
+              setFilters({
+                ...filters,
+                tipo_interesse: event.target.value || undefined,
+                offset: 0,
+              })
+            }
+          />
+          <Input
+            placeholder="Canal de origem"
+            value={filters.canal_origem ?? ""}
+            onChange={(event) =>
+              setFilters({
+                ...filters,
+                canal_origem: event.target.value || undefined,
+                offset: 0,
+              })
+            }
+          />
+          <Input
+            placeholder="Sistema de origem"
+            value={filters.sistema_origem ?? ""}
+            onChange={(event) =>
+              setFilters({
+                ...filters,
+                sistema_origem: event.target.value || undefined,
+                offset: 0,
+              })
+            }
+          />
+          <Input
+            placeholder="Estado de triagem"
+            value={filters.triage_state ?? ""}
+            onChange={(event) =>
+              setFilters({
+                ...filters,
+                triage_state: event.target.value || undefined,
+                offset: 0,
+              })
+            }
+          />
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant={filters.expired_only ? "default" : "outline"}
+              onClick={() =>
+                setFilters({
+                  ...filters,
+                  expired_only: !filters.expired_only,
+                  offset: 0,
+                })
+              }
+            >
+              <Clock className="mr-2 h-4 w-4" />
+              Expirados
+            </Button>
+            <Button
+              type="button"
+              variant={filters.only_contaminated ? "default" : "outline"}
+              onClick={() =>
+                setFilters({
+                  ...filters,
+                  only_contaminated: !filters.only_contaminated,
+                  offset: 0,
+                })
+              }
+            >
+              <AlertTriangle className="mr-2 h-4 w-4" />
+              Contaminados
+            </Button>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setFilters({ limit: PAGE_SIZE, offset: 0 })}
+          >
+            <RotateCcw className="mr-2 h-4 w-4" />
+            Limpar filtros
+          </Button>
+        </CardContent>
+      </Card>
 
-      <Card className="glass border-border/50 animate-slide-up">
+      <Card className="glass border-border/50">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-primary" />
-              Leads Pendentes de Operação
-            </CardTitle>
-            <Badge variant="secondary">
-              {totalLeads} {totalLeads === 1 ? 'pendente' : 'pendentes'}
-            </Badge>
+            <div>
+              <CardTitle>Fila</CardTitle>
+              <CardDescription>
+                Pagina {currentPage} de {totalPages}
+              </CardDescription>
+            </div>
+            <Badge variant="secondary">{meta.total} itens</Badge>
           </div>
         </CardHeader>
         <CardContent>
-          {leads.length === 0 ? (
-            <div className="text-center py-12">
-              <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-              <p className="text-muted-foreground">Nenhum lead pendente de operação nesta fila.</p>
+          {queue.length === 0 ? (
+            <div className="py-16 text-center text-muted-foreground">
+              Nenhum lead encontrado para os filtros atuais.
             </div>
           ) : (
-            <div className="rounded-xl border border-border/50 overflow-hidden">
+            <div className="overflow-hidden rounded-xl border border-border/50">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-secondary/30 border-border/50">
-                    <TableHead className="font-semibold">Nome</TableHead>
-                    <TableHead className="font-semibold">Contato</TableHead>
-                    <TableHead className="font-semibold">Último Contato</TableHead>
-                    <TableHead className="text-right font-semibold">Ação</TableHead>
+                  <TableRow>
+                    <TableHead>Lead</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Origem</TableHead>
+                    <TableHead>Proximo campo</TableHead>
+                    <TableHead>Acao recomendada</TableHead>
+                    <TableHead className="text-right">Selecionar</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {leads.map((lead, index) => (
-                    <TableRow 
-                      key={lead.id}
-                      className="hover:bg-secondary/30 transition-colors border-border/50 animate-slide-up"
-                      style={{ animationDelay: `${index * 20}ms` }}
+                  {queue.map((item) => (
+                    <TableRow
+                      key={item.lead_id}
+                      className={item.lead_id === selectedLeadId ? "bg-secondary/30" : ""}
                     >
-                      <TableCell className="font-medium">
-                        {lead.nome_completo || 'Sem Nome'}
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="font-medium">{item.telefone}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {item.qualification_summary || "Sem resumo de qualificacao"}
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {item.is_contaminated && (
+                              <Badge variant="outline" className="border-orange-500/20 bg-orange-500/10 text-orange-300">
+                                Contaminado
+                              </Badge>
+                            )}
+                            {item.confirmation_pending && (
+                              <Badge variant="outline" className="border-blue-500/20 bg-blue-500/10 text-blue-300">
+                                Confirmacao pendente
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {lead.telefone || '-'}
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div>{item.status || "-"}</div>
+                          <div className="text-xs text-muted-foreground">{item.fase || "-"}</div>
+                        </div>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {lead.updated_at ? new Date(lead.updated_at).toLocaleString("pt-BR") : '-'}
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div>{item.canal_origem || "-"}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {item.sistema_origem || "-"}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {item.next_field || "-"}
+                        {item.missing_fields.length > 0 && (
+                          <div className="text-xs text-muted-foreground">
+                            Faltando: {item.missing_fields.join(", ")}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={actionTone(item.recommended_action)}>
+                          {recommendedActionLabel(item.recommended_action)}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-right">
                         <Button
                           variant="ghost"
-                          size="sm"
-                          className="bg-primary/10 text-primary hover:bg-primary hover:text-white"
-                          onClick={() => handleOpenOpStatus(lead.id)}
+                          onClick={() => setSelectedLeadId(item.lead_id)}
                         >
-                          <Eye className="h-4 w-4 mr-2" />
-                          Detalhes da Operação
+                          Ver detalhe
+                          <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -203,116 +461,220 @@ export default function FollowupQueuePage() {
             </div>
           )}
 
-          {totalLeads > 0 && (
-            <div className="flex items-center justify-between pt-4 border-t border-border/50">
-              <div className="text-sm text-muted-foreground">
-                Página {page}
+          <Pagination className="mt-6 justify-end">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  text="Anterior"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    if (currentPage === 1) return;
+                    setFilters({
+                      ...filters,
+                      offset: getOffsetForPage(currentPage - 1, meta.limit),
+                    });
+                  }}
+                />
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationLink href="#" isActive>
+                  {currentPage}
+                </PaginationLink>
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  text="Proxima"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    if (currentPage >= totalPages) return;
+                    setFilters({
+                      ...filters,
+                      offset: getOffsetForPage(currentPage + 1, meta.limit),
+                    });
+                  }}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </CardContent>
+      </Card>
+
+      <Card className="glass border-border/50">
+        <CardHeader>
+          <CardTitle>Detalhe Operacional</CardTitle>
+          <CardDescription>
+            {selectedRow
+              ? `Lead ${selectedRow.telefone}`
+              : "Selecione um lead da fila para ver o detalhe operacional"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {!selectedLeadId ? (
+            <div className="py-12 text-muted-foreground">
+              Nenhum lead selecionado.
+            </div>
+          ) : detailLoading ? (
+            <div className="py-12 text-muted-foreground">Carregando detalhe operacional...</div>
+          ) : !selectedStatus ? (
+            <div className="py-12 text-muted-foreground">Sem detalhe operacional disponível.</div>
+          ) : (
+            <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+              <div className="space-y-4">
+                <div className="rounded-xl border border-border/50 p-4">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Recomendacao atual
+                  </div>
+                  <div className="mt-2">
+                    <Badge variant="outline" className={actionTone(selectedStatus.recommended_action)}>
+                      {recommendedActionLabel(selectedStatus.recommended_action)}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="rounded-xl border border-border/50 p-4">
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Proximo campo
+                    </div>
+                    <div className="mt-2 font-medium">{selectedStatus.next_field || "-"}</div>
+                  </div>
+                  <div className="rounded-xl border border-border/50 p-4">
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Tracking
+                    </div>
+                    <div className="mt-2 font-medium">
+                      {selectedStatus.tracked_codigo_ref || selectedStatus.campanha_origem || "-"}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-border/50 p-4">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Campos faltantes
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {selectedStatus.missing_fields.length > 0 ? (
+                      selectedStatus.missing_fields.map((field) => (
+                        <Badge key={field} variant="secondary">
+                          {field}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-sm text-muted-foreground">Nenhum campo faltante.</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-border/50 p-4">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Ultima interacao
+                  </div>
+                  <div className="mt-3 space-y-3 text-sm">
+                    <div className="flex items-start gap-2">
+                      <Bot className="mt-0.5 h-4 w-4 text-primary" />
+                      <div>
+                        <div className="text-xs text-muted-foreground">Ultima mensagem do bot</div>
+                        <div>{selectedStatus.last_bot_message || "-"}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-400" />
+                      <div>
+                        <div className="text-xs text-muted-foreground">Ultima mensagem do lead</div>
+                        <div>{selectedStatus.last_lead_message || "-"}</div>
+                      </div>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Direcao: {selectedStatus.last_message_direction || "-"}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-border/50 p-4">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Resumo de qualificacao
+                  </div>
+                  <div className="mt-2 text-sm">
+                    {selectedStatus.qualification_summary || "-"}
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page <= 1 || loading}
-                >
-                  Anterior
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(p => p + 1)}
-                  disabled={leads.length < limit || loading}
-                >
-                  Próxima
-                </Button>
+
+              <div className="space-y-4">
+                <div className="rounded-xl border border-border/50 p-4">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Sinais operacionais
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Badge variant="outline">
+                      {selectedStatus.status || "-"}
+                    </Badge>
+                    <Badge variant="outline">
+                      {selectedStatus.fase || "-"}
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className={
+                        selectedStatus.is_contaminated
+                          ? "border-orange-500/20 bg-orange-500/10 text-orange-300"
+                          : "border-green-500/20 bg-green-500/10 text-green-400"
+                      }
+                    >
+                      {selectedStatus.is_contaminated ? "Contaminado" : "Nao contaminado"}
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className={
+                        selectedStatus.confirmation_pending
+                          ? "border-blue-500/20 bg-blue-500/10 text-blue-300"
+                          : "border-border/50"
+                      }
+                    >
+                      {selectedStatus.confirmation_pending ? "Confirmacao pendente" : "Sem confirmacao pendente"}
+                    </Badge>
+                    {selectedStatus.intervention_type && (
+                      <Badge variant="outline" className="border-blue-500/20 bg-blue-500/10 text-blue-300">
+                        <ShieldAlert className="mr-1 h-3 w-3" />
+                        {selectedStatus.intervention_type}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-border/50 p-4">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Timeline de acoes
+                  </div>
+                  <div className="mt-3 space-y-3">
+                    {selectedActions.length > 0 ? (
+                      selectedActions.map((item) => (
+                        <div key={item.id} className="rounded-lg border border-border/50 p-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="font-medium">{actionLabel(item.action)}</div>
+                            <Badge variant="outline">{item.status}</Badge>
+                          </div>
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            Ator: {item.actor} · {new Date(item.created_at).toLocaleString("pt-BR")}
+                          </div>
+                          {item.details && (
+                            <div className="mt-2 text-xs text-muted-foreground break-all">
+                              {item.details}
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-sm text-muted-foreground">Nenhuma acao recente.</div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           )}
         </CardContent>
       </Card>
-
-      <Dialog open={!!selectedLeadId && !isCommunicating} onOpenChange={(open) => !open && setSelectedLeadId(null)}>
-        <DialogContent className="sm:max-w-[600px] border-border/50 glass">
-          <DialogHeader>
-            <DialogTitle>Status Operacional do Lead</DialogTitle>
-            <DialogDescription>Dados processados pelo backend na fila de follow-up</DialogDescription>
-          </DialogHeader>
-
-          {loadingOpStatus ? (
-            <div className="py-8 text-center text-muted-foreground">Carregando métricas operacionais...</div>
-          ) : opStatus ? (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <span className="text-xs text-muted-foreground">Fase</span>
-                  <div className="font-medium">{opStatus.fase}</div>
-                </div>
-                <div className="space-y-1">
-                  <span className="text-xs text-muted-foreground">Status / Intervenção</span>
-                  <div className="font-medium gap-2 flex items-center">
-                    <Badge variant="outline">{opStatus.status}</Badge>
-                    {opStatus.intervention_type !== "NONE" && <Badge variant="destructive">{opStatus.intervention_type}</Badge>}
-                  </div>
-                </div>
-              </div>
-
-              {opStatus.is_contaminated && (
-                <div className="bg-red-500/10 border border-red-500/30 text-red-500 rounded-xl p-3 text-sm flex gap-2">
-                  <AlertTriangle className="h-5 w-5 flex-shrink-0" />
-                  <div>
-                    <strong className="block">Este lead está contaminado.</strong>
-                    Ele requer intervenção humana antes que o bot possa continuar ou o negócio deve ser marcado como perdido/desqualificado.
-                  </div>
-                </div>
-              )}
-
-              <div className="bg-secondary/30 rounded-xl p-3 border border-border/50">
-                <div className="text-xs font-semibold uppercase tracking-wider mb-2 text-muted-foreground">Resumo de Qualificação</div>
-                <div className="text-sm">{opStatus.qualification_summary || 'Nenhum resumo disponível.'}</div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-secondary/30 rounded-xl p-3 border border-border/50">
-                  <div className="text-xs font-semibold uppercase tracking-wider mb-2 text-muted-foreground">Campos Pendentes</div>
-                  {opStatus.missing_fields && opStatus.missing_fields.length > 0 ? (
-                    <ul className="text-sm list-disc pl-4 space-y-1">
-                      {opStatus.missing_fields.map((field: string) => <li key={field}>{field}</li>)}
-                    </ul>
-                  ) : (
-                    <div className="text-sm text-green-400">Todos os campos coletados.</div>
-                  )}
-                </div>
-                
-                <div className="bg-secondary/30 rounded-xl p-3 border border-border/50">
-                  <div className="text-xs font-semibold uppercase tracking-wider mb-2 text-muted-foreground">Ação Recomendada</div>
-                  <div className="text-sm font-medium text-blue-400">{opStatus.recommended_action || '-'}</div>
-                </div>
-              </div>
-
-              <div className="flex gap-2 justify-end pt-4 mt-4 border-t border-border/50">
-                <Button variant="outline" onClick={() => handleReleaseFollowup(opStatus.lead_id)}>
-                  Liberar do Follow-up
-                </Button>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setIsCommunicating(true)}>
-                  <MessageSquare className="h-4 w-4 mr-2" /> Falar com Lead
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="py-8 text-center text-muted-foreground">Não foi possível carregar os detalhes.</div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {selectedLeadId && (
-        <LeadCommunicationPanel
-          leadId={selectedLeadId}
-          open={isCommunicating}
-          onClose={() => {
-            setIsCommunicating(false);
-          }}
-        />
-      )}
     </div>
   );
 }

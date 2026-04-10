@@ -1,18 +1,69 @@
 import {
-  ApiResponse,
+  AnalyticsFilters,
+  AnalyticsGroupedRow,
+  AnalyticsLeadRow,
+  AnalyticsOverview,
+  AnalyticsTimeseriesPoint,
+  CreateTrackedLinkValues,
+  FlowMetrics,
+  FollowupMetrics,
+  FollowupQueueFilters,
+  InboxConversationDetail,
+  InboxConversationFilters,
+  InboxConversationSummary,
+  LeadHumanIntervention,
+  LeadAction,
+  LeadStats,
+  OperationalQueueItem,
+  OperationalStatus,
+  SlaMetrics,
+  TrackedLink,
+  TrackedLinksFilters,
+} from "@/types/dashboard";
+import { ApiResult, PaginatedResponse } from "@/types/api";
+import {
   Conversa,
   Corretor,
   Lead,
-  LeadFormValues,
-  StatsData,
   LeadFilterOptions,
+  LeadFormValues,
+  LeadListFilters,
+  Mensagem,
   Note,
-  ApiResponseMeta,
-  InboxConversationSummary,
-  LeadOperationalStatus,
-  AnalyticsGroupedRow,
-  AnalyticsLeadRow,
+  StatsData,
 } from "@/types/leads";
+import {
+  buildInboundLeadPayload,
+  buildLeadFiltersQuery,
+  buildLeadUpdatePayload,
+  normalizeLead,
+} from "@/lib/api/leads";
+import {
+  normalizeLeadConversation,
+  normalizeLeadConversationMessage,
+  normalizeLeadHumanIntervention,
+} from "@/lib/leads/detail";
+import {
+  buildFollowupQueueQuery,
+  normalizeOperationalQueueItem,
+  normalizeOperationalStatus,
+} from "@/lib/pipeline/queue";
+import {
+  buildAnalyticsQuery,
+  normalizeAnalyticsGroupedRow,
+  normalizeAnalyticsLeadRow,
+  normalizeAnalyticsTimeseriesPoint,
+} from "@/lib/analytics/reports";
+import {
+  buildInboxConversationsQuery,
+  normalizeInboxConversationDetail,
+  normalizeInboxConversationSummary,
+} from "@/lib/inbox/conversations";
+import {
+  buildTrackedLinkPayload,
+  buildTrackedLinksQuery,
+  normalizeTrackedLink,
+} from "@/lib/tracking/tracked-links";
 
 const API_BASE_URL = "";
 
@@ -23,18 +74,10 @@ class AtusAPI {
     };
   }
 
-  private extractData<T>(payload: unknown): T {
-    if (payload && typeof payload === "object" && "data" in payload) {
-      return (payload as { data: T }).data;
-    }
-
-    return payload as T;
-  }
-
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
-  ): Promise<ApiResponse<T>> {
+  ): Promise<ApiResult<T>> {
     try {
       const url = `${API_BASE_URL}${endpoint}`;
       const headers = {
@@ -61,10 +104,7 @@ class AtusAPI {
       }
 
       return {
-        data: payload === null ? undefined : this.extractData<T>(payload),
-        meta: payload && typeof payload === "object" && "meta" in payload
-          ? (payload as { meta?: ApiResponseMeta }).meta
-          : undefined,
+        data: payload === null ? undefined : (payload as T),
         message:
           payload && typeof payload === "object" && "message" in payload
             ? (payload as { message?: string }).message
@@ -77,60 +117,210 @@ class AtusAPI {
     }
   }
 
-  async getLeads(filter?: LeadFilterOptions): Promise<ApiResponse<Lead[]>> {
-    const params = new URLSearchParams();
-    if (filter?.status) params.append("status", filter.status);
-    if (filter?.origem) params.append("origem", filter.origem);
-    if (filter?.corretor_id) params.append("corretor_id", filter.corretor_id);
-    if (filter?.dateFrom) params.append("dateFrom", filter.dateFrom);
-    if (filter?.dateTo) params.append("dateTo", filter.dateTo);
-    if (filter?.minRenda) params.append("minRenda", String(filter.minRenda));
-    if (filter?.maxRenda) params.append("maxRenda", String(filter.maxRenda));
-    if (filter?.temEntrada) params.append("temEntrada", String(filter.temEntrada));
-    if (filter?.temCarteira) params.append("temCarteira", String(filter.temCarteira));
-    if (filter?.search) params.append("search", filter.search);
-    if (filter?.sortBy) params.append("sortBy", filter.sortBy);
-    if (filter?.sortOrder) params.append("sortOrder", filter.sortOrder);
-    if (filter?.page) params.append("page", String(filter.page));
-    if (filter?.limit) params.append("limit", String(filter.limit));
+  async getPaginatedLeads(
+    filters: LeadListFilters = {}
+  ): Promise<ApiResult<PaginatedResponse<Lead>>> {
+    const query = buildLeadFiltersQuery(filters);
+    const response = await this.request<PaginatedResponse<Record<string, unknown>>>(
+      `/api/internal/leads${query.size ? `?${query.toString()}` : ""}`
+    );
 
-    return this.request<Lead[]>(`/api/v1/leads${params.size ? `?${params}` : ""}`);
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: {
+        data: response.data.data.map(normalizeLead),
+        meta: response.data.meta,
+      },
+      message: response.message,
+    };
   }
 
-  async getLeadById(id: string): Promise<ApiResponse<Lead>> {
-    return this.request<Lead>(`/api/v1/leads/${id}`);
+  async getLeads(filters: LeadFilterOptions = {}): Promise<ApiResult<Lead[]>> {
+    const response = await this.getPaginatedLeads(filters);
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data,
+      message: response.message,
+    };
   }
 
-  async updateLead(id: string, data: Partial<Lead>): Promise<ApiResponse<Lead>> {
-    return this.request<Lead>(`/api/v1/leads/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    });
+  async getLeadById(id: string): Promise<ApiResult<Lead>> {
+    const response = await this.request<{ data: Record<string, unknown> }>(
+      `/api/internal/leads/${id}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: normalizeLead(response.data.data),
+      message: response.message,
+    };
   }
 
-  async deleteLead(id: string): Promise<ApiResponse<void>> {
-    return this.request<void>(`/api/v1/leads/${id}`, {
+  async updateLead(id: string, values: LeadFormValues): Promise<ApiResult<Lead>> {
+    const response = await this.request<{ data: Record<string, unknown> }>(
+      `/api/internal/leads/${id}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(buildLeadUpdatePayload(values)),
+      }
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: normalizeLead(response.data.data),
+      message: response.message,
+    };
+  }
+
+  async deleteLead(id: string): Promise<ApiResult<void>> {
+    return this.request<void>(`/api/internal/leads/${id}`, {
       method: "DELETE",
     });
   }
 
-  // Conversations & Messages
-  async getLeadConversations(id: string): Promise<ApiResponse<Conversa[]>> {
-    return this.request<Conversa[]>(`/api/v1/leads/${id}/conversas`);
+  async createLead(values: LeadFormValues): Promise<ApiResult<Lead>> {
+    const response = await this.request<{ data: Record<string, unknown> }>(
+      "/api/internal/inbound/leads",
+      {
+        method: "POST",
+        body: JSON.stringify(buildInboundLeadPayload(values)),
+      }
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: normalizeLead(response.data.data),
+      message: response.message,
+    };
   }
 
-  async getConversationMessages(conversaId: string, limit = 50, before?: string): Promise<ApiResponse<{
-    data: Record<string, unknown>[];
+  async updateLeadPartial(
+    id: string,
+    data: Partial<Lead>
+  ): Promise<ApiResult<Lead>> {
+    const response = await this.request<{ data: Record<string, unknown> }>(
+      `/api/internal/leads/${id}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: normalizeLead(response.data.data),
+      message: response.message,
+    };
+  }
+
+  // Conversations & Messages
+  async getLeadConversations(id: string): Promise<ApiResult<Conversa[]>> {
+    const response = await this.request<{ data: Record<string, unknown>[] }>(
+      `/api/internal/leads/${id}/conversas`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data.map(normalizeLeadConversation),
+      message: response.message,
+    };
+  }
+
+  async getConversationMessages(conversaId: string, limit = 50, before?: string): Promise<ApiResult<{
+    data: Mensagem[];
     total: number;
     has_more: boolean;
   }>> {
     const params = new URLSearchParams();
     params.append("limit", String(limit));
     if (before) params.append("before", before);
-    return this.request(`/api/v1/conversas/${conversaId}/mensagens?${params.toString()}`);
+    const response = await this.request<{
+      data: Record<string, unknown>[];
+      total?: number;
+      has_more?: boolean;
+    }>(`/api/internal/conversas/${conversaId}/mensagens?${params.toString()}`);
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: {
+        data: response.data.data.map(normalizeLeadConversationMessage),
+        total: response.data.total ?? response.data.data.length,
+        has_more: response.data.has_more ?? false,
+      },
+      message: response.message,
+    };
   }
 
-  async sendWhatsAppMessage(id: string, mensagem: string, followUp = false): Promise<ApiResponse<{ success: boolean; message_id: string; status: string }>> {
+  async getLeadHumanIntervention(
+    id: string
+  ): Promise<ApiResult<LeadHumanIntervention>> {
+    const response = await this.request<{ data: Record<string, unknown> }>(
+      `/api/internal/leads/${id}/human-intervention`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: normalizeLeadHumanIntervention(response.data.data),
+      message: response.message,
+    };
+  }
+
+  async sendWhatsAppMessage(id: string, mensagem: string, followUp = false): Promise<ApiResult<{ success: boolean; message_id: string; status: string }>> {
     return this.request(`/api/v1/leads/${id}/send-message`, {
       method: "POST",
       body: JSON.stringify({ mensagem, follow_up: followUp }),
@@ -138,209 +328,672 @@ class AtusAPI {
   }
 
   // Follow-up Intervention
-  async interveneLead(id: string, type: "HUMAN_TAKEOVER" | "PAUSED" | "URGENT", reason?: string): Promise<ApiResponse<{ success: boolean; lead_id: string; status: string }>> {
+  async interveneLead(id: string, type: "HUMAN_TAKEOVER" | "PAUSED" | "URGENT", reason?: string): Promise<ApiResult<{ success: boolean; lead_id: string; status: string }>> {
     return this.request(`/api/v1/leads/${id}/intervene`, {
       method: "POST",
       body: JSON.stringify({ type, reason }),
     });
   }
 
-  async releaseLeadFollowup(id: string): Promise<ApiResponse<{ success: boolean; lead_id: string; status: string }>> {
+  async releaseLeadFollowup(id: string): Promise<ApiResult<{ success: boolean; lead_id: string; status: string }>> {
     return this.request(`/api/v1/leads/${id}/release-followup`, {
       method: "POST",
     });
   }
 
-  async getLeadFollowupStatus(id: string): Promise<ApiResponse<Record<string, unknown>>> {
+  async getLeadFollowupStatus(id: string): Promise<ApiResult<{
+    em_follow_up?: boolean;
+    followup_rodadas?: number;
+    followup_expira_em?: string | null;
+    intervention_type?: string;
+    active?: boolean;
+    is_paused?: boolean;
+  }>> {
     return this.request(`/api/v1/leads/${id}/follow-up-status`);
   }
 
   // Notes
-  async getLeadNotes(id: string): Promise<ApiResponse<Note[]>> {
+  async getLeadNotes(id: string): Promise<ApiResult<Note[]>> {
     return this.request<Note[]>(`/api/v1/leads/${id}/notes`);
   }
 
-  async createLeadNote(id: string, content: string, type: "observation" | "visit" | "follow_up" | "urgent"): Promise<ApiResponse<Record<string, unknown>>> {
-    return this.request<Record<string, unknown>>(`/api/v1/leads/${id}/notes`, {
+  async createLeadNote(id: string, content: string, type: "observation" | "visit" | "follow_up" | "urgent"): Promise<ApiResult<Note>> {
+    return this.request<Note>(`/api/v1/leads/${id}/notes`, {
       method: "POST",
       body: JSON.stringify({ content, type }),
     });
   }
 
-  async updateLeadNote(noteId: string, content: string): Promise<ApiResponse<Record<string, unknown>>> {
-    return this.request<Record<string, unknown>>(`/api/v1/notes/${noteId}`, {
+  async updateLeadNote(noteId: string, content: string): Promise<ApiResult<Note>> {
+    return this.request<Note>(`/api/v1/notes/${noteId}`, {
       method: "PUT",
       body: JSON.stringify({ content }),
     });
   }
 
-  async deleteLeadNote(noteId: string): Promise<ApiResponse<void>> {
+  async deleteLeadNote(noteId: string): Promise<ApiResult<void>> {
     return this.request<void>(`/api/v1/notes/${noteId}`, {
       method: "DELETE",
     });
   }
 
   // Assignment
-  async assignLead(id: string, corretorId: string | null, notes?: string): Promise<ApiResponse<Lead>> {
-    // Falls back to direct lead update since specific route was dropped in favor of single PUT update
-    return this.request<Lead>(`/api/v1/leads/${id}`, {
-      method: "PUT",
-      body: JSON.stringify({ corretor_id: corretorId, observacoes: notes }),
+  async assignLead(id: string, corretorId: string | null, notes?: string): Promise<ApiResult<Lead>> {
+    return this.updateLeadPartial(id, {
+      corretor_id: corretorId,
+      observacoes: notes,
     });
   }
 
-  async updateLeadStatus(id: string, status: string, notes?: string): Promise<ApiResponse<Lead>> {
-    return this.request<Lead>(`/api/v1/leads/${id}/status`, {
-      method: "PUT",
-      body: JSON.stringify({ status, notes }),
+  async updateLeadStatus(id: string, status: string, notes?: string): Promise<ApiResult<Lead>> {
+    return this.updateLeadPartial(id, {
+      status,
+      observacoes: notes,
     });
   }
 
-  async getLeadsStats(): Promise<ApiResponse<StatsData>> {
-    return this.request<StatsData>("/api/v1/stats/leads");
+  async getLeadsStats(): Promise<ApiResult<StatsData>> {
+    const response = await this.request<{ data: LeadStats }>("/api/internal/stats/leads");
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data,
+      message: response.message,
+    };
   }
 
-  async getCorretores(): Promise<ApiResponse<Corretor[]>> {
-    return this.request<Corretor[]>("/api/v1/corretores");
+  async getCorretores(): Promise<ApiResult<Corretor[]>> {
+    const response = await this.request<{ data: Corretor[] }>("/api/v1/corretores");
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data,
+      message: response.message,
+    };
   }
 
-  async createCorretor(data: Omit<Corretor, "id">): Promise<ApiResponse<Corretor>> {
-    return this.request<Corretor>("/api/v1/corretores", {
+  async createCorretor(data: Omit<Corretor, "id">): Promise<ApiResult<Corretor>> {
+    const response = await this.request<{ data: Corretor }>("/api/v1/corretores", {
       method: "POST",
       body: JSON.stringify(data),
     });
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data,
+      message: response.message,
+    };
   }
 
-  async updateCorretor(id: string, data: Partial<Corretor>): Promise<ApiResponse<Corretor>> {
-    return this.request<Corretor>(`/api/v1/corretores/${id}`, {
+  async updateCorretor(id: string, data: Partial<Corretor>): Promise<ApiResult<Corretor>> {
+    const response = await this.request<{ data: Corretor }>(`/api/v1/corretores/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     });
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data,
+      message: response.message,
+    };
   }
 
-  async getLeadByPhone(telefone: string): Promise<ApiResponse<Lead>> {
+  async getLeadByPhone(telefone: string): Promise<ApiResult<Lead>> {
     return this.request<Lead>(`/api/mcp/lead/${telefone}`);
   }
 
-  async createLead(data: LeadFormValues): Promise<ApiResponse<Lead>> {
-    return this.request<Lead>("/api/mcp/lead", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-  }
-
-  async getStats(): Promise<ApiResponse<StatsData>> {
+  async getStats(): Promise<ApiResult<StatsData>> {
     return this.request<StatsData>("/api/mcp/stats");
   }
 
-  async getLeadFlowMetrics(): Promise<ApiResponse<{
-    por_status: Record<string, number>;
-    conversoes_semana: Array<{ dia: string; total: number }>;
-    por_origem: Record<string, number>;
-  }>> {
-    return this.request("/api/v1/metrics/flow");
+  async getLeadFlowMetrics(): Promise<ApiResult<FlowMetrics>> {
+    const response = await this.request<{ data: FlowMetrics }>("/api/internal/metrics/flow");
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data,
+      message: response.message,
+    };
   }
 
-  async getSLAMetrics(): Promise<ApiResponse<{
-    dentro_do_sla: number;
-    fora_do_sla: number;
-    tempo_medio_resposta_min: number;
-    por_origem: Record<string, { dentro: number; fora: number }>;
-  }>> {
-    return this.request("/api/v1/metrics/sla");
+  async getFollowupMetrics(): Promise<ApiResult<FollowupMetrics>> {
+    const response = await this.request<{ data: FollowupMetrics }>(
+      "/api/internal/metrics/followup"
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data,
+      message: response.message,
+    };
   }
 
-  // Follow-up Queue Operational
   async getFollowupQueue(
-    filter?: { limit?: number; offset?: number; expired_only?: boolean; only_contaminated?: boolean; triage_state?: string }
-  ): Promise<ApiResponse<Lead[]>> {
-    const params = new URLSearchParams();
-    if (filter?.limit) params.append("limit", String(filter.limit));
-    if (filter?.offset) params.append("offset", String(filter.offset));
-    if (filter?.expired_only) params.append("expired_only", "true");
-    if (filter?.only_contaminated) params.append("only_contaminated", "true");
-    if (filter?.triage_state) params.append("triage_state", filter.triage_state);
+    filters: FollowupQueueFilters = {}
+  ): Promise<ApiResult<PaginatedResponse<OperationalQueueItem>>> {
+    const query = buildFollowupQueueQuery(filters);
+    const response = await this.request<
+      PaginatedResponse<Record<string, unknown>>
+    >(`/api/internal/leads/followup-queue${query.size ? `?${query.toString()}` : ""}`);
 
-    return this.request<Lead[]>(`/api/v1/leads/followup-queue${params.size ? `?${params}` : ""}`);
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: {
+        data: response.data.data.map(normalizeOperationalQueueItem),
+        meta: response.data.meta,
+      },
+      message: response.message,
+    };
   }
 
-  async getOperationalStatus(id: string): Promise<ApiResponse<LeadOperationalStatus>> {
-    return this.request<LeadOperationalStatus>(`/api/v1/leads/${id}/operational-status`);
+  async getLeadOperationalStatus(id: string): Promise<ApiResult<OperationalStatus>> {
+    const response = await this.request<{ data: Record<string, unknown> }>(
+      `/api/internal/leads/${id}/operational-status`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: normalizeOperationalStatus(response.data.data),
+      message: response.message,
+    };
   }
 
-  // Inbox Humana
-  async getInboxConversations(limit = 100, offset = 0, state?: string): Promise<ApiResponse<InboxConversationSummary[]>> {
-    const params = new URLSearchParams();
-    params.append("limit", String(limit));
-    params.append("offset", String(offset));
-    if (state) params.append("state", state);
-    return this.request<InboxConversationSummary[]>(`/api/v1/inbox/conversations?${params.toString()}`);
-  }
-
-  async getInboxConversationDetails(leadId: string): Promise<ApiResponse<InboxConversationSummary>> {
-    return this.request<InboxConversationSummary>(`/api/v1/inbox/conversations/${leadId}`);
-  }
-
-  async assignInboxConversation(leadId: string, corretorId: string | null): Promise<ApiResponse<void>> {
-    return this.request<void>(`/api/v1/inbox/conversations/${leadId}/assign`, {
-      method: "POST",
-      body: JSON.stringify({ corretor_id: corretorId }),
-    });
-  }
-
-  async setInboxConversationState(leadId: string, state: string): Promise<ApiResponse<void>> {
-    return this.request<void>(`/api/v1/inbox/conversations/${leadId}/state`, {
-      method: "POST",
-      body: JSON.stringify({ state }),
-    });
-  }
-
-  async returnInboxConversationToBot(leadId: string): Promise<ApiResponse<void>> {
-    return this.request<void>(`/api/v1/inbox/conversations/${leadId}/return-to-bot`, {
-      method: "POST",
-    });
-  }
-
-  // Analytics
-  async getAnalyticsOverview(dateFrom?: string, dateTo?: string): Promise<ApiResponse<Record<string, unknown>>> {
-    const params = new URLSearchParams();
-    if (dateFrom) params.append("date_from", dateFrom);
-    if (dateTo) params.append("date_to", dateTo);
-    return this.request<Record<string, unknown>>(`/api/v1/analytics/overview${params.size ? `?${params}` : ""}`);
-  }
-
-  async getAnalyticsGrouped(
-    dimension: "sources" | "campaigns" | "corretors",
-    dateFrom?: string, 
-    dateTo?: string
-  ): Promise<ApiResponse<AnalyticsGroupedRow[]>> {
-    const params = new URLSearchParams();
-    if (dateFrom) params.append("date_from", dateFrom);
-    if (dateTo) params.append("date_to", dateTo);
-    return this.request<AnalyticsGroupedRow[]>(`/api/v1/analytics/${dimension}${params.size ? `?${params}` : ""}`);
-  }
-
-  async getAnalyticsRankings(
-    type: "origins" | "campaigns" | "corretors" | "triage-ready" | "lead-scores",
+  async getLeadActions(
+    id: string,
     limit = 20,
     offset = 0
-  ): Promise<ApiResponse<unknown[]>> {
-    const params = new URLSearchParams();
-    params.append("limit", String(limit));
-    params.append("offset", String(offset));
-    return this.request<unknown[]>(`/api/v1/analytics/rankings/${type}?${params.toString()}`);
+  ): Promise<ApiResult<PaginatedResponse<LeadAction>>> {
+    const params = new URLSearchParams({
+      limit: String(limit),
+      offset: String(offset),
+    });
+    const response = await this.request<PaginatedResponse<LeadAction>>(
+      `/api/internal/leads/${id}/actions?${params.toString()}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data,
+      message: response.message,
+    };
   }
 
-  async getAnalyticsLeads(limit = 20, offset = 0, filters?: Record<string, string>): Promise<ApiResponse<AnalyticsLeadRow[]>> {
-    const params = new URLSearchParams();
-    params.append("limit", String(limit));
-    params.append("offset", String(offset));
-    if (filters) {
-      Object.entries(filters).forEach(([k, v]) => params.append(k, v));
+  async getInboxConversations(
+    filters: InboxConversationFilters = {}
+  ): Promise<ApiResult<PaginatedResponse<InboxConversationSummary>>> {
+    const query = buildInboxConversationsQuery(filters);
+    const response = await this.request<
+      PaginatedResponse<Record<string, unknown>>
+    >(`/api/internal/inbox/conversations${query.size ? `?${query.toString()}` : ""}`);
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
     }
-    return this.request<AnalyticsLeadRow[]>(`/api/v1/analytics/leads?${params.toString()}`);
+
+    return {
+      data: {
+        data: response.data.data.map(normalizeInboxConversationSummary),
+        meta: response.data.meta,
+      },
+      message: response.message,
+    };
+  }
+
+  async getInboxConversationDetail(
+    leadId: string
+  ): Promise<ApiResult<InboxConversationDetail>> {
+    const response = await this.request<{ data: Record<string, unknown> }>(
+      `/api/internal/inbox/conversations/${leadId}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: normalizeInboxConversationDetail(response.data.data),
+      message: response.message,
+    };
+  }
+
+  async sendInboxMessage(
+    leadId: string,
+    body: {
+      message: string;
+      actor_name: string;
+      actor_type: string;
+      introduce_actor?: boolean;
+    }
+  ): Promise<ApiResult<{ success: boolean }>> {
+    return this.request(`/api/internal/inbox/conversations/${leadId}/messages`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async assignInboxConversation(
+    leadId: string,
+    body: {
+      assigned_corretor_id: string;
+      assigned_by: string;
+      note?: string;
+    }
+  ): Promise<ApiResult<{ success: boolean }>> {
+    return this.request(`/api/internal/inbox/conversations/${leadId}/assign`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async updateInboxConversationState(
+    leadId: string,
+    body: {
+      state: string;
+      actor_name: string;
+      reason?: string;
+    }
+  ): Promise<ApiResult<{ success: boolean }>> {
+    return this.request(`/api/internal/inbox/conversations/${leadId}/state`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async returnInboxConversationToBot(
+    leadId: string,
+    body: {
+      actor_name: string;
+      reason?: string;
+    }
+  ): Promise<ApiResult<{ success: boolean }>> {
+    return this.request(
+      `/api/internal/inbox/conversations/${leadId}/return-to-bot`,
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+      }
+    );
+  }
+
+  async getSLAMetrics(): Promise<ApiResult<SlaMetrics>> {
+    const response = await this.request<{ data: SlaMetrics }>("/api/internal/metrics/sla");
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data,
+      message: response.message,
+    };
+  }
+
+  async getAnalyticsOverview(
+    filters: AnalyticsFilters = {}
+  ): Promise<ApiResult<AnalyticsOverview>> {
+    const query = buildAnalyticsQuery(filters);
+    const response = await this.request<{ data: AnalyticsOverview }>(
+      `/api/internal/analytics/overview${query.size ? `?${query.toString()}` : ""}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data,
+      message: response.message,
+    };
+  }
+
+  async getAnalyticsTimeseries(
+    filters: AnalyticsFilters = {}
+  ): Promise<ApiResult<AnalyticsTimeseriesPoint[]>> {
+    const query = buildAnalyticsQuery(filters);
+    const response = await this.request<{ data: Record<string, unknown>[] }>(
+      `/api/internal/analytics/timeseries${query.size ? `?${query.toString()}` : ""}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data.map(normalizeAnalyticsTimeseriesPoint),
+      message: response.message,
+    };
+  }
+
+  async getAnalyticsSources(
+    filters: AnalyticsFilters = {}
+  ): Promise<ApiResult<AnalyticsGroupedRow[]>> {
+    const query = buildAnalyticsQuery(filters);
+    const response = await this.request<{ data: Record<string, unknown>[] }>(
+      `/api/internal/analytics/sources${query.size ? `?${query.toString()}` : ""}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data.map(normalizeAnalyticsGroupedRow),
+      message: response.message,
+    };
+  }
+
+  async getAnalyticsCampaigns(
+    filters: AnalyticsFilters = {}
+  ): Promise<ApiResult<AnalyticsGroupedRow[]>> {
+    const query = buildAnalyticsQuery(filters);
+    const response = await this.request<{ data: Record<string, unknown>[] }>(
+      `/api/internal/analytics/campaigns${query.size ? `?${query.toString()}` : ""}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data.map(normalizeAnalyticsGroupedRow),
+      message: response.message,
+    };
+  }
+
+  async getAnalyticsCorretors(
+    filters: AnalyticsFilters = {}
+  ): Promise<ApiResult<AnalyticsGroupedRow[]>> {
+    const query = buildAnalyticsQuery(filters);
+    const response = await this.request<{ data: Record<string, unknown>[] }>(
+      `/api/internal/analytics/corretors${query.size ? `?${query.toString()}` : ""}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data.map(normalizeAnalyticsGroupedRow),
+      message: response.message,
+    };
+  }
+
+  async getAnalyticsLeads(
+    filters: AnalyticsFilters = {}
+  ): Promise<ApiResult<PaginatedResponse<AnalyticsLeadRow>>> {
+    const query = buildAnalyticsQuery(filters);
+    const response = await this.request<PaginatedResponse<Record<string, unknown>>>(
+      `/api/internal/analytics/leads${query.size ? `?${query.toString()}` : ""}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: {
+        data: response.data.data.map(normalizeAnalyticsLeadRow),
+        meta: response.data.meta,
+      },
+      message: response.message,
+    };
+  }
+
+  async getAnalyticsRankingOrigins(
+    filters: AnalyticsFilters = {}
+  ): Promise<ApiResult<AnalyticsGroupedRow[]>> {
+    const query = buildAnalyticsQuery(filters);
+    const response = await this.request<{ data: Record<string, unknown>[] }>(
+      `/api/internal/analytics/rankings/origins${query.size ? `?${query.toString()}` : ""}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data.map(normalizeAnalyticsGroupedRow),
+      message: response.message,
+    };
+  }
+
+  async getAnalyticsRankingCampaigns(
+    filters: AnalyticsFilters = {}
+  ): Promise<ApiResult<AnalyticsGroupedRow[]>> {
+    const query = buildAnalyticsQuery(filters);
+    const response = await this.request<{ data: Record<string, unknown>[] }>(
+      `/api/internal/analytics/rankings/campaigns${query.size ? `?${query.toString()}` : ""}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data.map(normalizeAnalyticsGroupedRow),
+      message: response.message,
+    };
+  }
+
+  async getAnalyticsRankingCorretors(
+    filters: AnalyticsFilters = {}
+  ): Promise<ApiResult<AnalyticsGroupedRow[]>> {
+    const query = buildAnalyticsQuery(filters);
+    const response = await this.request<{ data: Record<string, unknown>[] }>(
+      `/api/internal/analytics/rankings/corretors${query.size ? `?${query.toString()}` : ""}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data.map(normalizeAnalyticsGroupedRow),
+      message: response.message,
+    };
+  }
+
+  async getAnalyticsRankingTriageReady(
+    filters: AnalyticsFilters = {}
+  ): Promise<ApiResult<PaginatedResponse<AnalyticsLeadRow>>> {
+    const query = buildAnalyticsQuery(filters);
+    const response = await this.request<PaginatedResponse<Record<string, unknown>>>(
+      `/api/internal/analytics/rankings/triage-ready${query.size ? `?${query.toString()}` : ""}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: {
+        data: response.data.data.map(normalizeAnalyticsLeadRow),
+        meta: response.data.meta,
+      },
+      message: response.message,
+    };
+  }
+
+  async getAnalyticsRankingLeadScores(
+    filters: AnalyticsFilters = {}
+  ): Promise<ApiResult<PaginatedResponse<AnalyticsLeadRow>>> {
+    const query = buildAnalyticsQuery(filters);
+    const response = await this.request<PaginatedResponse<Record<string, unknown>>>(
+      `/api/internal/analytics/rankings/lead-scores${query.size ? `?${query.toString()}` : ""}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: {
+        data: response.data.data.map(normalizeAnalyticsLeadRow),
+        meta: response.data.meta,
+      },
+      message: response.message,
+    };
+  }
+
+  async getTrackedLinks(
+    filters: TrackedLinksFilters = {}
+  ): Promise<ApiResult<TrackedLink[]>> {
+    const query = buildTrackedLinksQuery(filters);
+    const response = await this.request<{ data: Record<string, unknown>[] }>(
+      `/api/internal/tracked-links${query.size ? `?${query.toString()}` : ""}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data.map((item) => normalizeTrackedLink(item)),
+      message: response.message,
+    };
+  }
+
+  async getTrackedLink(id: string): Promise<ApiResult<TrackedLink>> {
+    const response = await this.request<{ data: Record<string, unknown>; link?: string }>(
+      `/api/internal/tracked-links/${id}`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: normalizeTrackedLink(response.data.data, response.data.link),
+      message: response.message,
+    };
+  }
+
+  async createTrackedLink(
+    values: CreateTrackedLinkValues
+  ): Promise<ApiResult<TrackedLink>> {
+    const response = await this.request<{ data: Record<string, unknown>; link?: string }>(
+      "/api/internal/tracked-links",
+      {
+        method: "POST",
+        body: JSON.stringify(buildTrackedLinkPayload(values)),
+      }
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: normalizeTrackedLink(response.data.data, response.data.link),
+      message: response.message,
+    };
   }
 }
 
 export const api = new AtusAPI();
-export type { Lead, StatsData, Corretor, Conversa, ApiResponse, InboxConversationSummary, LeadOperationalStatus };
+export type { Lead, StatsData, Corretor, Conversa, ApiResult };

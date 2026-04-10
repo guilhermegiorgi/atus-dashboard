@@ -1,289 +1,393 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Lead } from "@/lib/api/client";
+import { Badge } from "@/components/ui/badge";
+import { api } from "@/lib/api/client";
+import { Conversa, Lead, Mensagem } from "@/types/leads";
 import {
-  Building2,
-  CalendarDays,
-  DollarSign,
-  EditIcon,
-  Mail,
-  MapPin,
-  MessageSquareText,
-  MessageSquare,
-  Phone,
-  Sparkles,
-  UserRound,
-} from "lucide-react";
+  LeadAction,
+  LeadHumanIntervention,
+  OperationalStatus,
+} from "@/types/dashboard";
 
 interface LeadDetailModalProps {
   lead: Lead;
   open: boolean;
   onClose: () => void;
   onEdit: (lead: Lead) => void;
-  onOpenCommunication?: (lead: Lead) => void;
 }
 
-const statusColors: Record<string, string> = {
-  NOVO: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-  EM_ATENDIMENTO: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  CONVERTIDO: "bg-green-500/20 text-green-400 border-green-500/30",
-  PERDIDO: "bg-red-500/20 text-red-400 border-red-500/30",
-};
+function formatDateTime(value?: string | null) {
+  if (!value) {
+    return "-";
+  }
 
-export function LeadDetailModal({ lead, open, onClose, onEdit, onOpenCommunication }: LeadDetailModalProps) {
-  const statusClass = statusColors[lead.status] || "bg-gray-500/20 text-gray-400 border-gray-500/30";
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
-  };
+function truthyLabel(value?: string | null) {
+  return value && value.trim().length > 0 ? value : "-";
+}
 
-  const formatDate = (value: string | null | undefined) => {
-    if (!value) {
-      return "Não informado";
+function toneForState(value?: string | null) {
+  const state = value ?? "";
+
+  switch (state) {
+    case "TRIAGE_HUMAN":
+    case "HUMAN_ACTIVE":
+      return "border-amber-500/20 bg-amber-500/10 text-amber-300";
+    case "ASSIGNED_TO_BROKER":
+      return "border-blue-500/20 bg-blue-500/10 text-blue-300";
+    case "RETURNED_TO_BOT":
+      return "border-green-500/20 bg-green-500/10 text-green-400";
+    case "CLOSED":
+      return "border-zinc-500/20 bg-zinc-500/10 text-zinc-300";
+    default:
+      return "border-border/50 bg-secondary/30 text-foreground";
+  }
+}
+
+export function LeadDetailModal({
+  lead,
+  open,
+  onClose,
+  onEdit,
+}: LeadDetailModalProps) {
+  const [operationalStatus, setOperationalStatus] = useState<OperationalStatus | null>(
+    null
+  );
+  const [humanIntervention, setHumanIntervention] =
+    useState<LeadHumanIntervention | null>(null);
+  const [actions, setActions] = useState<LeadAction[]>([]);
+  const [conversations, setConversations] = useState<Conversa[]>([]);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(
+    null
+  );
+  const [messages, setMessages] = useState<Mensagem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) {
+      setOperationalStatus(null);
+      setHumanIntervention(null);
+      setActions([]);
+      setConversations([]);
+      setSelectedConversationId(null);
+      setMessages([]);
+      setError(null);
+      return;
     }
 
-    const date = new Date(value);
+    let cancelled = false;
 
-    if (Number.isNaN(date.getTime())) {
-      return "Não informado";
+    async function loadDetail() {
+      setLoading(true);
+      setError(null);
+
+      const [operationalResult, humanResult, actionsResult, conversationsResult] =
+        await Promise.all([
+          api.getLeadOperationalStatus(lead.id),
+          api.getLeadHumanIntervention(lead.id),
+          api.getLeadActions(lead.id, 20, 0),
+          api.getLeadConversations(lead.id),
+        ]);
+
+      if (cancelled) {
+        return;
+      }
+
+      const firstError =
+        operationalResult.error ??
+        humanResult.error ??
+        actionsResult.error ??
+        conversationsResult.error ??
+        null;
+
+      if (firstError) {
+        setError(firstError);
+        setLoading(false);
+        return;
+      }
+
+      const nextConversations = conversationsResult.data ?? [];
+
+      setOperationalStatus(operationalResult.data ?? null);
+      setHumanIntervention(humanResult.data ?? null);
+      setActions(actionsResult.data?.data ?? []);
+      setConversations(nextConversations);
+      setSelectedConversationId((current) => current ?? nextConversations[0]?.id ?? null);
+      setLoading(false);
     }
 
-    return date.toLocaleDateString("pt-BR");
-  };
+    void loadDetail();
 
-  const leadInitials = lead.nome_completo
-    ? lead.nome_completo
-        .split(" ")
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((part) => part[0]?.toUpperCase())
-        .join("")
-    : "LD";
+    return () => {
+      cancelled = true;
+    };
+  }, [lead.id, open]);
 
-  const detailItems = [
-    { icon: Mail, label: "Email", value: lead.email || "Não informado" },
-    { icon: Phone, label: "Telefone", value: lead.telefone || "Não informado" },
-    { icon: MapPin, label: "Localização", value: lead.localizacao || "Não informado" },
-    { icon: Building2, label: "Interesse", value: lead.tipo_interesse || "Não informado" },
-  ];
+  useEffect(() => {
+    if (!open || !selectedConversationId) {
+      setMessages([]);
+      return;
+    }
+
+    const currentConversationId = selectedConversationId;
+    let cancelled = false;
+
+    async function loadMessages() {
+      setMessagesLoading(true);
+      const result = await api.getConversationMessages(currentConversationId);
+
+      if (cancelled) {
+        return;
+      }
+
+      if (result.error || !result.data) {
+        setError(result.error ?? "Erro ao carregar mensagens");
+        setMessagesLoading(false);
+        return;
+      }
+
+      const sorted = [...result.data.data].sort(
+        (left, right) =>
+          new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime()
+      );
+
+      setMessages(sorted);
+      setMessagesLoading(false);
+    }
+
+    void loadMessages();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, selectedConversationId]);
+
+  const selectedConversation = useMemo(
+    () => conversations.find((item) => item.id === selectedConversationId) ?? null,
+    [conversations, selectedConversationId]
+  );
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="w-[95vw] max-w-6xl xl:max-w-7xl max-h-[90vh] overflow-y-auto overflow-x-hidden border border-white/10 bg-zinc-950/95 p-0 text-zinc-100 backdrop-blur-xl">
-        <div tabIndex={0} className="sr-only focus:outline-none" aria-hidden="true" />
-        <div className="relative overflow-hidden border-b border-white/5">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.28),transparent_35%),radial-gradient(circle_at_top_left,rgba(251,191,36,0.14),transparent_30%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0))]" />
-          <div className="relative grid gap-6 px-6 py-6 md:grid-cols-[1.5fr_1fr]">
-            <DialogHeader className="space-y-4">
-              <div className="flex items-start gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-amber-400 text-lg font-semibold text-white shadow-[0_0_40px_rgba(249,115,22,0.22)]">
-                  {leadInitials}
-                </div>
-                <div className="space-y-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${statusClass}`}>
-                      {lead.status.replace("_", " ")}
-                    </span>
-                    {lead.origem && (
-                      <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-300">
-                        Origem: {lead.origem}
-                      </span>
-                    )}
-                    {lead.codigo_ref && (
-                      <span className="rounded-full border border-orange-500/20 bg-orange-500/10 px-3 py-1 text-xs text-orange-200">
-                        Ref. {lead.codigo_ref}
-                      </span>
-                    )}
-                  </div>
-                  <DialogTitle className="text-2xl font-semibold tracking-tight text-white md:text-3xl">
-                    {lead.nome_completo || "Lead sem nome"}
-                  </DialogTitle>
-                  <DialogDescription className="max-w-2xl text-sm leading-6 text-zinc-300">
-                    Visualização executiva do lead com contexto comercial, dados de contato e indicadores para atendimento premium.
-                  </DialogDescription>
-                </div>
-              </div>
-            </DialogHeader>
+    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
+      <DialogContent className="max-h-[90vh] max-w-6xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{lead.nome_completo || "Lead sem nome"}</DialogTitle>
+          <DialogDescription>
+            Detalhe canônico do lead com estado operacional, humano, auditoria e conversa
+          </DialogDescription>
+        </DialogHeader>
 
-            <div className="grid gap-3 sm:grid-cols-3 md:grid-cols-1">
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-zinc-400">
-                  <DollarSign className="h-4 w-4 text-orange-400" />
-                  Potencial
-                </div>
-                <div className="text-lg font-semibold text-white">{formatCurrency(lead.renda_comprovada || 0)}</div>
-                <div className="mt-1 text-xs text-zinc-400">Renda comprovada atual</div>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-zinc-400">
-                  <CalendarDays className="h-4 w-4 text-orange-400" />
-                  Último contato
-                </div>
-                <div className="text-lg font-semibold text-white">{formatDate(lead.ultimo_contato)}</div>
-                <div className="mt-1 text-xs text-zinc-400">Acompanhamento do relacionamento</div>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-zinc-400">
-                  <Sparkles className="h-4 w-4 text-orange-400" />
-                  Faixa de interesse
-                </div>
-                <div className="text-lg font-semibold text-white">
-                  {lead.fixa_preco_max || lead.fixa_preco_min
-                    ? `${formatCurrency(lead.fixa_preco_min || 0)} · ${formatCurrency(lead.fixa_preco_max || 0)}`
-                    : "Não informada"}
-                </div>
-                <div className="mt-1 text-xs text-zinc-400">Parâmetro de negociação</div>
-              </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="flex flex-col items-center gap-4">
+              <div className="h-10 w-10 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
+              <p className="text-sm text-muted-foreground">Carregando detalhe do lead...</p>
             </div>
           </div>
-        </div>
-
-        <div className="grid gap-6 px-6 py-6 md:grid-cols-[1.15fr_0.85fr]">
-          <div className="space-y-6">
-            <div className="rounded-3xl border border-white/8 bg-gradient-to-b from-white/6 to-white/[0.03] p-5 shadow-[0_20px_80px_rgba(0,0,0,0.22)]">
-              <div className="mb-4 flex items-center gap-2 text-sm font-medium text-white">
-                <UserRound className="h-4 w-4 text-orange-400" />
-                Dados de contato
-              </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                {detailItems.map((item) => (
-                  <div key={item.label} className="rounded-2xl border border-white/8 bg-black/20 p-4">
-                    <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-zinc-500">
-                      <item.icon className="h-4 w-4 text-orange-400" />
-                      {item.label}
-                    </div>
-                    <div className="text-sm font-medium leading-6 text-zinc-100">{item.value}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-white/8 bg-gradient-to-b from-white/6 to-white/[0.03] p-5 shadow-[0_20px_80px_rgba(0,0,0,0.22)]">
-              <div className="mb-4 flex items-center gap-2 text-sm font-medium text-white">
-                <Building2 className="h-4 w-4 text-orange-400" />
-                Perfil comercial
-              </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
-                  <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Tipo de imóvel</div>
-                  <div className="mt-2 text-sm font-medium text-zinc-100">{lead.tipo_imovel || "Não informado"}</div>
-                </div>
-                <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
-                  <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Origem</div>
-                  <div className="mt-2 text-sm font-medium text-zinc-100">{lead.origem || "Não informada"}</div>
-                </div>
-                <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
-                  <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Quartos e banheiros</div>
-                  <div className="mt-2 text-sm font-medium text-zinc-100">
-                    {lead.qtd_quartos || 0} quartos · {lead.qtd_banheiros || 0} banheiros
-                  </div>
-                </div>
-                <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
-                  <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">FGTS disponível</div>
-                  <div className="mt-2 text-sm font-medium text-zinc-100">
-                    {formatCurrency((lead.fgts || 0) + (lead.fgts_conjuge || 0))}
-                  </div>
-                </div>
-              </div>
-            </div>
+        ) : error ? (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+            {error}
           </div>
+        ) : (
+          <div className="grid gap-6 xl:grid-cols-2">
+            <section className="space-y-4 rounded-xl border border-border/50 p-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Cadastro
+              </h3>
+              <div><strong>Telefone:</strong> {lead.telefone || "-"}</div>
+              <div><strong>Email:</strong> {lead.email || "-"}</div>
+              <div><strong>Status:</strong> {lead.status || "-"}</div>
+              <div><strong>Fase:</strong> {lead.fase || operationalStatus?.fase || "-"}</div>
+              <div><strong>Tipo de interesse:</strong> {lead.tipo_interesse || "-"}</div>
+              <div><strong>Estado civil:</strong> {lead.estado_civil || "-"}</div>
+              <div><strong>Renda comprovada:</strong> {lead.renda_comprovada ?? 0}</div>
+              <div><strong>Entrada:</strong> {lead.entrada ?? 0}</div>
+              <div><strong>Observações:</strong> {lead.observacoes || "-"}</div>
+            </section>
 
-          <div className="space-y-6">
-            <div className="rounded-3xl border border-orange-500/15 bg-gradient-to-b from-orange-500/10 to-transparent p-5 shadow-[0_20px_80px_rgba(249,115,22,0.12)]">
-              <div className="mb-4 flex items-center gap-2 text-sm font-medium text-white">
-                <MessageSquareText className="h-4 w-4 text-orange-400" />
-                Contexto do relacionamento
-              </div>
-              <div className="space-y-3 text-sm text-zinc-300">
-                <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
-                  <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Observações</div>
-                  <div className="mt-2 leading-6 text-zinc-100">
-                    {lead.observacoes || "Nenhuma observação registrada até o momento."}
-                  </div>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
-                    <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Primeiro contato</div>
-                    <div className="mt-2 text-sm font-medium text-zinc-100">{formatDate(lead.primeiro_contato)}</div>
-                  </div>
-                  <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
-                    <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Criado em</div>
-                    <div className="mt-2 text-sm font-medium text-zinc-100">{formatDate(lead.created_at)}</div>
-                  </div>
-                  <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
-                    <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Estado civil</div>
-                    <div className="mt-2 text-sm font-medium text-zinc-100">{lead.estado_civil || "Não informado"}</div>
-                  </div>
-                  <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
-                    <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Entrada</div>
-                    <div className="mt-2 text-sm font-medium text-zinc-100">
-                      {lead.tem_entrada ? formatCurrency(lead.entrada || 0) : "Ainda não informada"}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <section className="space-y-4 rounded-xl border border-border/50 p-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Origem e Tracking
+              </h3>
+              <div><strong>Canal:</strong> {lead.canal_origem || operationalStatus?.canal_origem || "-"}</div>
+              <div><strong>Sistema:</strong> {lead.sistema_origem || operationalStatus?.sistema_origem || "-"}</div>
+              <div><strong>Campanha:</strong> {lead.campanha_origem || operationalStatus?.campanha_origem || "-"}</div>
+              <div><strong>Tracked ref:</strong> {lead.tracked_codigo_ref || operationalStatus?.tracked_codigo_ref || "-"}</div>
+              <div><strong>Link click ID:</strong> {lead.link_click_id || "-"}</div>
+              <div><strong>External lead ID:</strong> {lead.external_lead_id || "-"}</div>
+              <div><strong>Resumo de qualificação:</strong> {lead.resumo_qualificacao || operationalStatus?.qualification_summary || "-"}</div>
+            </section>
 
-            <div className="rounded-3xl border border-white/8 bg-gradient-to-b from-white/6 to-white/[0.03] p-5">
-              <div className="mb-4 flex items-center gap-2 text-sm font-medium text-white">
-                <Sparkles className="h-4 w-4 text-orange-400" />
-                Sinais de qualificação
-              </div>
+            <section className="space-y-4 rounded-xl border border-border/50 p-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Estado operacional
+              </h3>
+              {operationalStatus ? (
+                <>
+                  <div><strong>Next field:</strong> {truthyLabel(operationalStatus.next_field)}</div>
+                  <div><strong>Recommended action:</strong> {truthyLabel(operationalStatus.recommended_action)}</div>
+                  <div><strong>Qualification summary:</strong> {truthyLabel(operationalStatus.qualification_summary)}</div>
+                  <div><strong>Last bot message:</strong> {truthyLabel(operationalStatus.last_bot_message)}</div>
+                  <div><strong>Last lead message:</strong> {truthyLabel(operationalStatus.last_lead_message)}</div>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline">
+                      {operationalStatus.confirmation_pending ? "Confirmação pendente" : "Sem confirmação pendente"}
+                    </Badge>
+                    <Badge variant="outline">
+                      {operationalStatus.is_contaminated ? "Contaminado" : "Não contaminado"}
+                    </Badge>
+                    {operationalStatus.missing_fields.map((field) => (
+                      <Badge key={field} variant="outline" className="border-amber-500/20 bg-amber-500/10 text-amber-300">
+                        {field}
+                      </Badge>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">Sem status operacional disponível.</p>
+              )}
+            </section>
+
+            <section className="space-y-4 rounded-xl border border-border/50 p-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Atendimento humano
+              </h3>
               <div className="flex flex-wrap gap-2">
-                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-zinc-200">
-                  {lead.tem_carteira_assinada ? "Carteira assinada" : "Sem carteira assinada"}
-                </span>
-                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-zinc-200">
-                  {lead.em_follow_up ? `Follow-up ativo · ${lead.followup_rodadas || 0} rodadas` : "Sem follow-up ativo"}
-                </span>
-                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-zinc-200">
-                  {lead.tem_entrada ? "Possui entrada" : "Sem entrada definida"}
-                </span>
-                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-zinc-200">
-                  Conversão: {formatDate(lead.conversao_data)}
-                </span>
+                <Badge variant="outline" className={toneForState(humanIntervention?.conversation_state || lead.conversation_state)}>
+                  {humanIntervention?.conversation_state || lead.conversation_state || "Sem conversation_state"}
+                </Badge>
+                <Badge variant="outline">
+                  {humanIntervention?.intervention_type || lead.intervention_type || "Sem intervention_type"}
+                </Badge>
+                <Badge variant="outline">
+                  {humanIntervention?.em_follow_up ?? lead.em_follow_up ? "Follow-up ativo" : "Sem follow-up ativo"}
+                </Badge>
               </div>
-            </div>
-          </div>
-        </div>
+              <div><strong>Intervention at:</strong> {formatDateTime(humanIntervention?.intervention_at || lead.intervention_at)}</div>
+              <div><strong>Intervention by:</strong> {truthyLabel(humanIntervention?.intervention_by)}</div>
+              <div><strong>Atualizado em:</strong> {formatDateTime(lead.updated_at)}</div>
+            </section>
 
-        <DialogFooter className="border-t border-white/5 bg-white/[0.02] px-6 py-5">
-          <Button
-            variant="outline"
-            className="border-white/10 bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-white"
-            onClick={onClose}
-          >
-            Fechar
-          </Button>
-          {onOpenCommunication && (
-            <Button
-              variant="outline"
-              className="border-white/10 bg-white/5 text-zinc-300 hover:bg-green-500/10 hover:text-green-400"
-              onClick={() => onOpenCommunication(lead)}
-            >
-              <MessageSquare className="mr-2 h-4 w-4" />
-              Comunicação
-            </Button>
-          )}
-          <Button
-            className="bg-gradient-to-r from-orange-500 to-amber-400 text-white shadow-[0_12px_30px_rgba(249,115,22,0.28)] hover:from-orange-400 hover:to-amber-300"
-            onClick={() => onEdit(lead)}
-          >
-            <EditIcon className="mr-2 h-4 w-4" />
-            Editar lead
-          </Button>
+            <section className="space-y-4 rounded-xl border border-border/50 p-4 xl:col-span-2">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Auditoria
+              </h3>
+              {actions.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhuma ação registrada.</p>
+              ) : (
+                <div className="space-y-3">
+                  {actions.map((action) => (
+                    <div
+                      key={action.id}
+                      className="rounded-xl border border-border/50 bg-secondary/20 p-3"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="font-medium">{action.action}</div>
+                        <Badge variant="outline">{action.status}</Badge>
+                      </div>
+                      <div className="mt-1 text-sm text-muted-foreground">
+                        Ator: {action.actor || "-"} | {formatDateTime(action.created_at)}
+                      </div>
+                      <div className="mt-2 text-sm break-all">{action.details || "-"}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="space-y-4 rounded-xl border border-border/50 p-4 xl:col-span-2">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Conversa
+              </h3>
+              <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
+                <div className="space-y-2">
+                  {conversations.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Nenhuma conversa disponível.</p>
+                  ) : (
+                    conversations.map((conversation) => (
+                      <button
+                        key={conversation.id}
+                        type="button"
+                        onClick={() => setSelectedConversationId(conversation.id)}
+                        className={`w-full rounded-xl border p-3 text-left transition-colors ${
+                          selectedConversationId === conversation.id
+                            ? "border-primary/30 bg-primary/10"
+                            : "border-border/50 bg-secondary/20"
+                        }`}
+                      >
+                        <div className="font-medium">{conversation.status || "Sem status"}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatDateTime(conversation.started_at)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {conversation.message_count} mensagem(ns)
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+
+                <div className="space-y-3 rounded-xl border border-border/50 bg-secondary/20 p-4">
+                  {selectedConversation ? (
+                    <div className="text-sm text-muted-foreground">
+                      Conversa iniciada em {formatDateTime(selectedConversation.started_at)}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">Selecione uma conversa.</div>
+                  )}
+
+                  {messagesLoading ? (
+                    <div className="text-sm text-muted-foreground">Carregando mensagens...</div>
+                  ) : messages.length === 0 ? (
+                    <div className="text-sm text-muted-foreground">Sem mensagens nesta conversa.</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {messages.map((message) => (
+                        <div
+                          key={message.id}
+                          className={`rounded-xl border p-3 ${
+                            message.direcao === "SAIDA"
+                              ? "border-primary/20 bg-primary/10"
+                              : "border-border/50 bg-background"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-4 text-xs text-muted-foreground">
+                            <span>{message.direcao}</span>
+                            <span>{formatDateTime(message.timestamp)}</span>
+                          </div>
+                          <div className="mt-2 text-sm whitespace-pre-wrap">
+                            {message.conteudo || "-"}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Fechar</Button>
+          <Button onClick={() => onEdit(lead)}>Editar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -8,6 +8,7 @@ import {
   Users,
   Home,
   BarChart3,
+  Link2,
   MessageSquare,
   TrendingUp,
   Zap,
@@ -18,7 +19,8 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Leads', href: '/leads', icon: Users },
   { name: 'Análises', href: '/analytics', icon: BarChart3 },
-  { name: 'Conversas', href: '/conversations', icon: MessageSquare },
+  { name: 'Tracking', href: '/tracking', icon: Link2 },
+  { name: 'Inbox Humana', href: '/conversations', icon: MessageSquare },
   { name: 'Pipeline', href: '/pipeline', icon: TrendingUp },
 ];
 
