@@ -11,6 +11,7 @@ import {
   InboxConversationDetail,
   InboxConversationFilters,
   InboxConversationSummary,
+  LeadHumanIntervention,
   LeadAction,
   LeadStats,
   OperationalQueueItem,
@@ -37,6 +38,11 @@ import {
   buildLeadUpdatePayload,
   normalizeLead,
 } from "@/lib/api/leads";
+import {
+  normalizeLeadConversation,
+  normalizeLeadConversationMessage,
+  normalizeLeadHumanIntervention,
+} from "@/lib/leads/detail";
 import {
   buildFollowupQueueQuery,
   normalizeOperationalQueueItem,
@@ -246,7 +252,21 @@ class AtusAPI {
 
   // Conversations & Messages
   async getLeadConversations(id: string): Promise<ApiResult<Conversa[]>> {
-    return this.request<Conversa[]>(`/api/v1/leads/${id}/conversas`);
+    const response = await this.request<{ data: Record<string, unknown>[] }>(
+      `/api/internal/leads/${id}/conversas`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: response.data.data.map(normalizeLeadConversation),
+      message: response.message,
+    };
   }
 
   async getConversationMessages(conversaId: string, limit = 50, before?: string): Promise<ApiResult<{
@@ -257,7 +277,47 @@ class AtusAPI {
     const params = new URLSearchParams();
     params.append("limit", String(limit));
     if (before) params.append("before", before);
-    return this.request(`/api/v1/conversas/${conversaId}/mensagens?${params.toString()}`);
+    const response = await this.request<{
+      data: Record<string, unknown>[];
+      total?: number;
+      has_more?: boolean;
+    }>(`/api/internal/conversas/${conversaId}/mensagens?${params.toString()}`);
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: {
+        data: response.data.data.map(normalizeLeadConversationMessage),
+        total: response.data.total ?? response.data.data.length,
+        has_more: response.data.has_more ?? false,
+      },
+      message: response.message,
+    };
+  }
+
+  async getLeadHumanIntervention(
+    id: string
+  ): Promise<ApiResult<LeadHumanIntervention>> {
+    const response = await this.request<{ data: Record<string, unknown> }>(
+      `/api/internal/leads/${id}/human-intervention`
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: normalizeLeadHumanIntervention(response.data.data),
+      message: response.message,
+    };
   }
 
   async sendWhatsAppMessage(id: string, mensagem: string, followUp = false): Promise<ApiResult<{ success: boolean; message_id: string; status: string }>> {

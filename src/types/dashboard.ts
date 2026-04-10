@@ -241,3 +241,13 @@ export interface InboxConversationDetail extends InboxConversationSummary {
   messages: InboxMessage[];
   operational_status?: OperationalStatus | null;
 }
+
+export interface LeadHumanIntervention {
+  lead_id: string;
+  telefone: string;
+  intervention_type: string;
+  conversation_state: string;
+  intervention_at: string | null;
+  intervention_by: string | null;
+  em_follow_up: boolean;
+}
