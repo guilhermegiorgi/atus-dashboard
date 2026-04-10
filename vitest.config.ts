@@ -10,6 +10,7 @@ export default defineConfig({
     globals: true,
     restoreMocks: true,
     clearMocks: true,
+    exclude: ["**/node_modules/**", ".worktrees/**"],
   },
   resolve: {
     alias: {
