@@ -18,6 +18,18 @@ describe("getAtusBotConfig", () => {
     });
   });
 
+  it("falls back to existing NEXT_PUBLIC env vars on the server", () => {
+    delete process.env.ATUS_BOT_BASE_URL;
+    delete process.env.ATUS_BOT_API_KEY;
+    process.env.NEXT_PUBLIC_API_URL = "https://chatbot.atusbr.com.br";
+    process.env.NEXT_PUBLIC_API_KEY = "public-build-key";
+
+    expect(getAtusBotConfig()).toEqual({
+      baseUrl: "https://chatbot.atusbr.com.br",
+      apiKey: "public-build-key",
+    });
+  });
+
   it("throws when a required env var is missing", () => {
     delete process.env.ATUS_BOT_BASE_URL;
     process.env.ATUS_BOT_API_KEY = "secret-key";
