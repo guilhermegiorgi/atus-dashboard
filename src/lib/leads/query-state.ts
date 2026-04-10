@@ -49,6 +49,18 @@ export function searchWithinPage(leads: Lead[], query: string) {
 
   return leads.filter((lead) => {
     return [lead.nome_completo, lead.telefone, lead.email]
+      .concat([
+        lead.tipo_interesse,
+        lead.canal_origem,
+        lead.sistema_origem,
+        lead.campanha_origem,
+        lead.external_lead_id,
+        lead.resumo_qualificacao,
+        lead.tracked_codigo_ref,
+        lead.link_click_id ?? undefined,
+        lead.conversation_state,
+        lead.intervention_type,
+      ])
       .filter(Boolean)
       .some((value) => value!.toLowerCase().includes(normalized));
   });

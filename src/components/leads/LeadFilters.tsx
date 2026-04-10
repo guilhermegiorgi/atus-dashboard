@@ -19,9 +19,13 @@ export function LeadFilters({
   onFiltersChange,
   onClearFilters,
 }: LeadFiltersProps) {
-  const activeFilters = Object.entries(filters).filter(
-    ([, value]) => value !== undefined && value !== ""
-  );
+  const activeFilters = Object.entries(filters).filter(([key, value]) => {
+    if (key === "limit" || key === "offset" || key === "page") {
+      return false;
+    }
+
+    return value !== undefined && value !== "";
+  });
 
   return (
     <Card className="glass border-border/50">
@@ -96,6 +100,32 @@ export function LeadFilters({
               placeholder="Ex.: COLETA"
               className="border-white/10 bg-secondary/50"
             />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-zinc-200">
+              Em Follow-up
+            </label>
+            <Select
+              value={
+                filters.em_follow_up === undefined ? "all" : String(filters.em_follow_up)
+              }
+              onValueChange={(value) =>
+                onFiltersChange({
+                  ...filters,
+                  em_follow_up: value === "all" ? undefined : value === "true",
+                })
+              }
+            >
+              <SelectTrigger className="border-white/10 bg-secondary/50">
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="true">Ativo</SelectItem>
+                <SelectItem value="false">Inativo</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
@@ -201,7 +231,12 @@ export function LeadFilters({
                 {key}: {String(value)}
                 <button
                   type="button"
-                  onClick={() => onFiltersChange({ ...filters, [key]: undefined })}
+                  onClick={() =>
+                    onFiltersChange({
+                      ...filters,
+                      [key]: undefined,
+                    })
+                  }
                 >
                   <X className="h-3 w-3" />
                 </button>
