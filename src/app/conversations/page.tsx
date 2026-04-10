@@ -1,11 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Pagination,
   PaginationContent,
@@ -14,33 +19,49 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api/client";
-import { Corretor } from "@/types/leads";
+import { getOffsetForPage } from "@/lib/leads/query-state";
 import {
   InboxConversationDetail,
   InboxConversationFilters,
   InboxConversationSummary,
 } from "@/types/dashboard";
-import { getOffsetForPage } from "@/lib/leads/query-state";
+import { Corretor } from "@/types/leads";
 import {
   ArrowRight,
   Bot,
   MessageSquare,
+  RefreshCw,
   RotateCcw,
   Send,
   ShieldAlert,
   UserRound,
+  Users,
 } from "lucide-react";
 
 const PAGE_SIZE = 20;
 const ACTOR_NAME = "Dashboard";
 const ACTOR_TYPE = "admin";
-const INBOX_STATES = [
+const INBOX_FILTER_STATES = [
   "TRIAGE_HUMAN",
   "ASSIGNED_TO_BROKER",
   "HUMAN_ACTIVE",
   "HUMAN_STANDBY",
   "RETURNED_TO_BOT",
+  "CLOSED",
+] as const;
+const MUTABLE_INBOX_STATES = [
+  "TRIAGE_HUMAN",
+  "HUMAN_ACTIVE",
+  "HUMAN_STANDBY",
   "CLOSED",
 ] as const;
 
@@ -63,6 +84,54 @@ function stateTone(state: string) {
   }
 }
 
+function stateLabel(state: string) {
+  switch (state) {
+    case "TRIAGE_HUMAN":
+      return "Triagem humana";
+    case "ASSIGNED_TO_BROKER":
+      return "Atribuida";
+    case "HUMAN_ACTIVE":
+      return "Humano ativo";
+    case "HUMAN_STANDBY":
+      return "Humano em espera";
+    case "RETURNED_TO_BOT":
+      return "Devolvida ao bot";
+    case "CLOSED":
+      return "Fechada";
+    default:
+      return state || "-";
+  }
+}
+
+function formatDateTime(value?: string | null) {
+  if (!value) return "-";
+
+  try {
+    return new Date(value).toLocaleString("pt-BR");
+  } catch {
+    return value;
+  }
+}
+
+function summarySearchText(item: InboxConversationSummary) {
+  return [
+    item.nome_completo,
+    item.telefone,
+    item.owner_user_name,
+    item.owner_user_type,
+    item.qualification_summary,
+    item.last_message_preview,
+    item.canal_origem,
+    item.sistema_origem,
+    item.status,
+    item.fase,
+    item.conversation_state,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
 export default function ConversationsPage() {
   const [filters, setFilters] = useState<InboxConversationFilters>({
     limit: PAGE_SIZE,
@@ -76,7 +145,9 @@ export default function ConversationsPage() {
   const [corretores, setCorretores] = useState<Corretor[]>([]);
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [pageError, setPageError] = useState<string | null>(null);
+  const [detailError, setDetailError] = useState<string | null>(null);
+  const [corretoresError, setCorretoresError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [message, setMessage] = useState("");
   const [introduceActor, setIntroduceActor] = useState(true);
@@ -90,33 +161,47 @@ export default function ConversationsPage() {
 
   const loadInbox = useCallback(async (currentFilters: InboxConversationFilters) => {
     setLoading(true);
-    setError(null);
+    setPageError(null);
 
     const [listResult, corretoresResult] = await Promise.all([
       api.getInboxConversations(currentFilters),
       api.getCorretores(),
     ]);
 
-    const firstError = listResult.error ?? corretoresResult.error ?? null;
-
-    if (firstError || !listResult.data) {
-      setError(firstError ?? "Erro ao carregar inbox humana");
+    if (listResult.error || !listResult.data) {
+      setPageError(listResult.error ?? "Erro ao carregar inbox humana");
       setLoading(false);
       return;
     }
 
-    setConversations(listResult.data.data);
+    const nextConversations = listResult.data.data;
+    setConversations(nextConversations);
     setMeta(listResult.data.meta);
     setCorretores(corretoresResult.data ?? []);
+    setCorretoresError(corretoresResult.error ?? null);
+    setSelectedLeadId((current) => {
+      if (nextConversations.length === 0) {
+        return null;
+      }
+
+      if (current && nextConversations.some((item) => item.lead_id === current)) {
+        return current;
+      }
+
+      return nextConversations[0]?.lead_id ?? null;
+    });
     setLoading(false);
   }, []);
 
   const loadConversationDetail = useCallback(async (leadId: string) => {
     setDetailLoading(true);
+    setDetailError(null);
+
     const detailResult = await api.getInboxConversationDetail(leadId);
 
     if (detailResult.error || !detailResult.data) {
-      setError(detailResult.error ?? "Erro ao carregar detalhe da inbox");
+      setSelectedConversation(null);
+      setDetailError(detailResult.error ?? "Erro ao carregar detalhe da inbox");
       setDetailLoading(false);
       return;
     }
@@ -124,9 +209,11 @@ export default function ConversationsPage() {
     setSelectedConversation(detailResult.data);
     setAssignedCorretorId(detailResult.data.assigned_corretor_id ?? "");
     setStateValue(
-      detailResult.data.conversation_state === "ASSIGNED_TO_BROKER"
-        ? "HUMAN_ACTIVE"
-        : detailResult.data.conversation_state || "HUMAN_STANDBY"
+      MUTABLE_INBOX_STATES.includes(
+        detailResult.data.conversation_state as (typeof MUTABLE_INBOX_STATES)[number]
+      )
+        ? detailResult.data.conversation_state
+        : "HUMAN_STANDBY"
     );
     setDetailLoading(false);
   }, []);
@@ -138,6 +225,7 @@ export default function ConversationsPage() {
   useEffect(() => {
     if (!selectedLeadId) {
       setSelectedConversation(null);
+      setDetailError(null);
       return;
     }
 
@@ -151,25 +239,22 @@ export default function ConversationsPage() {
       return conversations;
     }
 
-    return conversations.filter((item) =>
-      [
-        item.nome_completo,
-        item.telefone,
-        item.owner_user_name,
-        item.qualification_summary,
-      ]
-        .filter(Boolean)
-        .some((value) => value.toLowerCase().includes(normalized))
-    );
+    return conversations.filter((item) => summarySearchText(item).includes(normalized));
   }, [conversations, search]);
 
-  const totalPages = Math.max(1, Math.ceil(meta.total / meta.limit));
-  const currentPage = Math.floor(meta.offset / meta.limit) + 1;
+  const selectedSummary = useMemo(
+    () => conversations.find((item) => item.lead_id === selectedLeadId) ?? null,
+    [conversations, selectedLeadId]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(meta.total / Math.max(meta.limit, 1)));
+  const currentPage = Math.floor(meta.offset / Math.max(meta.limit, 1)) + 1;
 
   async function refreshSelectedConversation() {
     if (selectedLeadId) {
       await loadConversationDetail(selectedLeadId);
     }
+
     await loadInbox(filters);
   }
 
@@ -177,6 +262,8 @@ export default function ConversationsPage() {
     if (!selectedLeadId || !message.trim()) {
       return;
     }
+
+    setDetailError(null);
 
     const result = await api.sendInboxMessage(selectedLeadId, {
       message: message.trim(),
@@ -186,7 +273,7 @@ export default function ConversationsPage() {
     });
 
     if (result.error) {
-      setError(result.error);
+      setDetailError(result.error);
       return;
     }
 
@@ -200,6 +287,8 @@ export default function ConversationsPage() {
       return;
     }
 
+    setDetailError(null);
+
     const result = await api.assignInboxConversation(selectedLeadId, {
       assigned_corretor_id: assignedCorretorId,
       assigned_by: ACTOR_NAME,
@@ -207,10 +296,11 @@ export default function ConversationsPage() {
     });
 
     if (result.error) {
-      setError(result.error);
+      setDetailError(result.error);
       return;
     }
 
+    setAssignNote("");
     await refreshSelectedConversation();
   }
 
@@ -219,6 +309,8 @@ export default function ConversationsPage() {
       return;
     }
 
+    setDetailError(null);
+
     const result = await api.updateInboxConversationState(selectedLeadId, {
       state: stateValue,
       actor_name: ACTOR_NAME,
@@ -226,7 +318,7 @@ export default function ConversationsPage() {
     });
 
     if (result.error) {
-      setError(result.error);
+      setDetailError(result.error);
       return;
     }
 
@@ -239,13 +331,15 @@ export default function ConversationsPage() {
       return;
     }
 
+    setDetailError(null);
+
     const result = await api.returnInboxConversationToBot(selectedLeadId, {
       actor_name: ACTOR_NAME,
       reason: returnReason || undefined,
     });
 
     if (result.error) {
-      setError(result.error);
+      setDetailError(result.error);
       return;
     }
 
@@ -255,21 +349,21 @@ export default function ConversationsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex h-64 items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary/30 border-t-primary" />
           <p className="text-muted-foreground">Carregando inbox humana...</p>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  if (pageError) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-destructive text-center">
+      <div className="flex h-64 items-center justify-center">
+        <div className="text-center text-destructive">
           <p className="font-semibold">Erro ao carregar</p>
-          <p className="text-sm">{error}</p>
+          <p className="text-sm">{pageError}</p>
         </div>
       </div>
     );
@@ -277,33 +371,70 @@ export default function ConversationsPage() {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Inbox Humana</h1>
-        <p className="text-muted-foreground">
-          Atendimento humano no mesmo numero do bot, dirigido por conversation_state
-        </p>
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Inbox Humana</h1>
+          <p className="text-muted-foreground">
+            Atendimento no mesmo numero do bot, guiado por{" "}
+            <span className="font-medium text-foreground">conversation_state</span>.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Badge variant="secondary">{meta.total} conversas na fila</Badge>
+          <Badge variant="outline">{visibleConversations.length} visiveis nesta pagina</Badge>
+          {selectedSummary ? (
+            <Badge variant="outline" className={stateTone(selectedSummary.conversation_state)}>
+              {stateLabel(selectedSummary.conversation_state)}
+            </Badge>
+          ) : null}
+          <Button variant="outline" onClick={() => void refreshSelectedConversation()}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Atualizar
+          </Button>
+        </div>
       </div>
 
       <Card className="glass border-border/50">
         <CardHeader>
           <CardTitle>Filtros da Inbox</CardTitle>
-          <CardDescription>Consumo canonico de /api/v1/inbox/conversations</CardDescription>
+          <CardDescription>
+            Busca local atua apenas sobre os resultados carregados nesta pagina.
+          </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <Input
-            placeholder="Busca local na pagina"
+            placeholder="Buscar por lead, telefone, owner ou mensagem"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
+
+          <Select
+            value={filters.state ?? "all"}
+            onValueChange={(value) => {
+              const nextState = value && value !== "all" ? value : undefined;
+
+              setFilters({
+                ...filters,
+                state: nextState,
+                offset: 0,
+              });
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Estado da conversa" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os estados</SelectItem>
+              {INBOX_FILTER_STATES.map((state) => (
+                <SelectItem key={state} value={state}>
+                  {stateLabel(state)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <Input
-            placeholder="conversation_state"
-            value={filters.state ?? ""}
-            onChange={(event) =>
-              setFilters({ ...filters, state: event.target.value || undefined, offset: 0 })
-            }
-          />
-          <Input
-            placeholder="owner_user_name"
+            placeholder="Owner (nome)"
             value={filters.owner_user_name ?? ""}
             onChange={(event) =>
               setFilters({
@@ -313,8 +444,9 @@ export default function ConversationsPage() {
               })
             }
           />
+
           <Input
-            placeholder="assigned_corretor_id"
+            placeholder="Corretor atribuido (id)"
             value={filters.assigned_corretor_id ?? ""}
             onChange={(event) =>
               setFilters({
@@ -324,8 +456,9 @@ export default function ConversationsPage() {
               })
             }
           />
+
           <Input
-            placeholder="canal_origem"
+            placeholder="Canal de origem"
             value={filters.canal_origem ?? ""}
             onChange={(event) =>
               setFilters({
@@ -335,8 +468,9 @@ export default function ConversationsPage() {
               })
             }
           />
+
           <Input
-            placeholder="sistema_origem"
+            placeholder="Sistema de origem"
             value={filters.sistema_origem ?? ""}
             onChange={(event) =>
               setFilters({
@@ -346,20 +480,31 @@ export default function ConversationsPage() {
               })
             }
           />
+
           <Input
-            placeholder="status"
+            placeholder="Status do lead"
             value={filters.status ?? ""}
             onChange={(event) =>
-              setFilters({ ...filters, status: event.target.value || undefined, offset: 0 })
+              setFilters({
+                ...filters,
+                status: event.target.value || undefined,
+                offset: 0,
+              })
             }
           />
+
           <Input
-            placeholder="fase"
+            placeholder="Fase do lead"
             value={filters.fase ?? ""}
             onChange={(event) =>
-              setFilters({ ...filters, fase: event.target.value || undefined, offset: 0 })
+              setFilters({
+                ...filters,
+                fase: event.target.value || undefined,
+                offset: 0,
+              })
             }
           />
+
           <Button
             type="button"
             variant="outline"
@@ -374,93 +519,78 @@ export default function ConversationsPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+      <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
         <Card className="glass border-border/50">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4">
               <div>
-                <CardTitle>Conversas</CardTitle>
+                <CardTitle>Fila da Inbox</CardTitle>
                 <CardDescription>
                   Pagina {currentPage} de {totalPages}
                 </CardDescription>
               </div>
-              <Badge variant="secondary">{meta.total} conversas</Badge>
+              <Badge variant="secondary">{meta.total}</Badge>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             {visibleConversations.length === 0 ? (
-              <div className="py-12 text-center text-muted-foreground">
-                Nenhuma conversa encontrada.
+              <div className="rounded-xl border border-dashed border-border/50 px-4 py-12 text-center text-muted-foreground">
+                Nenhuma conversa encontrada para os filtros atuais.
               </div>
             ) : (
-              <div className="overflow-hidden rounded-xl border border-border/50">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Lead</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead>Owner</TableHead>
-                      <TableHead>Ultima mensagem</TableHead>
-                      <TableHead className="text-right">Selecionar</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {visibleConversations.map((item) => (
-                      <TableRow
-                        key={item.lead_id}
-                        className={item.lead_id === selectedLeadId ? "bg-secondary/30" : ""}
-                      >
-                        <TableCell>
-                          <div className="space-y-1">
-                            <div className="font-medium">
-                              {item.nome_completo || item.telefone}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {item.telefone}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {item.qualification_summary || "Sem resumo"}
-                            </div>
+              <div className="space-y-3">
+                {visibleConversations.map((item) => {
+                  const isSelected = item.lead_id === selectedLeadId;
+
+                  return (
+                    <button
+                      key={item.lead_id}
+                      type="button"
+                      onClick={() => setSelectedLeadId(item.lead_id)}
+                      className={`w-full rounded-2xl border p-4 text-left transition ${
+                        isSelected
+                          ? "border-primary/40 bg-primary/5 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]"
+                          : "border-border/50 bg-background/40 hover:border-primary/20 hover:bg-secondary/30"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 space-y-1">
+                          <div className="truncate font-medium">
+                            {item.nome_completo || item.telefone}
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={stateTone(item.conversation_state)}>
-                            {item.conversation_state || "-"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <div>{item.owner_user_name || "-"}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {item.owner_user_type || "-"}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <div>{item.last_message_preview || "-"}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {item.last_message_direction || "-"}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            onClick={() => setSelectedLeadId(item.lead_id)}
-                          >
-                            Abrir
-                            <ArrowRight className="ml-2 h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                          <div className="text-xs text-muted-foreground">{item.telefone}</div>
+                        </div>
+                        <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <Badge variant="outline" className={stateTone(item.conversation_state)}>
+                          {stateLabel(item.conversation_state)}
+                        </Badge>
+                        <Badge variant="outline">{item.status || "-"}</Badge>
+                        <Badge variant="outline">{item.fase || "-"}</Badge>
+                      </div>
+
+                      <div className="mt-3 space-y-2 text-xs text-muted-foreground">
+                        <div className="line-clamp-2">
+                          {item.qualification_summary || "Sem resumo de qualificacao."}
+                        </div>
+                        <div className="line-clamp-2">
+                          Ultima mensagem: {item.last_message_preview || "Sem preview"}
+                        </div>
+                        <div className="flex flex-wrap gap-x-3 gap-y-1">
+                          <span>Owner: {item.owner_user_name || "-"}</span>
+                          <span>Canal: {item.canal_origem || "-"}</span>
+                          <span>Atualizada: {formatDateTime(item.updated_at)}</span>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             )}
 
-            <Pagination className="mt-6 justify-end">
+            <Pagination className="justify-end">
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious
@@ -502,208 +632,301 @@ export default function ConversationsPage() {
 
         <Card className="glass border-border/50">
           <CardHeader>
-            <CardTitle>Detalhe da Conversa</CardTitle>
-            <CardDescription>
-              {selectedConversation
-                ? selectedConversation.nome_completo || selectedConversation.telefone
-                : "Selecione uma conversa para operar a inbox"}
-            </CardDescription>
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+              <div>
+                <CardTitle>Operacao da Conversa</CardTitle>
+                <CardDescription>
+                  {selectedConversation
+                    ? `${selectedConversation.nome_completo || selectedConversation.telefone}`
+                    : "Selecione uma conversa para responder, atribuir ou devolver ao bot."}
+                </CardDescription>
+              </div>
+              {selectedConversation ? (
+                <div className="flex flex-wrap gap-2">
+                  <Badge
+                    variant="outline"
+                    className={stateTone(selectedConversation.conversation_state)}
+                  >
+                    {stateLabel(selectedConversation.conversation_state)}
+                  </Badge>
+                  <Badge variant="outline">{selectedConversation.status || "-"}</Badge>
+                  <Badge variant="outline">{selectedConversation.fase || "-"}</Badge>
+                </div>
+              ) : null}
+            </div>
           </CardHeader>
           <CardContent>
             {!selectedLeadId ? (
-              <div className="py-12 text-muted-foreground">Nenhuma conversa selecionada.</div>
+              <div className="rounded-xl border border-dashed border-border/50 px-4 py-12 text-muted-foreground">
+                Nenhuma conversa disponivel nesta pagina.
+              </div>
             ) : detailLoading ? (
               <div className="py-12 text-muted-foreground">Carregando detalhe da conversa...</div>
+            ) : detailError ? (
+              <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-6 text-sm text-destructive">
+                {detailError}
+              </div>
             ) : !selectedConversation ? (
               <div className="py-12 text-muted-foreground">Sem detalhe carregado.</div>
             ) : (
               <div className="space-y-6">
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline" className={stateTone(selectedConversation.conversation_state)}>
-                    {selectedConversation.conversation_state}
-                  </Badge>
-                  <Badge variant="outline">{selectedConversation.status || "-"}</Badge>
-                  <Badge variant="outline">{selectedConversation.fase || "-"}</Badge>
-                  {selectedConversation.assigned_corretor_id && (
-                    <Badge variant="outline">
-                      Corretor: {selectedConversation.assigned_corretor_id}
-                    </Badge>
-                  )}
-                </div>
+                <div className="grid gap-4 lg:grid-cols-3">
+                  <div className="rounded-2xl border border-border/50 p-4">
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Lead
+                    </div>
+                    <div className="mt-3 space-y-2 text-sm">
+                      <div className="font-medium">
+                        {selectedConversation.nome_completo || selectedConversation.telefone}
+                      </div>
+                      <div>Telefone: {selectedConversation.telefone || "-"}</div>
+                      <div>Email: {selectedConversation.email || "-"}</div>
+                      <div>Atualizada: {formatDateTime(selectedConversation.updated_at)}</div>
+                    </div>
+                  </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="rounded-xl border border-border/50 p-4">
+                  <div className="rounded-2xl border border-border/50 p-4">
                     <div className="text-xs uppercase tracking-wide text-muted-foreground">
                       Origem e tracking
                     </div>
-                    <div className="mt-2 space-y-1 text-sm">
+                    <div className="mt-3 space-y-2 text-sm">
                       <div>Canal: {selectedConversation.canal_origem || "-"}</div>
                       <div>Sistema: {selectedConversation.sistema_origem || "-"}</div>
                       <div>Tracked ref: {selectedConversation.tracked_codigo_ref || "-"}</div>
                       <div>Link click ID: {selectedConversation.link_click_id || "-"}</div>
                     </div>
                   </div>
-                  <div className="rounded-xl border border-border/50 p-4">
+
+                  <div className="rounded-2xl border border-border/50 p-4">
                     <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Owner
+                      Ownership humano
                     </div>
-                    <div className="mt-2 space-y-1 text-sm">
-                      <div>Nome: {selectedConversation.owner_user_name || "-"}</div>
+                    <div className="mt-3 space-y-2 text-sm">
+                      <div>Owner: {selectedConversation.owner_user_name || "-"}</div>
                       <div>Tipo: {selectedConversation.owner_user_type || "-"}</div>
+                      <div>
+                        Corretor: {selectedConversation.assigned_corretor_id || "Nao atribuido"}
+                      </div>
                       <div>Atribuido por: {selectedConversation.assigned_by || "-"}</div>
                     </div>
                   </div>
                 </div>
 
-                {selectedConversation.operational_status && (
-                  <div className="rounded-xl border border-border/50 p-4">
-                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Resumo operacional
+                <div className="rounded-2xl border border-border/50 p-4">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Resumo da conversa
+                  </div>
+                  <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                    <div className="rounded-xl bg-secondary/20 p-3 text-sm">
+                      <div className="text-xs text-muted-foreground">Qualificacao</div>
+                      <div className="mt-1">{selectedConversation.qualification_summary || "-"}</div>
                     </div>
-                    <div className="mt-2 space-y-1 text-sm">
-                      <div>
-                        Acao recomendada:{" "}
-                        {selectedConversation.operational_status.recommended_action || "-"}
-                      </div>
-                      <div>
-                        Campos faltantes:{" "}
-                        {selectedConversation.operational_status.missing_fields.join(", ") || "-"}
-                      </div>
-                      <div>
-                        Ultimo bot: {selectedConversation.operational_status.last_bot_message || "-"}
+                    <div className="rounded-xl bg-secondary/20 p-3 text-sm">
+                      <div className="text-xs text-muted-foreground">Ultimo preview</div>
+                      <div className="mt-1">
+                        {selectedConversation.last_message_preview || "Sem preview"}
                       </div>
                     </div>
-                  </div>
-                )}
-
-                <div className="rounded-xl border border-border/50 p-4">
-                  <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
-                    <MessageSquare className="h-4 w-4" />
-                    Mensagens
-                  </div>
-                  <div className="mt-4 space-y-3 max-h-72 overflow-y-auto">
-                    {selectedConversation.messages.length > 0 ? (
-                      selectedConversation.messages.map((item) => (
-                        <div
-                          key={item.id || `${item.timestamp}-${item.content}`}
-                          className={`rounded-xl p-3 ${
-                            item.direction === "SAIDA"
-                              ? "bg-primary/10 border border-primary/20"
-                              : "bg-secondary/40 border border-border/50"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            {item.direction === "SAIDA" ? (
-                              <Bot className="h-3 w-3" />
-                            ) : (
-                              <UserRound className="h-3 w-3" />
-                            )}
-                            <span>{item.actor_name || item.actor_type || item.direction}</span>
-                            <span>·</span>
-                            <span>
-                              {item.timestamp
-                                ? new Date(item.timestamp).toLocaleString("pt-BR")
-                                : "-"}
-                            </span>
-                          </div>
-                          <div className="mt-2 text-sm">{item.content || "-"}</div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-sm text-muted-foreground">Nenhuma mensagem retornada pelo detalhe.</div>
-                    )}
                   </div>
                 </div>
 
-                <div className="grid gap-4">
-                  <div className="rounded-xl border border-border/50 p-4 space-y-3">
+                {selectedConversation.operational_status ? (
+                  <div className="rounded-2xl border border-border/50 p-4">
                     <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Enviar mensagem humana
+                      Resumo operacional
                     </div>
-                    <textarea
-                      value={message}
-                      onChange={(event) => setMessage(event.target.value)}
-                      className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                      placeholder="Digite a mensagem da equipe humana..."
-                    />
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={introduceActor}
-                        onChange={(event) => setIntroduceActor(event.target.checked)}
+                    <div className="mt-3 grid gap-3 lg:grid-cols-3">
+                      <div className="rounded-xl bg-secondary/20 p-3 text-sm">
+                        <div className="text-xs text-muted-foreground">Acao recomendada</div>
+                        <div className="mt-1">
+                          {selectedConversation.operational_status.recommended_action || "-"}
+                        </div>
+                      </div>
+                      <div className="rounded-xl bg-secondary/20 p-3 text-sm">
+                        <div className="text-xs text-muted-foreground">Campos faltantes</div>
+                        <div className="mt-1">
+                          {selectedConversation.operational_status.missing_fields.join(", ") ||
+                            "-"}
+                        </div>
+                      </div>
+                      <div className="rounded-xl bg-secondary/20 p-3 text-sm">
+                        <div className="text-xs text-muted-foreground">Ultima msg do bot</div>
+                        <div className="mt-1">
+                          {selectedConversation.operational_status.last_bot_message || "-"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+                  <div className="rounded-2xl border border-border/50 p-4">
+                    <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                      <MessageSquare className="h-4 w-4" />
+                      Mensagens da conversa
+                    </div>
+                    <div className="mt-4 max-h-[520px] space-y-3 overflow-y-auto pr-1">
+                      {selectedConversation.messages.length > 0 ? (
+                        selectedConversation.messages.map((item) => {
+                          const isOutgoing = item.direction === "SAIDA";
+
+                          return (
+                            <div
+                              key={item.id || `${item.timestamp}-${item.content}`}
+                              className={`flex ${isOutgoing ? "justify-end" : "justify-start"}`}
+                            >
+                              <div
+                                className={`max-w-[85%] rounded-2xl border p-4 ${
+                                  isOutgoing
+                                    ? "border-primary/20 bg-primary/10"
+                                    : "border-border/50 bg-secondary/30"
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  {isOutgoing ? (
+                                    <Bot className="h-3 w-3" />
+                                  ) : (
+                                    <UserRound className="h-3 w-3" />
+                                  )}
+                                  <span>{item.actor_name || item.actor_type || item.direction}</span>
+                                  <span>·</span>
+                                  <span>{formatDateTime(item.timestamp)}</span>
+                                </div>
+                                <div className="mt-2 whitespace-pre-wrap text-sm">
+                                  {item.content || "-"}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="rounded-xl border border-dashed border-border/50 px-4 py-10 text-center text-sm text-muted-foreground">
+                          Nenhuma mensagem retornada pelo detalhe desta conversa.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="rounded-2xl border border-border/50 p-4">
+                      <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                        Responder como humano
+                      </div>
+                      <Textarea
+                        value={message}
+                        onChange={(event) => setMessage(event.target.value)}
+                        className="mt-3 min-h-28"
+                        placeholder="Digite a mensagem da equipe humana..."
                       />
-                      Introduzir atendente nesta mensagem
-                    </label>
-                    <Button onClick={() => void handleSendMessage()}>
-                      <Send className="mr-2 h-4 w-4" />
-                      Enviar mensagem
-                    </Button>
-                  </div>
-
-                  <div className="rounded-xl border border-border/50 p-4 space-y-3">
-                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Atribuir para corretor
+                      <label className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+                        <input
+                          type="checkbox"
+                          checked={introduceActor}
+                          onChange={(event) => setIntroduceActor(event.target.checked)}
+                        />
+                        Identificar o atendente nesta mensagem
+                      </label>
+                      <Button
+                        className="mt-4 w-full"
+                        onClick={() => void handleSendMessage()}
+                        disabled={!message.trim()}
+                      >
+                        <Send className="mr-2 h-4 w-4" />
+                        Enviar mensagem
+                      </Button>
                     </div>
-                    <select
-                      value={assignedCorretorId}
-                      onChange={(event) => setAssignedCorretorId(event.target.value)}
-                      className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                    >
-                      <option value="">Selecione um corretor</option>
-                      {corretores.map((corretor) => (
-                        <option key={corretor.id} value={corretor.id}>
-                          {corretor.nome}
-                        </option>
-                      ))}
-                    </select>
-                    <Input
-                      placeholder="Nota de atribuicao"
-                      value={assignNote}
-                      onChange={(event) => setAssignNote(event.target.value)}
-                    />
-                    <Button variant="outline" onClick={() => void handleAssignConversation()}>
-                      Atribuir conversa
-                    </Button>
-                  </div>
 
-                  <div className="rounded-xl border border-border/50 p-4 space-y-3">
-                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Alterar estado da conversa
+                    <div className="rounded-2xl border border-border/50 p-4">
+                      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                        <Users className="h-4 w-4" />
+                        Atribuicao para corretor
+                      </div>
+                      {corretoresError ? (
+                        <div className="mt-3 rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                          Lista de corretores indisponivel agora: {corretoresError}
+                        </div>
+                      ) : null}
+                      <select
+                        value={assignedCorretorId}
+                        onChange={(event) => setAssignedCorretorId(event.target.value)}
+                        className="mt-3 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      >
+                        <option value="">Selecione um corretor</option>
+                        {corretores.map((corretor) => (
+                          <option key={corretor.id} value={corretor.id}>
+                            {corretor.nome}
+                          </option>
+                        ))}
+                      </select>
+                      <Input
+                        className="mt-3"
+                        placeholder="Nota da atribuicao"
+                        value={assignNote}
+                        onChange={(event) => setAssignNote(event.target.value)}
+                      />
+                      <Button
+                        variant="outline"
+                        className="mt-4 w-full"
+                        onClick={() => void handleAssignConversation()}
+                        disabled={!assignedCorretorId || corretores.length === 0}
+                      >
+                        Atribuir conversa
+                      </Button>
                     </div>
-                    <select
-                      value={stateValue}
-                      onChange={(event) => setStateValue(event.target.value)}
-                      className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                    >
-                      {INBOX_STATES.map((state) => (
-                        <option key={state} value={state}>
-                          {state}
-                        </option>
-                      ))}
-                    </select>
-                    <Input
-                      placeholder="Motivo da mudanca"
-                      value={stateReason}
-                      onChange={(event) => setStateReason(event.target.value)}
-                    />
-                    <Button variant="outline" onClick={() => void handleStateChange()}>
-                      Atualizar estado
-                    </Button>
-                  </div>
 
-                  <div className="rounded-xl border border-border/50 p-4 space-y-3">
-                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Devolver ao bot
+                    <div className="rounded-2xl border border-border/50 p-4">
+                      <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                        Alterar estado humano
+                      </div>
+                      <Select
+                        value={stateValue}
+                        onValueChange={(value) => setStateValue(value || "HUMAN_STANDBY")}
+                      >
+                        <SelectTrigger className="mt-3">
+                          <SelectValue placeholder="Selecione o estado" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {MUTABLE_INBOX_STATES.map((state) => (
+                            <SelectItem key={state} value={state}>
+                              {stateLabel(state)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        className="mt-3"
+                        placeholder="Motivo da mudanca"
+                        value={stateReason}
+                        onChange={(event) => setStateReason(event.target.value)}
+                      />
+                      <Button
+                        variant="outline"
+                        className="mt-4 w-full"
+                        onClick={() => void handleStateChange()}
+                      >
+                        Atualizar estado
+                      </Button>
                     </div>
-                    <Input
-                      placeholder="Motivo do retorno ao bot"
-                      value={returnReason}
-                      onChange={(event) => setReturnReason(event.target.value)}
-                    />
-                    <Button variant="outline" onClick={() => void handleReturnToBot()}>
-                      <ShieldAlert className="mr-2 h-4 w-4" />
-                      Return to bot
-                    </Button>
+
+                    <div className="rounded-2xl border border-border/50 p-4">
+                      <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                        Encerrar atendimento humano
+                      </div>
+                      <Input
+                        className="mt-3"
+                        placeholder="Motivo do retorno ao bot"
+                        value={returnReason}
+                        onChange={(event) => setReturnReason(event.target.value)}
+                      />
+                      <Button
+                        variant="outline"
+                        className="mt-4 w-full"
+                        onClick={() => void handleReturnToBot()}
+                      >
+                        <ShieldAlert className="mr-2 h-4 w-4" />
+                        Devolver ao bot
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>

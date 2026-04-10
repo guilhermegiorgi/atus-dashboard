@@ -20,7 +20,7 @@ const navigation = [
   { name: 'Leads', href: '/leads', icon: Users },
   { name: 'Análises', href: '/analytics', icon: BarChart3 },
   { name: 'Tracking', href: '/tracking', icon: Link2 },
-  { name: 'Conversas', href: '/conversations', icon: MessageSquare },
+  { name: 'Inbox Humana', href: '/conversations', icon: MessageSquare },
   { name: 'Pipeline', href: '/pipeline', icon: TrendingUp },
 ];
 
