@@ -1,6 +1,16 @@
 # Use the official Node.js 20 LTS image as base
 FROM node:20-alpine AS base
 
+# Build arguments
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_API_KEY
+
+# Set environment variables for build
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_KEY=$NEXT_PUBLIC_API_KEY
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
+
 # Install dependencies only when needed
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
@@ -36,6 +46,12 @@ RUN adduser --system --uid 1001 nextjs
 # Copy necessary files
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+
+# Set environment variables for runtime
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_API_KEY
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_KEY=$NEXT_PUBLIC_API_KEY
 
 # Create public directory if it doesn't exist
 RUN mkdir -p ./public || true
