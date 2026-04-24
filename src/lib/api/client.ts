@@ -65,18 +65,20 @@ import {
   normalizeTrackedLink,
 } from "@/lib/tracking/tracked-links";
 
-const API_BASE_URL = "";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 class AtusAPI {
   private getHeaders() {
+    const apiKey = process.env.NEXT_PUBLIC_API_KEY;
     return {
       "Content-Type": "application/json",
+      ...(apiKey && { "x-api-key": apiKey }),
     };
   }
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
   ): Promise<ApiResult<T>> {
     try {
       const url = `${API_BASE_URL}${endpoint}`;
@@ -118,12 +120,12 @@ class AtusAPI {
   }
 
   async getPaginatedLeads(
-    filters: LeadListFilters = {}
+    filters: LeadListFilters = {},
   ): Promise<ApiResult<PaginatedResponse<Lead>>> {
     const query = buildLeadFiltersQuery(filters);
-    const response = await this.request<PaginatedResponse<Record<string, unknown>>>(
-      `/api/internal/leads${query.size ? `?${query.toString()}` : ""}`
-    );
+    const response = await this.request<
+      PaginatedResponse<Record<string, unknown>>
+    >(`/api/internal/leads${query.size ? `?${query.toString()}` : ""}`);
 
     if (response.error || !response.data) {
       return {
@@ -159,7 +161,7 @@ class AtusAPI {
 
   async getLeadById(id: string): Promise<ApiResult<Lead>> {
     const response = await this.request<{ data: Record<string, unknown> }>(
-      `/api/internal/leads/${id}`
+      `/api/internal/leads/${id}`,
     );
 
     if (response.error || !response.data) {
@@ -175,13 +177,16 @@ class AtusAPI {
     };
   }
 
-  async updateLead(id: string, values: LeadFormValues): Promise<ApiResult<Lead>> {
+  async updateLead(
+    id: string,
+    values: LeadFormValues,
+  ): Promise<ApiResult<Lead>> {
     const response = await this.request<{ data: Record<string, unknown> }>(
       `/api/internal/leads/${id}`,
       {
         method: "PUT",
         body: JSON.stringify(buildLeadUpdatePayload(values)),
-      }
+      },
     );
 
     if (response.error || !response.data) {
@@ -209,7 +214,7 @@ class AtusAPI {
       {
         method: "POST",
         body: JSON.stringify(buildInboundLeadPayload(values)),
-      }
+      },
     );
 
     if (response.error || !response.data) {
@@ -227,14 +232,14 @@ class AtusAPI {
 
   async updateLeadPartial(
     id: string,
-    data: Partial<Lead>
+    data: Partial<Lead>,
   ): Promise<ApiResult<Lead>> {
     const response = await this.request<{ data: Record<string, unknown> }>(
       `/api/internal/leads/${id}`,
       {
         method: "PUT",
         body: JSON.stringify(data),
-      }
+      },
     );
 
     if (response.error || !response.data) {
@@ -253,7 +258,7 @@ class AtusAPI {
   // Conversations & Messages
   async getLeadConversations(id: string): Promise<ApiResult<Conversa[]>> {
     const response = await this.request<{ data: Record<string, unknown>[] }>(
-      `/api/internal/leads/${id}/conversas`
+      `/api/internal/leads/${id}/conversas`,
     );
 
     if (response.error || !response.data) {
@@ -269,11 +274,17 @@ class AtusAPI {
     };
   }
 
-  async getConversationMessages(conversaId: string, limit = 50, before?: string): Promise<ApiResult<{
-    data: Mensagem[];
-    total: number;
-    has_more: boolean;
-  }>> {
+  async getConversationMessages(
+    conversaId: string,
+    limit = 50,
+    before?: string,
+  ): Promise<
+    ApiResult<{
+      data: Mensagem[];
+      total: number;
+      has_more: boolean;
+    }>
+  > {
     const params = new URLSearchParams();
     params.append("limit", String(limit));
     if (before) params.append("before", before);
@@ -301,10 +312,10 @@ class AtusAPI {
   }
 
   async getLeadHumanIntervention(
-    id: string
+    id: string,
   ): Promise<ApiResult<LeadHumanIntervention>> {
     const response = await this.request<{ data: Record<string, unknown> }>(
-      `/api/internal/leads/${id}/human-intervention`
+      `/api/internal/leads/${id}/human-intervention`,
     );
 
     if (response.error || !response.data) {
@@ -320,7 +331,13 @@ class AtusAPI {
     };
   }
 
-  async sendWhatsAppMessage(id: string, mensagem: string, followUp = false): Promise<ApiResult<{ success: boolean; message_id: string; status: string }>> {
+  async sendWhatsAppMessage(
+    id: string,
+    mensagem: string,
+    followUp = false,
+  ): Promise<
+    ApiResult<{ success: boolean; message_id: string; status: string }>
+  > {
     return this.request(`/api/v1/leads/${id}/send-message`, {
       method: "POST",
       body: JSON.stringify({ mensagem, follow_up: followUp }),
@@ -328,27 +345,35 @@ class AtusAPI {
   }
 
   // Follow-up Intervention
-  async interveneLead(id: string, type: "HUMAN_TAKEOVER" | "PAUSED" | "URGENT", reason?: string): Promise<ApiResult<{ success: boolean; lead_id: string; status: string }>> {
+  async interveneLead(
+    id: string,
+    type: "HUMAN_TAKEOVER" | "PAUSED" | "URGENT",
+    reason?: string,
+  ): Promise<ApiResult<{ success: boolean; lead_id: string; status: string }>> {
     return this.request(`/api/v1/leads/${id}/intervene`, {
       method: "POST",
       body: JSON.stringify({ type, reason }),
     });
   }
 
-  async releaseLeadFollowup(id: string): Promise<ApiResult<{ success: boolean; lead_id: string; status: string }>> {
+  async releaseLeadFollowup(
+    id: string,
+  ): Promise<ApiResult<{ success: boolean; lead_id: string; status: string }>> {
     return this.request(`/api/v1/leads/${id}/release-followup`, {
       method: "POST",
     });
   }
 
-  async getLeadFollowupStatus(id: string): Promise<ApiResult<{
-    em_follow_up?: boolean;
-    followup_rodadas?: number;
-    followup_expira_em?: string | null;
-    intervention_type?: string;
-    active?: boolean;
-    is_paused?: boolean;
-  }>> {
+  async getLeadFollowupStatus(id: string): Promise<
+    ApiResult<{
+      em_follow_up?: boolean;
+      followup_rodadas?: number;
+      followup_expira_em?: string | null;
+      intervention_type?: string;
+      active?: boolean;
+      is_paused?: boolean;
+    }>
+  > {
     return this.request(`/api/v1/leads/${id}/follow-up-status`);
   }
 
@@ -357,14 +382,21 @@ class AtusAPI {
     return this.request<Note[]>(`/api/v1/leads/${id}/notes`);
   }
 
-  async createLeadNote(id: string, content: string, type: "observation" | "visit" | "follow_up" | "urgent"): Promise<ApiResult<Note>> {
+  async createLeadNote(
+    id: string,
+    content: string,
+    type: "observation" | "visit" | "follow_up" | "urgent",
+  ): Promise<ApiResult<Note>> {
     return this.request<Note>(`/api/v1/leads/${id}/notes`, {
       method: "POST",
       body: JSON.stringify({ content, type }),
     });
   }
 
-  async updateLeadNote(noteId: string, content: string): Promise<ApiResult<Note>> {
+  async updateLeadNote(
+    noteId: string,
+    content: string,
+  ): Promise<ApiResult<Note>> {
     return this.request<Note>(`/api/v1/notes/${noteId}`, {
       method: "PUT",
       body: JSON.stringify({ content }),
@@ -378,14 +410,22 @@ class AtusAPI {
   }
 
   // Assignment
-  async assignLead(id: string, corretorId: string | null, notes?: string): Promise<ApiResult<Lead>> {
+  async assignLead(
+    id: string,
+    corretorId: string | null,
+    notes?: string,
+  ): Promise<ApiResult<Lead>> {
     return this.updateLeadPartial(id, {
       corretor_id: corretorId,
       observacoes: notes,
     });
   }
 
-  async updateLeadStatus(id: string, status: string, notes?: string): Promise<ApiResult<Lead>> {
+  async updateLeadStatus(
+    id: string,
+    status: string,
+    notes?: string,
+  ): Promise<ApiResult<Lead>> {
     return this.updateLeadPartial(id, {
       status,
       observacoes: notes,
@@ -393,7 +433,9 @@ class AtusAPI {
   }
 
   async getLeadsStats(): Promise<ApiResult<StatsData>> {
-    const response = await this.request<{ data: LeadStats }>("/api/internal/stats/leads");
+    const response = await this.request<{ data: LeadStats }>(
+      "/api/internal/stats/leads",
+    );
 
     if (response.error || !response.data) {
       return {
@@ -409,7 +451,9 @@ class AtusAPI {
   }
 
   async getCorretores(): Promise<ApiResult<Corretor[]>> {
-    const response = await this.request<{ data: Corretor[] }>("/api/v1/corretores");
+    const response = await this.request<{ data: Corretor[] }>(
+      "/api/v1/corretores",
+    );
 
     if (response.error || !response.data) {
       return {
@@ -424,11 +468,16 @@ class AtusAPI {
     };
   }
 
-  async createCorretor(data: Omit<Corretor, "id">): Promise<ApiResult<Corretor>> {
-    const response = await this.request<{ data: Corretor }>("/api/v1/corretores", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
+  async createCorretor(
+    data: Omit<Corretor, "id">,
+  ): Promise<ApiResult<Corretor>> {
+    const response = await this.request<{ data: Corretor }>(
+      "/api/v1/corretores",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+    );
 
     if (response.error || !response.data) {
       return {
@@ -443,11 +492,17 @@ class AtusAPI {
     };
   }
 
-  async updateCorretor(id: string, data: Partial<Corretor>): Promise<ApiResult<Corretor>> {
-    const response = await this.request<{ data: Corretor }>(`/api/v1/corretores/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    });
+  async updateCorretor(
+    id: string,
+    data: Partial<Corretor>,
+  ): Promise<ApiResult<Corretor>> {
+    const response = await this.request<{ data: Corretor }>(
+      `/api/v1/corretores/${id}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(data),
+      },
+    );
 
     if (response.error || !response.data) {
       return {
@@ -471,7 +526,9 @@ class AtusAPI {
   }
 
   async getLeadFlowMetrics(): Promise<ApiResult<FlowMetrics>> {
-    const response = await this.request<{ data: FlowMetrics }>("/api/internal/metrics/flow");
+    const response = await this.request<{ data: FlowMetrics }>(
+      "/api/internal/metrics/flow",
+    );
 
     if (response.error || !response.data) {
       return {
@@ -488,7 +545,7 @@ class AtusAPI {
 
   async getFollowupMetrics(): Promise<ApiResult<FollowupMetrics>> {
     const response = await this.request<{ data: FollowupMetrics }>(
-      "/api/internal/metrics/followup"
+      "/api/internal/metrics/followup",
     );
 
     if (response.error || !response.data) {
@@ -505,12 +562,14 @@ class AtusAPI {
   }
 
   async getFollowupQueue(
-    filters: FollowupQueueFilters = {}
+    filters: FollowupQueueFilters = {},
   ): Promise<ApiResult<PaginatedResponse<OperationalQueueItem>>> {
     const query = buildFollowupQueueQuery(filters);
     const response = await this.request<
       PaginatedResponse<Record<string, unknown>>
-    >(`/api/internal/leads/followup-queue${query.size ? `?${query.toString()}` : ""}`);
+    >(
+      `/api/internal/leads/followup-queue${query.size ? `?${query.toString()}` : ""}`,
+    );
 
     if (response.error || !response.data) {
       return {
@@ -528,9 +587,11 @@ class AtusAPI {
     };
   }
 
-  async getLeadOperationalStatus(id: string): Promise<ApiResult<OperationalStatus>> {
+  async getLeadOperationalStatus(
+    id: string,
+  ): Promise<ApiResult<OperationalStatus>> {
     const response = await this.request<{ data: Record<string, unknown> }>(
-      `/api/internal/leads/${id}/operational-status`
+      `/api/internal/leads/${id}/operational-status`,
     );
 
     if (response.error || !response.data) {
@@ -549,14 +610,14 @@ class AtusAPI {
   async getLeadActions(
     id: string,
     limit = 20,
-    offset = 0
+    offset = 0,
   ): Promise<ApiResult<PaginatedResponse<LeadAction>>> {
     const params = new URLSearchParams({
       limit: String(limit),
       offset: String(offset),
     });
     const response = await this.request<PaginatedResponse<LeadAction>>(
-      `/api/internal/leads/${id}/actions?${params.toString()}`
+      `/api/internal/leads/${id}/actions?${params.toString()}`,
     );
 
     if (response.error || !response.data) {
@@ -573,12 +634,14 @@ class AtusAPI {
   }
 
   async getInboxConversations(
-    filters: InboxConversationFilters = {}
+    filters: InboxConversationFilters = {},
   ): Promise<ApiResult<PaginatedResponse<InboxConversationSummary>>> {
     const query = buildInboxConversationsQuery(filters);
     const response = await this.request<
       PaginatedResponse<Record<string, unknown>>
-    >(`/api/internal/inbox/conversations${query.size ? `?${query.toString()}` : ""}`);
+    >(
+      `/api/internal/inbox/conversations${query.size ? `?${query.toString()}` : ""}`,
+    );
 
     if (response.error || !response.data) {
       return {
@@ -597,10 +660,10 @@ class AtusAPI {
   }
 
   async getInboxConversationDetail(
-    leadId: string
+    leadId: string,
   ): Promise<ApiResult<InboxConversationDetail>> {
     const response = await this.request<{ data: Record<string, unknown> }>(
-      `/api/internal/inbox/conversations/${leadId}`
+      `/api/internal/inbox/conversations/${leadId}`,
     );
 
     if (response.error || !response.data) {
@@ -623,12 +686,15 @@ class AtusAPI {
       actor_name: string;
       actor_type: string;
       introduce_actor?: boolean;
-    }
+    },
   ): Promise<ApiResult<{ success: boolean }>> {
-    return this.request(`/api/internal/inbox/conversations/${leadId}/messages`, {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
+    return this.request(
+      `/api/internal/inbox/conversations/${leadId}/messages`,
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+      },
+    );
   }
 
   async assignInboxConversation(
@@ -637,7 +703,7 @@ class AtusAPI {
       assigned_corretor_id: string;
       assigned_by: string;
       note?: string;
-    }
+    },
   ): Promise<ApiResult<{ success: boolean }>> {
     return this.request(`/api/internal/inbox/conversations/${leadId}/assign`, {
       method: "POST",
@@ -651,7 +717,7 @@ class AtusAPI {
       state: string;
       actor_name: string;
       reason?: string;
-    }
+    },
   ): Promise<ApiResult<{ success: boolean }>> {
     return this.request(`/api/internal/inbox/conversations/${leadId}/state`, {
       method: "POST",
@@ -664,19 +730,21 @@ class AtusAPI {
     body: {
       actor_name: string;
       reason?: string;
-    }
+    },
   ): Promise<ApiResult<{ success: boolean }>> {
     return this.request(
       `/api/internal/inbox/conversations/${leadId}/return-to-bot`,
       {
         method: "POST",
         body: JSON.stringify(body),
-      }
+      },
     );
   }
 
   async getSLAMetrics(): Promise<ApiResult<SlaMetrics>> {
-    const response = await this.request<{ data: SlaMetrics }>("/api/internal/metrics/sla");
+    const response = await this.request<{ data: SlaMetrics }>(
+      "/api/internal/metrics/sla",
+    );
 
     if (response.error || !response.data) {
       return {
@@ -692,11 +760,11 @@ class AtusAPI {
   }
 
   async getAnalyticsOverview(
-    filters: AnalyticsFilters = {}
+    filters: AnalyticsFilters = {},
   ): Promise<ApiResult<AnalyticsOverview>> {
     const query = buildAnalyticsQuery(filters);
     const response = await this.request<{ data: AnalyticsOverview }>(
-      `/api/internal/analytics/overview${query.size ? `?${query.toString()}` : ""}`
+      `/api/internal/analytics/overview${query.size ? `?${query.toString()}` : ""}`,
     );
 
     if (response.error || !response.data) {
@@ -713,11 +781,11 @@ class AtusAPI {
   }
 
   async getAnalyticsTimeseries(
-    filters: AnalyticsFilters = {}
+    filters: AnalyticsFilters = {},
   ): Promise<ApiResult<AnalyticsTimeseriesPoint[]>> {
     const query = buildAnalyticsQuery(filters);
     const response = await this.request<{ data: Record<string, unknown>[] }>(
-      `/api/internal/analytics/timeseries${query.size ? `?${query.toString()}` : ""}`
+      `/api/internal/analytics/timeseries${query.size ? `?${query.toString()}` : ""}`,
     );
 
     if (response.error || !response.data) {
@@ -734,11 +802,11 @@ class AtusAPI {
   }
 
   async getAnalyticsSources(
-    filters: AnalyticsFilters = {}
+    filters: AnalyticsFilters = {},
   ): Promise<ApiResult<AnalyticsGroupedRow[]>> {
     const query = buildAnalyticsQuery(filters);
     const response = await this.request<{ data: Record<string, unknown>[] }>(
-      `/api/internal/analytics/sources${query.size ? `?${query.toString()}` : ""}`
+      `/api/internal/analytics/sources${query.size ? `?${query.toString()}` : ""}`,
     );
 
     if (response.error || !response.data) {
@@ -755,11 +823,11 @@ class AtusAPI {
   }
 
   async getAnalyticsCampaigns(
-    filters: AnalyticsFilters = {}
+    filters: AnalyticsFilters = {},
   ): Promise<ApiResult<AnalyticsGroupedRow[]>> {
     const query = buildAnalyticsQuery(filters);
     const response = await this.request<{ data: Record<string, unknown>[] }>(
-      `/api/internal/analytics/campaigns${query.size ? `?${query.toString()}` : ""}`
+      `/api/internal/analytics/campaigns${query.size ? `?${query.toString()}` : ""}`,
     );
 
     if (response.error || !response.data) {
@@ -776,11 +844,11 @@ class AtusAPI {
   }
 
   async getAnalyticsCorretors(
-    filters: AnalyticsFilters = {}
+    filters: AnalyticsFilters = {},
   ): Promise<ApiResult<AnalyticsGroupedRow[]>> {
     const query = buildAnalyticsQuery(filters);
     const response = await this.request<{ data: Record<string, unknown>[] }>(
-      `/api/internal/analytics/corretors${query.size ? `?${query.toString()}` : ""}`
+      `/api/internal/analytics/corretors${query.size ? `?${query.toString()}` : ""}`,
     );
 
     if (response.error || !response.data) {
@@ -797,11 +865,13 @@ class AtusAPI {
   }
 
   async getAnalyticsLeads(
-    filters: AnalyticsFilters = {}
+    filters: AnalyticsFilters = {},
   ): Promise<ApiResult<PaginatedResponse<AnalyticsLeadRow>>> {
     const query = buildAnalyticsQuery(filters);
-    const response = await this.request<PaginatedResponse<Record<string, unknown>>>(
-      `/api/internal/analytics/leads${query.size ? `?${query.toString()}` : ""}`
+    const response = await this.request<
+      PaginatedResponse<Record<string, unknown>>
+    >(
+      `/api/internal/analytics/leads${query.size ? `?${query.toString()}` : ""}`,
     );
 
     if (response.error || !response.data) {
@@ -821,11 +891,11 @@ class AtusAPI {
   }
 
   async getAnalyticsRankingOrigins(
-    filters: AnalyticsFilters = {}
+    filters: AnalyticsFilters = {},
   ): Promise<ApiResult<AnalyticsGroupedRow[]>> {
     const query = buildAnalyticsQuery(filters);
     const response = await this.request<{ data: Record<string, unknown>[] }>(
-      `/api/internal/analytics/rankings/origins${query.size ? `?${query.toString()}` : ""}`
+      `/api/internal/analytics/rankings/origins${query.size ? `?${query.toString()}` : ""}`,
     );
 
     if (response.error || !response.data) {
@@ -842,11 +912,11 @@ class AtusAPI {
   }
 
   async getAnalyticsRankingCampaigns(
-    filters: AnalyticsFilters = {}
+    filters: AnalyticsFilters = {},
   ): Promise<ApiResult<AnalyticsGroupedRow[]>> {
     const query = buildAnalyticsQuery(filters);
     const response = await this.request<{ data: Record<string, unknown>[] }>(
-      `/api/internal/analytics/rankings/campaigns${query.size ? `?${query.toString()}` : ""}`
+      `/api/internal/analytics/rankings/campaigns${query.size ? `?${query.toString()}` : ""}`,
     );
 
     if (response.error || !response.data) {
@@ -863,11 +933,11 @@ class AtusAPI {
   }
 
   async getAnalyticsRankingCorretors(
-    filters: AnalyticsFilters = {}
+    filters: AnalyticsFilters = {},
   ): Promise<ApiResult<AnalyticsGroupedRow[]>> {
     const query = buildAnalyticsQuery(filters);
     const response = await this.request<{ data: Record<string, unknown>[] }>(
-      `/api/internal/analytics/rankings/corretors${query.size ? `?${query.toString()}` : ""}`
+      `/api/internal/analytics/rankings/corretors${query.size ? `?${query.toString()}` : ""}`,
     );
 
     if (response.error || !response.data) {
@@ -884,11 +954,13 @@ class AtusAPI {
   }
 
   async getAnalyticsRankingTriageReady(
-    filters: AnalyticsFilters = {}
+    filters: AnalyticsFilters = {},
   ): Promise<ApiResult<PaginatedResponse<AnalyticsLeadRow>>> {
     const query = buildAnalyticsQuery(filters);
-    const response = await this.request<PaginatedResponse<Record<string, unknown>>>(
-      `/api/internal/analytics/rankings/triage-ready${query.size ? `?${query.toString()}` : ""}`
+    const response = await this.request<
+      PaginatedResponse<Record<string, unknown>>
+    >(
+      `/api/internal/analytics/rankings/triage-ready${query.size ? `?${query.toString()}` : ""}`,
     );
 
     if (response.error || !response.data) {
@@ -908,11 +980,13 @@ class AtusAPI {
   }
 
   async getAnalyticsRankingLeadScores(
-    filters: AnalyticsFilters = {}
+    filters: AnalyticsFilters = {},
   ): Promise<ApiResult<PaginatedResponse<AnalyticsLeadRow>>> {
     const query = buildAnalyticsQuery(filters);
-    const response = await this.request<PaginatedResponse<Record<string, unknown>>>(
-      `/api/internal/analytics/rankings/lead-scores${query.size ? `?${query.toString()}` : ""}`
+    const response = await this.request<
+      PaginatedResponse<Record<string, unknown>>
+    >(
+      `/api/internal/analytics/rankings/lead-scores${query.size ? `?${query.toString()}` : ""}`,
     );
 
     if (response.error || !response.data) {
@@ -932,11 +1006,11 @@ class AtusAPI {
   }
 
   async getTrackedLinks(
-    filters: TrackedLinksFilters = {}
+    filters: TrackedLinksFilters = {},
   ): Promise<ApiResult<TrackedLink[]>> {
     const query = buildTrackedLinksQuery(filters);
     const response = await this.request<{ data: Record<string, unknown>[] }>(
-      `/api/internal/tracked-links${query.size ? `?${query.toString()}` : ""}`
+      `/api/internal/tracked-links${query.size ? `?${query.toString()}` : ""}`,
     );
 
     if (response.error || !response.data) {
@@ -953,9 +1027,10 @@ class AtusAPI {
   }
 
   async getTrackedLink(id: string): Promise<ApiResult<TrackedLink>> {
-    const response = await this.request<{ data: Record<string, unknown>; link?: string }>(
-      `/api/internal/tracked-links/${id}`
-    );
+    const response = await this.request<{
+      data: Record<string, unknown>;
+      link?: string;
+    }>(`/api/internal/tracked-links/${id}`);
 
     if (response.error || !response.data) {
       return {
@@ -971,15 +1046,15 @@ class AtusAPI {
   }
 
   async createTrackedLink(
-    values: CreateTrackedLinkValues
+    values: CreateTrackedLinkValues,
   ): Promise<ApiResult<TrackedLink>> {
-    const response = await this.request<{ data: Record<string, unknown>; link?: string }>(
-      "/api/internal/tracked-links",
-      {
-        method: "POST",
-        body: JSON.stringify(buildTrackedLinkPayload(values)),
-      }
-    );
+    const response = await this.request<{
+      data: Record<string, unknown>;
+      link?: string;
+    }>("/api/internal/tracked-links", {
+      method: "POST",
+      body: JSON.stringify(buildTrackedLinkPayload(values)),
+    });
 
     if (response.error || !response.data) {
       return {
