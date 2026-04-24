@@ -50,5 +50,4 @@ jobs:
           build-args: |
             NEXT_PUBLIC_API_URL=https://chatbot.atusbr.com.br
             NEXT_PUBLIC_API_KEY=atus-mcp-api-key-2026
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          no-cache: true
