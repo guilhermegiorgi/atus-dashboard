@@ -1,0 +1,89 @@
+{
+  "_comment": "Fonte da verdade do projeto. Atualizar conforme evolui.",
+  "_lastUpdated": "2026-04-24",
+
+  "project": {
+    "name": "atus-lead-dashboard",
+    "slug": "atus-imobiliaria",
+    "description": "Dashboard de gestão de leads imobiliários da Atus",
+    "owner": "Guilherme Giorgi"
+  },
+
+  "stack": {
+    "framework": "nextjs",
+    "version": "14",
+    "router": "app",
+    "ui": "shadcn",
+    "designSystem": "blackstar",
+    "orm": "prisma",
+    "db": "postgresql",
+    "auth": "none",
+    "deploy": "vercel"
+  },
+
+  "domains": {
+    "leads": {
+      "enabled": true,
+      "apiBase": "chatbot.atusbr.com.br",
+      "states": ["NOVO", "EM_ATENDIMENTO", "AGUARDANDO_RETORNO", "CONVERTIDO", "PERDIDO"]
+    },
+    "corretores": {
+      "enabled": true,
+      "trackingLinks": true
+    },
+    "chatbot": {
+      "enabled": true,
+      "platform": "whatsapp",
+      "corrections": true
+    },
+    "crm": {
+      "enabled": false,
+      "provider": null,
+      "syncDirection": null
+    }
+  },
+
+  "features": {
+    "pipeline": true,
+    "kanbanBoard": true,
+    "lateralDetailPanel": true,
+    "kpis": true,
+    "trackingLinks": true,
+    "globalSearch": true,
+    "notifications": false,
+    "rag": false
+  },
+
+  "routes": {
+    "/": "Home overview",
+    "/dashboard": "Métricas e KPIs",
+    "/leads": "Lista de leads + painel lateral",
+    "/board": "Pipeline Kanban",
+    "/pipeline": "Fila operacional",
+    "/conversations": "Caixa de mensagens",
+    "/tracking": "Links rastreáveis",
+    "/analytics": "Relatórios"
+  },
+
+  "llm": {
+    "providers": ["google"],
+    "defaultProvider": "google",
+    "defaultModel": "gemini-3-flash-preview"
+  },
+
+  "api": {
+    "baseUrl": "chatbot.atusbr.com.br",
+    "endpoints": {
+      "leads": "/api/v1/leads",
+      "mcpLeads": "/mcp/leads",
+      "stats": "/api/v1/stats/leads",
+      "tracking": "/api/v1/tracked-links",
+      "conversations": "/api/v1/conversas"
+    }
+  },
+
+  "bugs": {
+    "activeBugCount": 0,
+    "lastBugfixSession": null
+  }
+}
