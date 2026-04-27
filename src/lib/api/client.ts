@@ -65,15 +65,23 @@ import {
   normalizeTrackedLink,
 } from "@/lib/tracking/tracked-links";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
+function buildRequestUrl(endpoint: string) {
+  if (/^https?:\/\//.test(endpoint)) {
+    return endpoint;
+  }
+
+  return endpoint;
+}
 
 class AtusAPI {
-  private getHeaders() {
-    const apiKey = process.env.NEXT_PUBLIC_API_KEY;
-    return {
-      "Content-Type": "application/json",
-      ...(apiKey && { "x-api-key": apiKey }),
-    };
+  private getHeaders(options: RequestInit) {
+    const headers = new Headers(options.headers);
+
+    if (options.body !== undefined && !headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json");
+    }
+
+    return headers;
   }
 
   private async request<T>(
@@ -81,11 +89,8 @@ class AtusAPI {
     options: RequestInit = {},
   ): Promise<ApiResult<T>> {
     try {
-      const url = `${API_BASE_URL}${endpoint}`;
-      const headers = {
-        ...this.getHeaders(),
-        ...(options.headers || {}),
-      };
+      const url = buildRequestUrl(endpoint);
+      const headers = this.getHeaders(options);
       const response = await fetch(url, {
         ...options,
         headers,
