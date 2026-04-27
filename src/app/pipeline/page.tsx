@@ -1,11 +1,24 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Pagination,
   PaginationContent,
@@ -87,7 +100,7 @@ function actionTone(action: string) {
     case "human_takeover_active":
       return "border-blue-500/20 bg-blue-500/10 text-blue-300";
     default:
-      return "border-border/50 bg-secondary/30 text-foreground";
+      return "border-white/[0.06] white/[0.02] text-foreground";
   }
 }
 
@@ -100,7 +113,8 @@ export default function PipelinePage() {
   const [meta, setMeta] = useState({ total: 0, limit: PAGE_SIZE, offset: 0 });
   const [metrics, setMetrics] = useState<FollowupMetrics>(EMPTY_METRICS);
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
-  const [selectedStatus, setSelectedStatus] = useState<OperationalStatus | null>(null);
+  const [selectedStatus, setSelectedStatus] =
+    useState<OperationalStatus | null>(null);
   const [selectedActions, setSelectedActions] = useState<LeadAction[]>([]);
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -108,28 +122,31 @@ export default function PipelinePage() {
 
   const requestFingerprint = JSON.stringify(filters);
 
-  const loadQueue = useCallback(async (currentFilters: FollowupQueueFilters) => {
-    setLoading(true);
-    setError(null);
+  const loadQueue = useCallback(
+    async (currentFilters: FollowupQueueFilters) => {
+      setLoading(true);
+      setError(null);
 
-    const [queueResult, metricsResult] = await Promise.all([
-      api.getFollowupQueue(currentFilters),
-      api.getFollowupMetrics(),
-    ]);
+      const [queueResult, metricsResult] = await Promise.all([
+        api.getFollowupQueue(currentFilters),
+        api.getFollowupMetrics(),
+      ]);
 
-    const firstError = queueResult.error ?? metricsResult.error ?? null;
+      const firstError = queueResult.error ?? metricsResult.error ?? null;
 
-    if (firstError || !queueResult.data) {
-      setError(firstError ?? "Erro ao carregar fila operacional");
+      if (firstError || !queueResult.data) {
+        setError(firstError ?? "Erro ao carregar fila operacional");
+        setLoading(false);
+        return;
+      }
+
+      setQueue(queueResult.data.data);
+      setMeta(queueResult.data.meta);
+      setMetrics(metricsResult.data ?? EMPTY_METRICS);
       setLoading(false);
-      return;
-    }
-
-    setQueue(queueResult.data.data);
-    setMeta(queueResult.data.meta);
-    setMetrics(metricsResult.data ?? EMPTY_METRICS);
-    setLoading(false);
-  }, []);
+    },
+    [],
+  );
 
   const loadLeadDetails = useCallback(async (leadId: string) => {
     setDetailLoading(true);
@@ -140,7 +157,11 @@ export default function PipelinePage() {
     ]);
 
     if (statusResult.error || actionsResult.error) {
-      setError(statusResult.error ?? actionsResult.error ?? "Erro ao carregar detalhe operacional");
+      setError(
+        statusResult.error ??
+          actionsResult.error ??
+          "Erro ao carregar detalhe operacional",
+      );
       setDetailLoading(false);
       return;
     }
@@ -168,15 +189,15 @@ export default function PipelinePage() {
   const currentPage = Math.floor(meta.offset / meta.limit) + 1;
   const selectedRow = useMemo(
     () => queue.find((item) => item.lead_id === selectedLeadId) ?? null,
-    [queue, selectedLeadId]
+    [queue, selectedLeadId],
   );
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
-          <p className="text-muted-foreground">Carregando fila operacional...</p>
+          <div className="h-8 w-8 rounded-full border-2 border-white/10 border-t-white/30 animate-spin" />
+          <p className="text-white/40 text-xs">Carregando...</p>
         </div>
       </div>
     );
@@ -185,9 +206,9 @@ export default function PipelinePage() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-destructive text-center">
-          <p className="font-semibold">Erro ao carregar</p>
-          <p className="text-sm">{error}</p>
+        <div className="text-red-400 text-center">
+          <p className="text-sm font-medium">Erro ao carregar</p>
+          <p className="text-xs text-white/40 mt-1">{error}</p>
         </div>
       </div>
     );
@@ -197,62 +218,78 @@ export default function PipelinePage() {
     <div className="space-y-8 animate-fade-in">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Fila Operacional</h1>
-        <p className="text-muted-foreground">
+        <p className="text-white/30">
           Leads travados, contaminados ou prontos para retomada automatica
         </p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-        <Card className="glass border-border/50">
+        <Card className="card-premium">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-white/30">
               Na fila
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{meta.total}</div>
-            <p className="mt-1 text-xs text-muted-foreground">Total paginado da fila operacional</p>
+            <p className="mt-1 text-xs text-white/30">
+              Total paginado da fila operacional
+            </p>
           </CardContent>
         </Card>
-        <Card className="glass border-border/50">
+        <Card className="card-premium">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-white/30">
               Expirados
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-amber-300">{metrics.expired_followups}</div>
-            <p className="mt-1 text-xs text-muted-foreground">Precisam de retomada imediata</p>
+            <div className="text-3xl font-bold text-amber-300">
+              {metrics.expired_followups}
+            </div>
+            <p className="mt-1 text-xs text-white/30">
+              Precisam de retomada imediata
+            </p>
           </CardContent>
         </Card>
-        <Card className="glass border-border/50">
+        <Card className="card-premium">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-white/30">
               Contaminados
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-orange-300">{metrics.contaminated_leads}</div>
-            <p className="mt-1 text-xs text-muted-foreground">Exigem revisao antes de lote</p>
+            <div className="text-3xl font-bold text-orange-300">
+              {metrics.contaminated_leads}
+            </div>
+            <p className="mt-1 text-xs text-white/30">
+              Exigem revisao antes de lote
+            </p>
           </CardContent>
         </Card>
-        <Card className="glass border-border/50">
+        <Card className="card-premium">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-white/30">
               Respostas Hoje
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-400">{metrics.followup_responses_today}</div>
-            <p className="mt-1 text-xs text-muted-foreground">Retornos capturados pelo follow-up</p>
+            <div className="text-3xl font-bold text-green-400">
+              {metrics.followup_responses_today}
+            </div>
+            <p className="mt-1 text-xs text-white/30">
+              Retornos capturados pelo follow-up
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="glass border-border/50">
+      <Card className="card-premium">
         <CardHeader>
           <CardTitle>Filtros</CardTitle>
-          <CardDescription>Use apenas os filtros canonicos da fila operacional</CardDescription>
+          <CardDescription>
+            Use apenas os filtros canonicos da fila operacional
+          </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <Input
@@ -362,7 +399,7 @@ export default function PipelinePage() {
         </CardContent>
       </Card>
 
-      <Card className="glass border-border/50">
+      <Card className="card-premium">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -376,11 +413,11 @@ export default function PipelinePage() {
         </CardHeader>
         <CardContent>
           {queue.length === 0 ? (
-            <div className="py-16 text-center text-muted-foreground">
+            <div className="py-16 text-center text-white/30">
               Nenhum lead encontrado para os filtros atuais.
             </div>
           ) : (
-            <div className="overflow-hidden rounded-xl border border-border/50">
+            <div className="overflow-hidden rounded-xl border border-white/[0.06]">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -396,22 +433,31 @@ export default function PipelinePage() {
                   {queue.map((item) => (
                     <TableRow
                       key={item.lead_id}
-                      className={item.lead_id === selectedLeadId ? "bg-secondary/30" : ""}
+                      className={
+                        item.lead_id === selectedLeadId ? "white/[0.02]" : ""
+                      }
                     >
                       <TableCell>
                         <div className="space-y-1">
                           <div className="font-medium">{item.telefone}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {item.qualification_summary || "Sem resumo de qualificacao"}
+                          <div className="text-xs text-white/30">
+                            {item.qualification_summary ||
+                              "Sem resumo de qualificacao"}
                           </div>
                           <div className="flex flex-wrap gap-2">
                             {item.is_contaminated && (
-                              <Badge variant="outline" className="border-orange-500/20 bg-orange-500/10 text-orange-300">
+                              <Badge
+                                variant="outline"
+                                className="border-orange-500/20 bg-orange-500/10 text-orange-300"
+                              >
                                 Contaminado
                               </Badge>
                             )}
                             {item.confirmation_pending && (
-                              <Badge variant="outline" className="border-blue-500/20 bg-blue-500/10 text-blue-300">
+                              <Badge
+                                variant="outline"
+                                className="border-blue-500/20 bg-blue-500/10 text-blue-300"
+                              >
                                 Confirmacao pendente
                               </Badge>
                             )}
@@ -421,13 +467,15 @@ export default function PipelinePage() {
                       <TableCell>
                         <div className="space-y-1">
                           <div>{item.status || "-"}</div>
-                          <div className="text-xs text-muted-foreground">{item.fase || "-"}</div>
+                          <div className="text-xs text-white/30">
+                            {item.fase || "-"}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
                           <div>{item.canal_origem || "-"}</div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-xs text-white/30">
                             {item.sistema_origem || "-"}
                           </div>
                         </div>
@@ -435,13 +483,16 @@ export default function PipelinePage() {
                       <TableCell>
                         {item.next_field || "-"}
                         {item.missing_fields.length > 0 && (
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-xs text-white/30">
                             Faltando: {item.missing_fields.join(", ")}
                           </div>
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={actionTone(item.recommended_action)}>
+                        <Badge
+                          variant="outline"
+                          className={actionTone(item.recommended_action)}
+                        >
                           {recommendedActionLabel(item.recommended_action)}
                         </Badge>
                       </TableCell>
@@ -501,7 +552,7 @@ export default function PipelinePage() {
         </CardContent>
       </Card>
 
-      <Card className="glass border-border/50">
+      <Card className="card-premium">
         <CardHeader>
           <CardTitle>Detalhe Operacional</CardTitle>
           <CardDescription>
@@ -512,46 +563,57 @@ export default function PipelinePage() {
         </CardHeader>
         <CardContent>
           {!selectedLeadId ? (
-            <div className="py-12 text-muted-foreground">
-              Nenhum lead selecionado.
-            </div>
+            <div className="py-12 text-white/30">Nenhum lead selecionado.</div>
           ) : detailLoading ? (
-            <div className="py-12 text-muted-foreground">Carregando detalhe operacional...</div>
+            <div className="py-12 text-white/30">
+              Carregando detalhe operacional...
+            </div>
           ) : !selectedStatus ? (
-            <div className="py-12 text-muted-foreground">Sem detalhe operacional disponível.</div>
+            <div className="py-12 text-white/30">
+              Sem detalhe operacional disponível.
+            </div>
           ) : (
             <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
               <div className="space-y-4">
-                <div className="rounded-xl border border-border/50 p-4">
-                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                <div className="rounded-xl border border-white/[0.06] p-4">
+                  <div className="text-xs uppercase tracking-wide text-white/30">
                     Recomendacao atual
                   </div>
                   <div className="mt-2">
-                    <Badge variant="outline" className={actionTone(selectedStatus.recommended_action)}>
-                      {recommendedActionLabel(selectedStatus.recommended_action)}
+                    <Badge
+                      variant="outline"
+                      className={actionTone(selectedStatus.recommended_action)}
+                    >
+                      {recommendedActionLabel(
+                        selectedStatus.recommended_action,
+                      )}
                     </Badge>
                   </div>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
-                  <div className="rounded-xl border border-border/50 p-4">
-                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                  <div className="rounded-xl border border-white/[0.06] p-4">
+                    <div className="text-xs uppercase tracking-wide text-white/30">
                       Proximo campo
                     </div>
-                    <div className="mt-2 font-medium">{selectedStatus.next_field || "-"}</div>
+                    <div className="mt-2 font-medium">
+                      {selectedStatus.next_field || "-"}
+                    </div>
                   </div>
-                  <div className="rounded-xl border border-border/50 p-4">
-                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                  <div className="rounded-xl border border-white/[0.06] p-4">
+                    <div className="text-xs uppercase tracking-wide text-white/30">
                       Tracking
                     </div>
                     <div className="mt-2 font-medium">
-                      {selectedStatus.tracked_codigo_ref || selectedStatus.campanha_origem || "-"}
+                      {selectedStatus.tracked_codigo_ref ||
+                        selectedStatus.campanha_origem ||
+                        "-"}
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border/50 p-4">
-                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                <div className="rounded-xl border border-white/[0.06] p-4">
+                  <div className="text-xs uppercase tracking-wide text-white/30">
                     Campos faltantes
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -562,38 +624,44 @@ export default function PipelinePage() {
                         </Badge>
                       ))
                     ) : (
-                      <span className="text-sm text-muted-foreground">Nenhum campo faltante.</span>
+                      <span className="text-sm text-white/30">
+                        Nenhum campo faltante.
+                      </span>
                     )}
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border/50 p-4">
-                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                <div className="rounded-xl border border-white/[0.06] p-4">
+                  <div className="text-xs uppercase tracking-wide text-white/30">
                     Ultima interacao
                   </div>
                   <div className="mt-3 space-y-3 text-sm">
                     <div className="flex items-start gap-2">
                       <Bot className="mt-0.5 h-4 w-4 text-primary" />
                       <div>
-                        <div className="text-xs text-muted-foreground">Ultima mensagem do bot</div>
+                        <div className="text-xs text-white/30">
+                          Ultima mensagem do bot
+                        </div>
                         <div>{selectedStatus.last_bot_message || "-"}</div>
                       </div>
                     </div>
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-400" />
                       <div>
-                        <div className="text-xs text-muted-foreground">Ultima mensagem do lead</div>
+                        <div className="text-xs text-white/30">
+                          Ultima mensagem do lead
+                        </div>
                         <div>{selectedStatus.last_lead_message || "-"}</div>
                       </div>
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-white/30">
                       Direcao: {selectedStatus.last_message_direction || "-"}
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border/50 p-4">
-                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                <div className="rounded-xl border border-white/[0.06] p-4">
+                  <div className="text-xs uppercase tracking-wide text-white/30">
                     Resumo de qualificacao
                   </div>
                   <div className="mt-2 text-sm">
@@ -603,8 +671,8 @@ export default function PipelinePage() {
               </div>
 
               <div className="space-y-4">
-                <div className="rounded-xl border border-border/50 p-4">
-                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                <div className="rounded-xl border border-white/[0.06] p-4">
+                  <div className="text-xs uppercase tracking-wide text-white/30">
                     Sinais operacionais
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -622,20 +690,27 @@ export default function PipelinePage() {
                           : "border-green-500/20 bg-green-500/10 text-green-400"
                       }
                     >
-                      {selectedStatus.is_contaminated ? "Contaminado" : "Nao contaminado"}
+                      {selectedStatus.is_contaminated
+                        ? "Contaminado"
+                        : "Nao contaminado"}
                     </Badge>
                     <Badge
                       variant="outline"
                       className={
                         selectedStatus.confirmation_pending
                           ? "border-blue-500/20 bg-blue-500/10 text-blue-300"
-                          : "border-border/50"
+                          : "border-white/[0.06]"
                       }
                     >
-                      {selectedStatus.confirmation_pending ? "Confirmacao pendente" : "Sem confirmacao pendente"}
+                      {selectedStatus.confirmation_pending
+                        ? "Confirmacao pendente"
+                        : "Sem confirmacao pendente"}
                     </Badge>
                     {selectedStatus.intervention_type && (
-                      <Badge variant="outline" className="border-blue-500/20 bg-blue-500/10 text-blue-300">
+                      <Badge
+                        variant="outline"
+                        className="border-blue-500/20 bg-blue-500/10 text-blue-300"
+                      >
                         <ShieldAlert className="mr-1 h-3 w-3" />
                         {selectedStatus.intervention_type}
                       </Badge>
@@ -643,30 +718,38 @@ export default function PipelinePage() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border/50 p-4">
-                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                <div className="rounded-xl border border-white/[0.06] p-4">
+                  <div className="text-xs uppercase tracking-wide text-white/30">
                     Timeline de acoes
                   </div>
                   <div className="mt-3 space-y-3">
                     {selectedActions.length > 0 ? (
                       selectedActions.map((item) => (
-                        <div key={item.id} className="rounded-lg border border-border/50 p-3">
+                        <div
+                          key={item.id}
+                          className="rounded-lg border border-white/[0.06] p-3"
+                        >
                           <div className="flex items-center justify-between gap-3">
-                            <div className="font-medium">{actionLabel(item.action)}</div>
+                            <div className="font-medium">
+                              {actionLabel(item.action)}
+                            </div>
                             <Badge variant="outline">{item.status}</Badge>
                           </div>
-                          <div className="mt-1 text-xs text-muted-foreground">
-                            Ator: {item.actor} · {new Date(item.created_at).toLocaleString("pt-BR")}
+                          <div className="mt-1 text-xs text-white/30">
+                            Ator: {item.actor} ·{" "}
+                            {new Date(item.created_at).toLocaleString("pt-BR")}
                           </div>
                           {item.details && (
-                            <div className="mt-2 text-xs text-muted-foreground break-all">
+                            <div className="mt-2 text-xs text-white/30 break-all">
                               {item.details}
                             </div>
                           )}
                         </div>
                       ))
                     ) : (
-                      <div className="text-sm text-muted-foreground">Nenhuma acao recente.</div>
+                      <div className="text-sm text-white/30">
+                        Nenhuma acao recente.
+                      </div>
                     )}
                   </div>
                 </div>

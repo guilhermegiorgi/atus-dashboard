@@ -1,76 +1,258 @@
+"use client";
+
 import Link from "next/link";
-import { Zap, ArrowRight, Users, BarChart3, MessageSquare, TrendingUp } from "lucide-react";
+import {
+  Zap,
+  Users,
+  BarChart3,
+  MessageSquare,
+  TrendingUp,
+  ArrowUpRight,
+  Link2,
+  LayoutDashboard,
+  Target,
+  Clock,
+  CheckCircle2,
+} from "lucide-react";
+
+const quickStats = [
+  {
+    label: "total leads",
+    value: "2,847",
+    change: "+12%",
+    icon: Users,
+    trend: "up",
+  },
+  { label: "new today", value: "156", change: "+8%", icon: Users, trend: "up" },
+  {
+    label: "conversions",
+    value: "847",
+    change: "+23%",
+    icon: TrendingUp,
+    trend: "up",
+  },
+  {
+    label: "revenue",
+    value: "R$ 1.2M",
+    change: "+18%",
+    icon: BarChart3,
+    trend: "up",
+  },
+];
 
 const features = [
   {
-    icon: Users,
-    title: "Gestão de Leads",
+    title: "leads",
     description: "Gerencie e acompanhe todos os seus leads em um só lugar",
+    icon: Users,
+    href: "/leads",
+    count: "2.847",
   },
   {
-    icon: BarChart3,
-    title: "Análises Detalhadas",
+    title: "analytics",
     description: "Visualize métricas e estatísticas em tempo real",
+    icon: BarChart3,
+    href: "/analytics",
+    count: "12",
   },
   {
-    icon: MessageSquare,
-    title: "Conversas",
+    title: "inbox",
     description: "Acompanhe todas as conversas com seus leads",
+    icon: MessageSquare,
+    href: "/conversations",
+    count: "48",
   },
   {
+    title: "pipeline",
+    description: "Monitore seu funil de vendas e conversões",
     icon: TrendingUp,
-    title: "Pipeline de Vendas",
-    description: "Acompanhe o funil de vendas e conversões",
+    href: "/pipeline",
+    count: "156",
+  },
+];
+
+const recentActivity = [
+  {
+    type: "lead",
+    message: "Novo lead: João Silva",
+    time: "2 min atrás",
+    icon: Users,
+  },
+  {
+    type: "conversion",
+    message: "Conversão: R$ 450.000",
+    time: "15 min atrás",
+    icon: CheckCircle2,
+  },
+  {
+    type: "followup",
+    message: "Follow-up enviado: Maria Santos",
+    time: "32 min atrás",
+    icon: Clock,
+  },
+  {
+    type: "tracking",
+    message: "Nova conversão de link rastreado",
+    time: "1h atrás",
+    icon: Link2,
   },
 ];
 
 export default function HomePage() {
   return (
-    <div className="space-y-16 animate-fade-in">
-      <div className="flex flex-col items-center justify-center py-16 space-y-8">
-        <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-orange-600 glow-primary-strong animate-pulse">
-          <Zap className="h-10 w-10 text-primary-foreground" />
+    <div className="space-y-10">
+      {/* Header */}
+      <div
+        className="flex items-center justify-between opacity-0 animate-in"
+        style={{ animationDelay: "0.05s" }}
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-white">
+            <Zap className="h-4 w-4 text-black" />
+          </div>
+          <div>
+            <h1 className="text-base font-medium tracking-tight text-white">
+              atus
+            </h1>
+            <p className="text-[10px] uppercase tracking-widest text-white/40">
+              lead management
+            </p>
+          </div>
         </div>
-        <div className="text-center space-y-4">
-          <h1 className="text-5xl font-bold tracking-tight">
-            <span className="text-gradient">ATUS</span> Dashboard
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl">
-            Plataforma completa para gestão de leads e conversas da Atus
-          </p>
-        </div>
-        <Link href="/dashboard">
-          <button className="group flex items-center gap-2 px-8 py-4 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-all duration-300 glow-primary">
-            <span>Acessar Dashboard</span>
-            <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-          </button>
-        </Link>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {features.map((feature, index) => (
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-2">
+        {quickStats.map((stat, i) => (
           <div
-            key={feature.title}
-            className="group glass rounded-2xl p-6 border border-border/50 hover:border-primary/30 transition-all duration-300 hover:glow-primary animate-slide-up"
-            style={{ animationDelay: `${index * 100}ms` }}
+            key={stat.label}
+            className="card-premium p-4 hover:card-premium-hover transition-all duration-300 opacity-0 animate-in"
+            style={{ animationDelay: `${0.1 + i * 0.05}s` }}
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
-              <feature.icon className="h-6 w-6" />
+            <div className="flex items-center justify-between mb-3">
+              <stat.icon className="h-3.5 w-3.5 text-white/30" />
+              <span className="text-[10px] font-medium text-emerald-400/80">
+                {stat.change}
+              </span>
             </div>
-            <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-            <p className="text-sm text-muted-foreground">{feature.description}</p>
+            <div className="text-2xl font-light tracking-tight text-white">
+              {stat.value}
+            </div>
+            <div className="text-[10px] uppercase tracking-widest text-white/30 mt-1.5">
+              {stat.label}
+            </div>
           </div>
         ))}
       </div>
 
-      <div className="glass rounded-2xl p-8 border border-border/50">
-        <h2 className="text-2xl font-bold mb-4">Sobre a Plataforma</h2>
-        <p className="text-muted-foreground leading-relaxed">
-          O ATUS Dashboard é uma plataforma moderna de gestão de leads, projetada para ajudar 
-          sua equipe a acompanhar, analisar e converter leads de forma eficiente. Com métricas 
-          em tempo real, visualização de conversas e um pipeline de vendas intuitivo, você 
-          terá total controle sobre seu funil comercial.
-        </p>
+      {/* Main Grid */}
+      <div className="grid grid-cols-3 gap-4">
+        {/* Features */}
+        <div className="col-span-2 space-y-3">
+          <div className="text-[10px] uppercase tracking-widest text-white/25 px-0.5">
+            Navigation
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {features.map((feature, i) => (
+              <Link
+                key={feature.title}
+                href={feature.href}
+                className="card-premium p-4 group hover:card-premium-hover transition-all duration-300 opacity-0 animate-in"
+                style={{ animationDelay: `${0.25 + i * 0.05}s` }}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-sm border border-white/[0.06] bg-white/[0.02]">
+                    <feature.icon className="h-3.5 w-3.5 text-white/40" />
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-white/25">
+                      {feature.count}
+                    </span>
+                    <ArrowUpRight className="h-3 w-3 text-white/15 group-hover:text-white/30 transition-colors" />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium text-white tracking-wide">
+                    {feature.title}
+                  </h3>
+                  <p className="text-[11px] text-white/35 mt-1 leading-relaxed">
+                    {feature.description}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {/* Dashboard Link */}
+          <Link
+            href="/dashboard"
+            className="card-premium p-4 flex items-center justify-between group hover:card-premium-hover transition-all duration-300 mt-2 opacity-0 animate-in"
+            style={{ animationDelay: "0.45s" }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-sm border border-white/[0.06] bg-white/[0.02]">
+                <LayoutDashboard className="h-3.5 w-3.5 text-white/40" />
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-white tracking-wide">
+                  Dashboard
+                </h3>
+                <p className="text-[11px] text-white/35">
+                  Visão geral completa com métricas
+                </p>
+              </div>
+            </div>
+            <ArrowUpRight className="h-3.5 w-3.5 text-white/15 group-hover:text-white/35 transition-colors" />
+          </Link>
+        </div>
+
+        {/* Activity */}
+        <div className="space-y-3">
+          <div className="text-[10px] uppercase tracking-widest text-white/25 px-0.5">
+            Recent
+          </div>
+          <div
+            className="card-premium p-4 space-y-4 opacity-0 animate-in"
+            style={{ animationDelay: "0.3s" }}
+          >
+            {recentActivity.map((activity, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border border-white/[0.06] bg-white/[0.02]">
+                  <activity.icon className="h-3 w-3 text-white/30" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] text-white/70 leading-snug">
+                    {activity.message}
+                  </p>
+                  <p className="text-[10px] text-white/25 mt-0.5">
+                    {activity.time}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Tracking CTA */}
+          <Link
+            href="/tracking"
+            className="card-premium p-4 block group hover:card-premium-hover transition-all duration-300 opacity-0 animate-in"
+            style={{ animationDelay: "0.35s" }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-sm border border-white/[0.06] bg-white/[0.02]">
+                <Target className="h-3.5 w-3.5 text-white/40" />
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-white tracking-wide">
+                  Links Rastreados
+                </h3>
+                <p className="text-[11px] text-white/35">
+                  Acompanhe a origem dos seus leads
+                </p>
+              </div>
+            </div>
+          </Link>
+        </div>
       </div>
     </div>
   );

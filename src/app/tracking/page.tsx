@@ -1,14 +1,34 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { api } from "@/lib/api/client";
 import { CreateTrackedLinkValues, TrackedLink } from "@/types/dashboard";
-import { Link2, MousePointerClick, Plus, RefreshCcw, Target, Ticket } from "lucide-react";
+import {
+  Link2,
+  MousePointerClick,
+  Plus,
+  RefreshCcw,
+  Target,
+  Ticket,
+} from "lucide-react";
 
 const PAGE_SIZE = 20;
 
@@ -43,7 +63,9 @@ function activeTone(active: boolean) {
 }
 
 export default function TrackingPage() {
-  const [ativoFilter, setAtivoFilter] = useState<"all" | "true" | "false">("all");
+  const [ativoFilter, setAtivoFilter] = useState<"all" | "true" | "false">(
+    "all",
+  );
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [links, setLinks] = useState<TrackedLink[]>([]);
@@ -65,8 +87,7 @@ export default function TrackingPage() {
       const result = await api.getTrackedLinks({
         limit: PAGE_SIZE,
         offset: (page - 1) * PAGE_SIZE,
-        ativo:
-          ativoFilter === "all" ? undefined : ativoFilter === "true",
+        ativo: ativoFilter === "all" ? undefined : ativoFilter === "true",
       });
 
       if (cancelled) {
@@ -134,7 +155,7 @@ export default function TrackingPage() {
     return links.filter((link) =>
       [link.nome, link.nome_campanha, link.codigo_ref, link.source, link.medium]
         .filter(Boolean)
-        .some((value) => value.toLowerCase().includes(normalized))
+        .some((value) => value.toLowerCase().includes(normalized)),
     );
   }, [links, search]);
 
@@ -177,8 +198,8 @@ export default function TrackingPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
-          <p className="text-muted-foreground">Carregando tracking e campanhas...</p>
+          <div className="h-8 w-8 rounded-full border-2 border-white/10 border-t-white/30 animate-spin" />
+          <p className="text-white/40 text-xs">Carregando...</p>
         </div>
       </div>
     );
@@ -187,9 +208,9 @@ export default function TrackingPage() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-destructive text-center">
-          <p className="font-semibold">Erro ao carregar tracking</p>
-          <p className="text-sm">{error}</p>
+        <div className="text-red-400 text-center">
+          <p className="text-sm font-medium">Erro ao carregar</p>
+          <p className="text-xs text-white/40 mt-1">{error}</p>
         </div>
       </div>
     );
@@ -198,27 +219,32 @@ export default function TrackingPage() {
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Tracking e Campanhas</h1>
-        <p className="text-muted-foreground">
-          Painel canonico de `/tracked-links`, com criacao, listagem e detalhe real
+        <h1 className="text-3xl font-bold tracking-tight">
+          Tracking e Campanhas
+        </h1>
+        <p className="text-white/30">
+          Painel canonico de `/tracked-links`, com criacao, listagem e detalhe
+          real
         </p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-        <Card className="glass border-border/50">
+        <Card className="card-premium">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-white/30">
               Links na pagina
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{links.length}</div>
-            <p className="mt-1 text-xs text-muted-foreground">`limit` e `offset` reais do endpoint</p>
+            <p className="mt-1 text-xs text-white/30">
+              `limit` e `offset` reais do endpoint
+            </p>
           </CardContent>
         </Card>
-        <Card className="glass border-border/50">
+        <Card className="card-premium">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-white/30">
               Clicks somados
             </CardTitle>
           </CardHeader>
@@ -226,12 +252,14 @@ export default function TrackingPage() {
             <div className="text-3xl font-bold text-primary">
               {links.reduce((total, item) => total + item.clicks, 0)}
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">Indicador do lote atual</p>
+            <p className="mt-1 text-xs text-white/30">
+              Indicador do lote atual
+            </p>
           </CardContent>
         </Card>
-        <Card className="glass border-border/50">
+        <Card className="card-premium">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-white/30">
               Leads convertidos
             </CardTitle>
           </CardHeader>
@@ -239,23 +267,26 @@ export default function TrackingPage() {
             <div className="text-3xl font-bold text-green-400">
               {links.reduce((total, item) => total + item.leads_convertidos, 0)}
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">Total devolvido pela API</p>
+            <p className="mt-1 text-xs text-white/30">
+              Total devolvido pela API
+            </p>
           </CardContent>
         </Card>
-        <Card className="glass border-border/50">
+        <Card className="card-premium">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-white/30">
               Regra de atribuicao
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            Leads devem ser lidos por `tracked_codigo_ref` e `link_click_id`, nao por `lead.codigo_ref`.
+          <CardContent className="text-sm text-white/30">
+            Leads devem ser lidos por `tracked_codigo_ref` e `link_click_id`,
+            nao por `lead.codigo_ref`.
           </CardContent>
         </Card>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
-        <Card className="glass border-border/50">
+        <Card className="card-premium">
           <CardHeader>
             <div className="flex items-center justify-between gap-4">
               <div>
@@ -264,7 +295,8 @@ export default function TrackingPage() {
                   Links rastreaveis
                 </CardTitle>
                 <CardDescription>
-                  O endpoint nao devolve `meta.total`, entao a pagina usa avancar/voltar por lote
+                  O endpoint nao devolve `meta.total`, entao a pagina usa
+                  avancar/voltar por lote
                 </CardDescription>
               </div>
               <Button variant="outline" size="sm" onClick={() => setPage(1)}>
@@ -322,7 +354,10 @@ export default function TrackingPage() {
               <TableBody>
                 {visibleLinks.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground">
+                    <TableCell
+                      colSpan={5}
+                      className="text-center text-white/30"
+                    >
                       Nenhum tracked-link encontrado
                     </TableCell>
                   </TableRow>
@@ -335,7 +370,7 @@ export default function TrackingPage() {
                     >
                       <TableCell>
                         <div className="font-medium">{link.nome}</div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-xs text-white/30">
                           {link.nome_campanha || "sem campanha"}
                         </div>
                       </TableCell>
@@ -345,7 +380,10 @@ export default function TrackingPage() {
                       </TableCell>
                       <TableCell>{link.clicks}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={activeTone(link.ativo)}>
+                        <Badge
+                          variant="outline"
+                          className={activeTone(link.ativo)}
+                        >
                           {link.ativo ? "ativo" : "inativo"}
                         </Badge>
                       </TableCell>
@@ -356,12 +394,21 @@ export default function TrackingPage() {
             </Table>
 
             <div className="flex items-center justify-between">
-              <div className="text-xs text-muted-foreground">Pagina atual {page}</div>
+              <div className="text-xs text-white/30">Pagina atual {page}</div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1}
+                  onClick={() => setPage(page - 1)}
+                >
                   Anterior
                 </Button>
-                <Button size="sm" disabled={!hasNextPage} onClick={() => setPage(page + 1)}>
+                <Button
+                  size="sm"
+                  disabled={!hasNextPage}
+                  onClick={() => setPage(page + 1)}
+                >
                   Proxima
                 </Button>
               </div>
@@ -369,7 +416,7 @@ export default function TrackingPage() {
           </CardContent>
         </Card>
 
-        <Card className="glass border-border/50">
+        <Card className="card-premium">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Plus className="h-4 w-4 text-primary" />
@@ -383,62 +430,103 @@ export default function TrackingPage() {
             <Input
               placeholder="Nome"
               value={form.nome}
-              onChange={(event) => setForm((current) => ({ ...current, nome: event.target.value }))}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, nome: event.target.value }))
+              }
             />
             <Input
               placeholder="Nome campanha"
               value={form.nome_campanha ?? ""}
               onChange={(event) =>
-                setForm((current) => ({ ...current, nome_campanha: event.target.value }))
+                setForm((current) => ({
+                  ...current,
+                  nome_campanha: event.target.value,
+                }))
               }
             />
             <div className="grid gap-3 md:grid-cols-2">
               <Input
                 placeholder="Source"
                 value={form.source ?? ""}
-                onChange={(event) => setForm((current) => ({ ...current, source: event.target.value }))}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    source: event.target.value,
+                  }))
+                }
               />
               <Input
                 placeholder="Medium"
                 value={form.medium ?? ""}
-                onChange={(event) => setForm((current) => ({ ...current, medium: event.target.value }))}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    medium: event.target.value,
+                  }))
+                }
               />
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               <Input
                 placeholder="Content"
                 value={form.content ?? ""}
-                onChange={(event) => setForm((current) => ({ ...current, content: event.target.value }))}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    content: event.target.value,
+                  }))
+                }
               />
               <Input
                 placeholder="Term"
                 value={form.term ?? ""}
-                onChange={(event) => setForm((current) => ({ ...current, term: event.target.value }))}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    term: event.target.value,
+                  }))
+                }
               />
             </div>
             <Input
               placeholder="WhatsApp num"
               value={form.whatsapp_num}
               onChange={(event) =>
-                setForm((current) => ({ ...current, whatsapp_num: event.target.value }))
+                setForm((current) => ({
+                  ...current,
+                  whatsapp_num: event.target.value,
+                }))
               }
             />
             <Input
               placeholder="WhatsApp msg"
               value={form.whatsapp_msg ?? ""}
               onChange={(event) =>
-                setForm((current) => ({ ...current, whatsapp_msg: event.target.value }))
+                setForm((current) => ({
+                  ...current,
+                  whatsapp_msg: event.target.value,
+                }))
               }
             />
             <Input
               placeholder="URL base"
               value={form.url_base ?? ""}
-              onChange={(event) => setForm((current) => ({ ...current, url_base: event.target.value }))}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  url_base: event.target.value,
+                }))
+              }
             />
             <Input
               type="date"
               value={form.expira_em ?? ""}
-              onChange={(event) => setForm((current) => ({ ...current, expira_em: event.target.value }))}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  expira_em: event.target.value,
+                }))
+              }
             />
             <Button disabled={saving} onClick={handleCreateTrackedLink}>
               Criar link
@@ -447,7 +535,7 @@ export default function TrackingPage() {
         </Card>
       </div>
 
-      <Card className="glass border-border/50">
+      <Card className="card-premium">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Link2 className="h-4 w-4 text-primary" />
@@ -459,26 +547,31 @@ export default function TrackingPage() {
         </CardHeader>
         <CardContent>
           {detailLoading ? (
-            <div className="flex items-center justify-center py-12 text-muted-foreground">
+            <div className="flex items-center justify-center py-12 text-white/30">
               Carregando detalhe...
             </div>
           ) : !selectedLink ? (
-            <div className="py-12 text-center text-muted-foreground">
+            <div className="py-12 text-center text-white/30">
               Selecione um tracked-link para ver o detalhe
             </div>
           ) : (
             <div className="grid gap-6 xl:grid-cols-3">
               <div className="space-y-3">
-                <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                <div className="text-xs uppercase tracking-wide text-white/30">
                   Identificacao
                 </div>
-                <div className="rounded-2xl border border-border/50 bg-secondary/20 p-4">
-                  <div className="text-lg font-semibold">{selectedLink.nome}</div>
-                  <div className="text-sm text-muted-foreground">
+                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+                  <div className="text-lg font-semibold">
+                    {selectedLink.nome}
+                  </div>
+                  <div className="text-sm text-white/30">
                     {selectedLink.nome_campanha || "sem campanha"}
                   </div>
                   <div className="mt-3">
-                    <Badge variant="outline" className={activeTone(selectedLink.ativo)}>
+                    <Badge
+                      variant="outline"
+                      className={activeTone(selectedLink.ativo)}
+                    >
                       {selectedLink.ativo ? "ativo" : "inativo"}
                     </Badge>
                   </div>
@@ -486,31 +579,31 @@ export default function TrackingPage() {
               </div>
 
               <div className="space-y-3">
-                <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                <div className="text-xs uppercase tracking-wide text-white/30">
                   Tracking
                 </div>
-                <div className="rounded-2xl border border-border/50 bg-secondary/20 p-4 text-sm">
+                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 text-sm">
                   <div className="flex items-center gap-2 font-medium">
                     <Ticket className="h-4 w-4 text-primary" />
                     {selectedLink.codigo_ref}
                   </div>
-                  <div className="mt-3 text-muted-foreground">
+                  <div className="mt-3 text-white/30">
                     {selectedLink.source || "-"} / {selectedLink.medium || "-"}
                   </div>
-                  <div className="text-muted-foreground">
+                  <div className="text-white/30">
                     {selectedLink.content || "-"} / {selectedLink.term || "-"}
                   </div>
-                  <div className="mt-3 break-all text-xs text-muted-foreground">
+                  <div className="mt-3 break-all text-xs text-white/30">
                     {selectedLink.link || "-"}
                   </div>
                 </div>
               </div>
 
               <div className="space-y-3">
-                <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                <div className="text-xs uppercase tracking-wide text-white/30">
                   Performance
                 </div>
-                <div className="rounded-2xl border border-border/50 bg-secondary/20 p-4 text-sm">
+                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 text-sm">
                   <div className="flex items-center gap-2">
                     <MousePointerClick className="h-4 w-4 text-primary" />
                     {selectedLink.clicks} click(s)
@@ -519,24 +612,28 @@ export default function TrackingPage() {
                     <Target className="h-4 w-4 text-green-400" />
                     {selectedLink.leads_convertidos} lead(s) convertidos
                   </div>
-                  <div className="mt-3 text-muted-foreground">
+                  <div className="mt-3 text-white/30">
                     Expira em: {formatDateTime(selectedLink.expira_em)}
                   </div>
-                  <div className="text-muted-foreground">
+                  <div className="text-white/30">
                     Criado em: {formatDateTime(selectedLink.created_at)}
                   </div>
                 </div>
               </div>
 
               <div className="xl:col-span-3 grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-border/50 bg-secondary/20 p-4 text-sm">
+                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 text-sm">
                   <div className="font-medium">WhatsApp</div>
-                  <div className="mt-2 text-muted-foreground">{selectedLink.whatsapp_num}</div>
-                  <div className="mt-2 text-muted-foreground">{selectedLink.whatsapp_msg || "-"}</div>
+                  <div className="mt-2 text-white/30">
+                    {selectedLink.whatsapp_num}
+                  </div>
+                  <div className="mt-2 text-white/30">
+                    {selectedLink.whatsapp_msg || "-"}
+                  </div>
                 </div>
-                <div className="rounded-2xl border border-border/50 bg-secondary/20 p-4 text-sm">
+                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 text-sm">
                   <div className="font-medium">URL base</div>
-                  <div className="mt-2 break-all text-muted-foreground">
+                  <div className="mt-2 break-all text-white/30">
                     {selectedLink.url_base || "-"}
                   </div>
                 </div>

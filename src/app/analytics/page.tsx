@@ -1,11 +1,24 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { api } from "@/lib/api/client";
 import { getOffsetForPage } from "@/lib/leads/query-state";
 import {
@@ -95,21 +108,19 @@ function SummaryCard({
   icon: typeof Users;
 }) {
   return (
-    <Card className="glass border-border/50">
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between gap-4">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            {title}
-          </CardTitle>
-          <div className="rounded-xl border border-primary/20 bg-primary/10 p-2 text-primary">
-            <Icon className="h-4 w-4" />
-          </div>
+    <Card className="card-premium p-4">
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <CardTitle className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+          {title}
+        </CardTitle>
+        <div className="rounded-sm border border-white/[0.06] bg-white/[0.02] p-1.5">
+          <Icon className="h-3 w-3 text-white/30" />
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-bold">{value}</div>
-        <p className="mt-1 text-xs text-muted-foreground">{description}</p>
-      </CardContent>
+      </div>
+      <div className="text-xl font-light tracking-tight text-white">
+        {value}
+      </div>
+      <p className="mt-1 text-[10px] text-white/30">{description}</p>
     </Card>
   );
 }
@@ -124,42 +135,72 @@ function GroupedMetricsTable({
   rows: AnalyticsGroupedRow[];
 }) {
   return (
-    <Card className="glass border-border/50">
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
+    <Card className="card-premium">
+      <CardHeader className="border-b border-white/[0.06] pb-3">
+        <CardTitle className="text-sm font-medium text-white">
+          {title}
+        </CardTitle>
+        <CardDescription className="text-white/30 text-[10px]">
+          {description}
+        </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-3">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Grupo</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead>Conv. op.</TableHead>
-              <TableHead>Conv. com.</TableHead>
-              <TableHead>Prontidao</TableHead>
+            <TableRow className="border-white/[0.06] hover:bg-transparent">
+              <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                Grupo
+              </TableHead>
+              <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                Total
+              </TableHead>
+              <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                Conv. op.
+              </TableHead>
+              <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                Conv. com.
+              </TableHead>
+              <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                Prontidao
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
-                  Sem dados para os filtros atuais
+                <TableCell
+                  colSpan={5}
+                  className="text-center text-white/30 text-xs"
+                >
+                  Sem dados
                 </TableCell>
               </TableRow>
             ) : (
               rows.slice(0, 6).map((row) => (
-                <TableRow key={`${title}-${row.key}`}>
+                <TableRow
+                  key={`${title}-${row.key}`}
+                  className="border-white/[0.06] hover:bg-white/[0.02]"
+                >
                   <TableCell>
-                    <div className="font-medium">{row.label || row.key || "-"}</div>
-                    <div className="text-xs text-muted-foreground">
-                      Potencial medio {row.score_potencial_medio.toFixed(1)}
+                    <div className="text-sm text-white">
+                      {row.label || row.key || "-"}
+                    </div>
+                    <div className="text-[10px] text-white/30">
+                      Potencial {row.score_potencial_medio.toFixed(1)}
                     </div>
                   </TableCell>
-                  <TableCell>{row.total_leads}</TableCell>
-                  <TableCell>{row.conversoes_operacionais}</TableCell>
-                  <TableCell>{row.conversoes_comerciais}</TableCell>
-                  <TableCell>{row.score_prontidao_medio.toFixed(1)}</TableCell>
+                  <TableCell className="text-white/60">
+                    {row.total_leads}
+                  </TableCell>
+                  <TableCell className="text-white/60">
+                    {row.conversoes_operacionais}
+                  </TableCell>
+                  <TableCell className="text-white/60">
+                    {row.conversoes_comerciais}
+                  </TableCell>
+                  <TableCell className="text-white/60">
+                    {row.score_prontidao_medio.toFixed(1)}
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -185,66 +226,100 @@ function LeadRankingTable({
   page: number;
   onPageChange: (page: number) => void;
 }) {
-  const totalPages = Math.max(1, Math.ceil(meta.total / Math.max(meta.limit, 1)));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(meta.total / Math.max(meta.limit, 1)),
+  );
 
   return (
-    <Card className="glass border-border/50">
-      <CardHeader>
+    <Card className="card-premium">
+      <CardHeader className="border-b border-white/[0.06] pb-3">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <CardTitle>{title}</CardTitle>
-            <CardDescription>{description}</CardDescription>
+            <CardTitle className="text-sm font-medium text-white">
+              {title}
+            </CardTitle>
+            <CardDescription className="text-white/30 text-[10px]">
+              {description}
+            </CardDescription>
           </div>
-          <div className="text-xs text-muted-foreground">
-            {meta.total} registro(s)
-          </div>
+          <div className="text-[10px] text-white/30">{meta.total} reg.</div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 pt-3">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Lead</TableHead>
-              <TableHead>Tracking</TableHead>
-              <TableHead>Prontidao</TableHead>
-              <TableHead>Potencial</TableHead>
-              <TableHead>Atualizado</TableHead>
+            <TableRow className="border-white/[0.06] hover:bg-transparent">
+              <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                Lead
+              </TableHead>
+              <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                Tracking
+              </TableHead>
+              <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                Prontidao
+              </TableHead>
+              <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                Potencial
+              </TableHead>
+              <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                Atualizado
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
-                  Sem leads para os filtros atuais
+                <TableCell
+                  colSpan={5}
+                  className="text-center text-white/30 text-xs"
+                >
+                  Sem dados
                 </TableCell>
               </TableRow>
             ) : (
               rows.map((row) => (
-                <TableRow key={`${title}-${row.lead_id}`}>
+                <TableRow
+                  key={`${title}-${row.lead_id}`}
+                  className="border-white/[0.06] hover:bg-white/[0.02]"
+                >
                   <TableCell>
-                    <div className="font-medium">{row.nome_completo || row.telefone}</div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-sm text-white">
+                      {row.nome_completo || row.telefone}
+                    </div>
+                    <div className="text-[10px] text-white/30">
                       {row.canal_origem || "-"} / {row.sistema_origem || "-"}
                     </div>
-                    <div className="text-xs text-muted-foreground">{row.qualification_summary || "-"}</div>
                   </TableCell>
                   <TableCell>
-                    <div className="font-medium">{row.tracked_codigo_ref || row.campanha_origem || "-"}</div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-white/70">
+                      {row.tracked_codigo_ref || row.campanha_origem || "-"}
+                    </div>
+                    <div className="text-[10px] text-white/30">
                       {row.status || "-"} / {row.fase || "-"}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={bucketTone(row.score_prontidao_bucket)}>
-                      {row.score_prontidao_bucket || "-"} {row.score_prontidao_operacional}
+                    <Badge
+                      variant="outline"
+                      className={bucketTone(row.score_prontidao_bucket)}
+                    >
+                      {row.score_prontidao_bucket || "-"}{" "}
+                      {row.score_prontidao_operacional}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={bucketTone(row.score_potencial_bucket)}>
-                      {row.score_potencial_bucket || "-"} {row.score_potencial_comercial}
+                    <Badge
+                      variant="outline"
+                      className={bucketTone(row.score_potencial_bucket)}
+                    >
+                      {row.score_potencial_bucket || "-"}{" "}
+                      {row.score_potencial_comercial}
                     </Badge>
                   </TableCell>
-                  <TableCell>{formatDateTime(row.updated_at)}</TableCell>
+                  <TableCell className="text-white/50 text-xs">
+                    {formatDateTime(row.updated_at)}
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -252,24 +327,26 @@ function LeadRankingTable({
         </Table>
 
         <div className="flex items-center justify-between">
-          <div className="text-xs text-muted-foreground">
-            Pagina {page} de {totalPages}
+          <div className="text-[10px] text-white/30">
+            {page}/{totalPages}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             <Button
               variant="outline"
               size="sm"
               disabled={page <= 1}
               onClick={() => onPageChange(page - 1)}
+              className="h-6 text-[10px]"
             >
-              Anterior
+              Ant.
             </Button>
             <Button
               size="sm"
               disabled={page >= totalPages}
               onClick={() => onPageChange(page + 1)}
+              className="h-6 text-[10px] bg-white text-black hover:bg-white/90"
             >
-              Proxima
+              Prox.
             </Button>
           </div>
         </div>
@@ -289,9 +366,15 @@ export default function AnalyticsPage() {
   const [sources, setSources] = useState<AnalyticsGroupedRow[]>([]);
   const [campaigns, setCampaigns] = useState<AnalyticsGroupedRow[]>([]);
   const [corretors, setCorretors] = useState<AnalyticsGroupedRow[]>([]);
-  const [originRankings, setOriginRankings] = useState<AnalyticsGroupedRow[]>([]);
-  const [campaignRankings, setCampaignRankings] = useState<AnalyticsGroupedRow[]>([]);
-  const [corretorRankings, setCorretorRankings] = useState<AnalyticsGroupedRow[]>([]);
+  const [originRankings, setOriginRankings] = useState<AnalyticsGroupedRow[]>(
+    [],
+  );
+  const [campaignRankings, setCampaignRankings] = useState<
+    AnalyticsGroupedRow[]
+  >([]);
+  const [corretorRankings, setCorretorRankings] = useState<
+    AnalyticsGroupedRow[]
+  >([]);
   const [triageReady, setTriageReady] = useState<AnalyticsLeadRow[]>([]);
   const [triageMeta, setTriageMeta] = useState(EMPTY_META);
   const [leadScores, setLeadScores] = useState<AnalyticsLeadRow[]>([]);
@@ -450,7 +533,7 @@ export default function AnalyticsPage() {
         icon: BarChart3,
       },
     ],
-    [overview]
+    [overview],
   );
 
   function applyFilters() {
@@ -483,8 +566,8 @@ export default function AnalyticsPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
-          <p className="text-muted-foreground">Carregando analytics reais...</p>
+          <div className="h-8 w-8 rounded-full border-2 border-white/10 border-t-white/30 animate-spin" />
+          <p className="text-white/40 text-xs">Carregando analytics...</p>
         </div>
       </div>
     );
@@ -493,42 +576,49 @@ export default function AnalyticsPage() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-destructive text-center">
-          <p className="font-semibold">Erro ao carregar analytics</p>
-          <p className="text-sm">{error}</p>
+        <div className="text-red-400 text-center">
+          <p className="text-sm font-medium">Erro ao carregar</p>
+          <p className="text-xs text-white/40 mt-1">{error}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
-        <p className="text-muted-foreground">
-          Consumo direto da camada analitica dedicada, sem reconstruir metricas no frontend
+    <div className="space-y-6">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-lg font-medium tracking-tight text-white">
+          Analytics
+        </h1>
+        <p className="text-xs text-white/40">
+          Consumo direto da camada analitica dedicada
         </p>
       </div>
 
-      <Card className="glass border-border/50">
-        <CardHeader>
+      <Card className="card-premium">
+        <CardHeader className="border-b border-white/[0.06] pb-3">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-primary" />
-                Filtros canonicos
+              <CardTitle className="flex items-center gap-2 text-sm font-medium text-white">
+                <Filter className="h-3.5 w-3.5 text-white/40" />
+                Filtros
               </CardTitle>
-              <CardDescription>
-                date_from, date_to, origem, tracking, status, fase, corretor e intervention_type
+              <CardDescription className="text-white/30 text-[10px] mt-1">
+                date_from, date_to, origem, tracking, status, fase
               </CardDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={clearFilters}>
-              <RefreshCcw className="mr-2 h-4 w-4" />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearFilters}
+              className="h-7 text-[10px]"
+            >
+              <RefreshCcw className="mr-1.5 h-3 w-3" />
               Limpar
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 pt-4">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <Input
               type="date"
@@ -632,7 +722,12 @@ export default function AnalyticsPage() {
             />
           </div>
           <div className="flex justify-end">
-            <Button onClick={applyFilters}>Aplicar filtros</Button>
+            <Button
+              onClick={applyFilters}
+              className="bg-white text-black hover:bg-white/90 h-7 text-[10px]"
+            >
+              Aplicar
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -649,43 +744,69 @@ export default function AnalyticsPage() {
         ))}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.2fr_1fr]">
-        <Card className="glass border-border/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <LineChart className="h-4 w-4 text-primary" />
+      <div className="grid gap-4 xl:grid-cols-[1.2fr_1fr]">
+        <Card className="card-premium">
+          <CardHeader className="border-b border-white/[0.06] pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-white">
+              <LineChart className="h-3.5 w-3.5 text-white/40" />
               Serie temporal
             </CardTitle>
-            <CardDescription>
-              `/analytics/timeseries` por dia, sem recalculo local
+            <CardDescription className="text-white/30 text-[10px]">
+              /analytics/timeseries por dia
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-3">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Leads</TableHead>
-                  <TableHead>Conv. op.</TableHead>
-                  <TableHead>Conv. com.</TableHead>
-                  <TableHead>Takeovers</TableHead>
+                <TableRow className="border-white/[0.06] hover:bg-transparent">
+                  <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                    Data
+                  </TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                    Leads
+                  </TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                    Conv. op.
+                  </TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                    Conv. com.
+                  </TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                    Takeovers
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {timeseries.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground">
-                      Sem pontos para o periodo atual
+                    <TableCell
+                      colSpan={5}
+                      className="text-center text-white/30 text-xs"
+                    >
+                      Sem dados
                     </TableCell>
                   </TableRow>
                 ) : (
                   timeseries.map((point) => (
-                    <TableRow key={point.date}>
-                      <TableCell>{formatDate(point.date)}</TableCell>
-                      <TableCell>{point.leads}</TableCell>
-                      <TableCell>{point.operational_conversions}</TableCell>
-                      <TableCell>{point.commercial_conversions}</TableCell>
-                      <TableCell>{point.human_takeovers}</TableCell>
+                    <TableRow
+                      key={point.date}
+                      className="border-white/[0.06] hover:bg-white/[0.02]"
+                    >
+                      <TableCell className="text-white/60">
+                        {formatDate(point.date)}
+                      </TableCell>
+                      <TableCell className="text-white/60">
+                        {point.leads}
+                      </TableCell>
+                      <TableCell className="text-white/60">
+                        {point.operational_conversions}
+                      </TableCell>
+                      <TableCell className="text-white/60">
+                        {point.commercial_conversions}
+                      </TableCell>
+                      <TableCell className="text-white/60">
+                        {point.human_takeovers}
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -730,16 +851,31 @@ export default function AnalyticsPage() {
           description="Conversao e prontidao media por corretor"
           rows={corretorRankings}
         />
-        <Card className="glass border-border/50">
-          <CardHeader>
-            <CardTitle>Regras canonicas em uso</CardTitle>
-            <CardDescription>Travas aplicadas na tela</CardDescription>
+        <Card className="card-premium">
+          <CardHeader className="border-b border-white/[0.06] pb-3">
+            <CardTitle className="text-sm font-medium text-white">
+              Regras
+            </CardTitle>
+            <CardDescription className="text-white/30 text-[10px]">
+              Travas aplicadas
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p>`conversoes_operacionais` e `conversoes_comerciais` seguem separados.</p>
-            <p>`analytics/leads` e rankings usam scores entregues pelo backend.</p>
-            <p>`tracked_codigo_ref` aparece antes de `campanha_origem` na leitura de campanha.</p>
-            <p>O frontend nao faz sort adicional sobre os rankings ordenados pelo backend.</p>
+          <CardContent className="space-y-2 text-xs text-white/30 pt-3">
+            <p>
+              `conversoes_operacionais` e `conversoes_comerciais` seguem
+              separados.
+            </p>
+            <p>
+              `analytics/leads` e rankings usam scores entregues pelo backend.
+            </p>
+            <p>
+              `tracked_codigo_ref` aparece antes de `campanha_origem` na leitura
+              de campanha.
+            </p>
+            <p>
+              O frontend nao faz sort adicional sobre os rankings ordenados pelo
+              backend.
+            </p>
           </CardContent>
         </Card>
       </div>

@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   Users,
@@ -12,67 +12,63 @@ import {
   MessageSquare,
   TrendingUp,
   Zap,
-} from 'lucide-react';
+} from "lucide-react";
 
 const navigation = [
-  { name: 'Início', href: '/', icon: Home },
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Leads', href: '/leads', icon: Users },
-  { name: 'Análises', href: '/analytics', icon: BarChart3 },
-  { name: 'Tracking', href: '/tracking', icon: Link2 },
-  { name: 'Inbox Humana', href: '/conversations', icon: MessageSquare },
-  { name: 'Pipeline', href: '/pipeline', icon: TrendingUp },
+  { name: "overview", href: "/", icon: Home },
+  { name: "leads", href: "/leads", icon: Users },
+  { name: "analytics", href: "/analytics", icon: BarChart3 },
+  { name: "tracking", href: "/tracking", icon: Link2 },
+  { name: "inbox", href: "/conversations", icon: MessageSquare },
+  { name: "pipeline", href: "/pipeline", icon: TrendingUp },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <div className="flex h-full w-64 flex-col glass border-r border-border/50">
-      <div className="flex h-20 items-center gap-3 border-b border-border/50 px-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-orange-600 glow-primary">
-          <Zap className="h-5 w-5 text-primary-foreground" />
+    <div className="flex h-full w-56 flex-col border-r border-white/5 bg-[#050505]">
+      <div className="flex h-14 items-center gap-3 border-b border-white/5 px-4">
+        <div className="flex h-7 w-7 items-center justify-center rounded bg-white">
+          <Zap className="h-4 w-4 text-black" />
         </div>
-        <div className="flex flex-col">
-          <h1 className="text-xl font-bold tracking-tight">ATUS</h1>
-          <span className="text-xs text-muted-foreground">Lead Management</span>
-        </div>
+        <span className="text-sm font-medium text-white">atus</span>
       </div>
-      <nav className="flex-1 space-y-1 p-4">
-        {navigation.map((item, index) => {
+
+      <nav className="flex-1 space-y-0.5 p-3">
+        {navigation.map((item) => {
           const isActive = pathname === item.href;
           return (
             <Link
               key={item.name}
               href={item.href}
               className={cn(
-                'group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300',
+                "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-xs font-medium transition-colors",
                 isActive
-                  ? 'bg-primary/10 text-primary glow-primary'
-                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                  ? "bg-white text-black"
+                  : "text-white/40 hover:text-white hover:bg-white/5",
               )}
-              style={{ animationDelay: `${index * 50}ms` }}
             >
-              {isActive && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1 rounded-r-full bg-primary" />
-              )}
-              <item.icon className={cn(
-                'h-5 w-5 transition-transform duration-300',
-                isActive ? 'scale-110' : 'group-hover:scale-110'
-              )} />
-              <span>{item.name}</span>
+              <item.icon
+                className={cn(
+                  "h-3.5 w-3.5",
+                  isActive ? "text-black" : "text-white/40",
+                )}
+              />
+              <span className="lowercase">{item.name}</span>
             </Link>
           );
         })}
       </nav>
-      <div className="border-t border-border/50 p-4">
-        <div className="rounded-xl bg-secondary/50 p-4">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-            <span>Sistema Online</span>
-          </div>
-          <p className="mt-1 text-sm font-medium">Dashboard v1.0</p>
-        </div>
+
+      <div className="border-t border-white/5 p-3">
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-xs font-medium text-white/40 hover:text-white hover:bg-white/5 transition-colors"
+        >
+          <LayoutDashboard className="h-3.5 w-3.5" />
+          <span className="lowercase">dashboard</span>
+        </Link>
       </div>
     </div>
   );

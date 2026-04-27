@@ -80,7 +80,7 @@ function stateTone(state: string) {
     case "CLOSED":
       return "border-red-500/20 bg-red-500/10 text-red-300";
     default:
-      return "border-border/50 bg-secondary/30 text-foreground";
+      return "border-white/[0.06] white/[0.02] text-foreground";
   }
 }
 
@@ -137,7 +137,9 @@ export default function ConversationsPage() {
     limit: PAGE_SIZE,
     offset: 0,
   });
-  const [conversations, setConversations] = useState<InboxConversationSummary[]>([]);
+  const [conversations, setConversations] = useState<
+    InboxConversationSummary[]
+  >([]);
   const [meta, setMeta] = useState({ total: 0, limit: PAGE_SIZE, offset: 0 });
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [selectedConversation, setSelectedConversation] =
@@ -159,39 +161,45 @@ export default function ConversationsPage() {
 
   const requestFingerprint = JSON.stringify(filters);
 
-  const loadInbox = useCallback(async (currentFilters: InboxConversationFilters) => {
-    setLoading(true);
-    setPageError(null);
+  const loadInbox = useCallback(
+    async (currentFilters: InboxConversationFilters) => {
+      setLoading(true);
+      setPageError(null);
 
-    const [listResult, corretoresResult] = await Promise.all([
-      api.getInboxConversations(currentFilters),
-      api.getCorretores(),
-    ]);
+      const [listResult, corretoresResult] = await Promise.all([
+        api.getInboxConversations(currentFilters),
+        api.getCorretores(),
+      ]);
 
-    if (listResult.error || !listResult.data) {
-      setPageError(listResult.error ?? "Erro ao carregar inbox humana");
+      if (listResult.error || !listResult.data) {
+        setPageError(listResult.error ?? "Erro ao carregar inbox humana");
+        setLoading(false);
+        return;
+      }
+
+      const nextConversations = listResult.data.data;
+      setConversations(nextConversations);
+      setMeta(listResult.data.meta);
+      setCorretores(corretoresResult.data ?? []);
+      setCorretoresError(corretoresResult.error ?? null);
+      setSelectedLeadId((current) => {
+        if (nextConversations.length === 0) {
+          return null;
+        }
+
+        if (
+          current &&
+          nextConversations.some((item) => item.lead_id === current)
+        ) {
+          return current;
+        }
+
+        return nextConversations[0]?.lead_id ?? null;
+      });
       setLoading(false);
-      return;
-    }
-
-    const nextConversations = listResult.data.data;
-    setConversations(nextConversations);
-    setMeta(listResult.data.meta);
-    setCorretores(corretoresResult.data ?? []);
-    setCorretoresError(corretoresResult.error ?? null);
-    setSelectedLeadId((current) => {
-      if (nextConversations.length === 0) {
-        return null;
-      }
-
-      if (current && nextConversations.some((item) => item.lead_id === current)) {
-        return current;
-      }
-
-      return nextConversations[0]?.lead_id ?? null;
-    });
-    setLoading(false);
-  }, []);
+    },
+    [],
+  );
 
   const loadConversationDetail = useCallback(async (leadId: string) => {
     setDetailLoading(true);
@@ -210,10 +218,11 @@ export default function ConversationsPage() {
     setAssignedCorretorId(detailResult.data.assigned_corretor_id ?? "");
     setStateValue(
       MUTABLE_INBOX_STATES.includes(
-        detailResult.data.conversation_state as (typeof MUTABLE_INBOX_STATES)[number]
+        detailResult.data
+          .conversation_state as (typeof MUTABLE_INBOX_STATES)[number],
       )
         ? detailResult.data.conversation_state
-        : "HUMAN_STANDBY"
+        : "HUMAN_STANDBY",
     );
     setDetailLoading(false);
   }, []);
@@ -239,15 +248,20 @@ export default function ConversationsPage() {
       return conversations;
     }
 
-    return conversations.filter((item) => summarySearchText(item).includes(normalized));
+    return conversations.filter((item) =>
+      summarySearchText(item).includes(normalized),
+    );
   }, [conversations, search]);
 
   const selectedSummary = useMemo(
     () => conversations.find((item) => item.lead_id === selectedLeadId) ?? null,
-    [conversations, selectedLeadId]
+    [conversations, selectedLeadId],
   );
 
-  const totalPages = Math.max(1, Math.ceil(meta.total / Math.max(meta.limit, 1)));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(meta.total / Math.max(meta.limit, 1)),
+  );
   const currentPage = Math.floor(meta.offset / Math.max(meta.limit, 1)) + 1;
 
   async function refreshSelectedConversation() {
@@ -351,8 +365,8 @@ export default function ConversationsPage() {
     return (
       <div className="flex h-64 items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary/30 border-t-primary" />
-          <p className="text-muted-foreground">Carregando inbox humana...</p>
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-white/30" />
+          <p className="text-white/40 text-xs">Carregando inbox...</p>
         </div>
       </div>
     );
@@ -361,47 +375,67 @@ export default function ConversationsPage() {
   if (pageError) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="text-center text-destructive">
-          <p className="font-semibold">Erro ao carregar</p>
-          <p className="text-sm">{pageError}</p>
+        <div className="text-center text-red-400">
+          <p className="text-sm font-medium">Erro ao carregar</p>
+          <p className="text-xs text-white/40 mt-1">{pageError}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+    <div className="space-y-6">
+      <div className="flex flex-col gap-2 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Inbox Humana</h1>
-          <p className="text-muted-foreground">
-            Atendimento no mesmo numero do bot, guiado por{" "}
-            <span className="font-medium text-foreground">conversation_state</span>.
+          <h1 className="text-lg font-medium tracking-tight text-white">
+            Inbox Humana
+          </h1>
+          <p className="text-xs text-white/40 mt-0.5">
+            Atendimento no mesmo numero do bot
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Badge variant="secondary">{meta.total} conversas na fila</Badge>
-          <Badge variant="outline">{visibleConversations.length} visiveis nesta pagina</Badge>
+          <Badge
+            variant="secondary"
+            className="bg-white/[0.06] text-white/60 border-white/[0.06] text-[10px]"
+          >
+            {meta.total} na fila
+          </Badge>
+          <Badge
+            variant="outline"
+            className="border-white/[0.06] text-white/40 text-[10px]"
+          >
+            {visibleConversations.length} visiveis
+          </Badge>
           {selectedSummary ? (
-            <Badge variant="outline" className={stateTone(selectedSummary.conversation_state)}>
+            <Badge
+              variant="outline"
+              className={stateTone(selectedSummary.conversation_state)}
+            >
               {stateLabel(selectedSummary.conversation_state)}
             </Badge>
           ) : null}
-          <Button variant="outline" onClick={() => void refreshSelectedConversation()}>
-            <RefreshCw className="mr-2 h-4 w-4" />
+          <Button
+            variant="outline"
+            onClick={() => void refreshSelectedConversation()}
+            className="h-7 text-[10px]"
+          >
+            <RefreshCw className="mr-1.5 h-3 w-3" />
             Atualizar
           </Button>
         </div>
       </div>
 
-      <Card className="glass border-border/50">
-        <CardHeader>
-          <CardTitle>Filtros da Inbox</CardTitle>
-          <CardDescription>
-            Busca local atua apenas sobre os resultados carregados nesta pagina.
+      <Card className="card-premium">
+        <CardHeader className="border-b border-white/[0.06] pb-3">
+          <CardTitle className="text-sm font-medium text-white">
+            Filtros
+          </CardTitle>
+          <CardDescription className="text-white/30 text-[10px]">
+            Busca local sobre os resultados carregados
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-4 pt-4">
           <Input
             placeholder="Buscar por lead, telefone, owner ou mensagem"
             value={search}
@@ -520,7 +554,7 @@ export default function ConversationsPage() {
       </Card>
 
       <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
-        <Card className="glass border-border/50">
+        <Card className="card-premium">
           <CardHeader>
             <div className="flex items-center justify-between gap-4">
               <div>
@@ -534,7 +568,7 @@ export default function ConversationsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {visibleConversations.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border/50 px-4 py-12 text-center text-muted-foreground">
+              <div className="rounded-xl border border-dashed border-white/[0.06] px-4 py-12 text-center text-white/30">
                 Nenhuma conversa encontrada para os filtros atuais.
               </div>
             ) : (
@@ -550,7 +584,7 @@ export default function ConversationsPage() {
                       className={`w-full rounded-2xl border p-4 text-left transition ${
                         isSelected
                           ? "border-primary/40 bg-primary/5 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]"
-                          : "border-border/50 bg-background/40 hover:border-primary/20 hover:bg-secondary/30"
+                          : "border-white/[0.06] bg-background/40 hover:border-primary/20 hover:white/[0.02]"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -558,30 +592,39 @@ export default function ConversationsPage() {
                           <div className="truncate font-medium">
                             {item.nome_completo || item.telefone}
                           </div>
-                          <div className="text-xs text-muted-foreground">{item.telefone}</div>
+                          <div className="text-xs text-white/30">
+                            {item.telefone}
+                          </div>
                         </div>
-                        <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                        <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-white/30" />
                       </div>
 
                       <div className="mt-3 flex flex-wrap gap-2">
-                        <Badge variant="outline" className={stateTone(item.conversation_state)}>
+                        <Badge
+                          variant="outline"
+                          className={stateTone(item.conversation_state)}
+                        >
                           {stateLabel(item.conversation_state)}
                         </Badge>
                         <Badge variant="outline">{item.status || "-"}</Badge>
                         <Badge variant="outline">{item.fase || "-"}</Badge>
                       </div>
 
-                      <div className="mt-3 space-y-2 text-xs text-muted-foreground">
+                      <div className="mt-3 space-y-2 text-xs text-white/30">
                         <div className="line-clamp-2">
-                          {item.qualification_summary || "Sem resumo de qualificacao."}
+                          {item.qualification_summary ||
+                            "Sem resumo de qualificacao."}
                         </div>
                         <div className="line-clamp-2">
-                          Ultima mensagem: {item.last_message_preview || "Sem preview"}
+                          Ultima mensagem:{" "}
+                          {item.last_message_preview || "Sem preview"}
                         </div>
                         <div className="flex flex-wrap gap-x-3 gap-y-1">
                           <span>Owner: {item.owner_user_name || "-"}</span>
                           <span>Canal: {item.canal_origem || "-"}</span>
-                          <span>Atualizada: {formatDateTime(item.updated_at)}</span>
+                          <span>
+                            Atualizada: {formatDateTime(item.updated_at)}
+                          </span>
                         </div>
                       </div>
                     </button>
@@ -630,7 +673,7 @@ export default function ConversationsPage() {
           </CardContent>
         </Card>
 
-        <Card className="glass border-border/50">
+        <Card className="card-premium">
           <CardHeader>
             <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
               <div>
@@ -645,114 +688,160 @@ export default function ConversationsPage() {
                 <div className="flex flex-wrap gap-2">
                   <Badge
                     variant="outline"
-                    className={stateTone(selectedConversation.conversation_state)}
+                    className={stateTone(
+                      selectedConversation.conversation_state,
+                    )}
                   >
                     {stateLabel(selectedConversation.conversation_state)}
                   </Badge>
-                  <Badge variant="outline">{selectedConversation.status || "-"}</Badge>
-                  <Badge variant="outline">{selectedConversation.fase || "-"}</Badge>
+                  <Badge variant="outline">
+                    {selectedConversation.status || "-"}
+                  </Badge>
+                  <Badge variant="outline">
+                    {selectedConversation.fase || "-"}
+                  </Badge>
                 </div>
               ) : null}
             </div>
           </CardHeader>
           <CardContent>
             {!selectedLeadId ? (
-              <div className="rounded-xl border border-dashed border-border/50 px-4 py-12 text-muted-foreground">
+              <div className="rounded-xl border border-dashed border-white/[0.06] px-4 py-12 text-white/30">
                 Nenhuma conversa disponivel nesta pagina.
               </div>
             ) : detailLoading ? (
-              <div className="py-12 text-muted-foreground">Carregando detalhe da conversa...</div>
+              <div className="py-12 text-white/30">
+                Carregando detalhe da conversa...
+              </div>
             ) : detailError ? (
               <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-6 text-sm text-destructive">
                 {detailError}
               </div>
             ) : !selectedConversation ? (
-              <div className="py-12 text-muted-foreground">Sem detalhe carregado.</div>
+              <div className="py-12 text-white/30">Sem detalhe carregado.</div>
             ) : (
               <div className="space-y-6">
                 <div className="grid gap-4 lg:grid-cols-3">
-                  <div className="rounded-2xl border border-border/50 p-4">
-                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                  <div className="rounded-2xl border border-white/[0.06] p-4">
+                    <div className="text-xs uppercase tracking-wide text-white/30">
                       Lead
                     </div>
                     <div className="mt-3 space-y-2 text-sm">
                       <div className="font-medium">
-                        {selectedConversation.nome_completo || selectedConversation.telefone}
+                        {selectedConversation.nome_completo ||
+                          selectedConversation.telefone}
                       </div>
-                      <div>Telefone: {selectedConversation.telefone || "-"}</div>
+                      <div>
+                        Telefone: {selectedConversation.telefone || "-"}
+                      </div>
                       <div>Email: {selectedConversation.email || "-"}</div>
-                      <div>Atualizada: {formatDateTime(selectedConversation.updated_at)}</div>
+                      <div>
+                        Atualizada:{" "}
+                        {formatDateTime(selectedConversation.updated_at)}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-border/50 p-4">
-                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                  <div className="rounded-2xl border border-white/[0.06] p-4">
+                    <div className="text-xs uppercase tracking-wide text-white/30">
                       Origem e tracking
                     </div>
                     <div className="mt-3 space-y-2 text-sm">
-                      <div>Canal: {selectedConversation.canal_origem || "-"}</div>
-                      <div>Sistema: {selectedConversation.sistema_origem || "-"}</div>
-                      <div>Tracked ref: {selectedConversation.tracked_codigo_ref || "-"}</div>
-                      <div>Link click ID: {selectedConversation.link_click_id || "-"}</div>
+                      <div>
+                        Canal: {selectedConversation.canal_origem || "-"}
+                      </div>
+                      <div>
+                        Sistema: {selectedConversation.sistema_origem || "-"}
+                      </div>
+                      <div>
+                        Tracked ref:{" "}
+                        {selectedConversation.tracked_codigo_ref || "-"}
+                      </div>
+                      <div>
+                        Link click ID:{" "}
+                        {selectedConversation.link_click_id || "-"}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-border/50 p-4">
-                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                  <div className="rounded-2xl border border-white/[0.06] p-4">
+                    <div className="text-xs uppercase tracking-wide text-white/30">
                       Ownership humano
                     </div>
                     <div className="mt-3 space-y-2 text-sm">
-                      <div>Owner: {selectedConversation.owner_user_name || "-"}</div>
-                      <div>Tipo: {selectedConversation.owner_user_type || "-"}</div>
                       <div>
-                        Corretor: {selectedConversation.assigned_corretor_id || "Nao atribuido"}
+                        Owner: {selectedConversation.owner_user_name || "-"}
                       </div>
-                      <div>Atribuido por: {selectedConversation.assigned_by || "-"}</div>
+                      <div>
+                        Tipo: {selectedConversation.owner_user_type || "-"}
+                      </div>
+                      <div>
+                        Corretor:{" "}
+                        {selectedConversation.assigned_corretor_id ||
+                          "Nao atribuido"}
+                      </div>
+                      <div>
+                        Atribuido por: {selectedConversation.assigned_by || "-"}
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-border/50 p-4">
-                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                <div className="rounded-2xl border border-white/[0.06] p-4">
+                  <div className="text-xs uppercase tracking-wide text-white/30">
                     Resumo da conversa
                   </div>
                   <div className="mt-3 grid gap-3 lg:grid-cols-2">
-                    <div className="rounded-xl bg-secondary/20 p-3 text-sm">
-                      <div className="text-xs text-muted-foreground">Qualificacao</div>
-                      <div className="mt-1">{selectedConversation.qualification_summary || "-"}</div>
-                    </div>
-                    <div className="rounded-xl bg-secondary/20 p-3 text-sm">
-                      <div className="text-xs text-muted-foreground">Ultimo preview</div>
+                    <div className="rounded-xl white/[0.02] p-3 text-sm">
+                      <div className="text-xs text-white/30">Qualificacao</div>
                       <div className="mt-1">
-                        {selectedConversation.last_message_preview || "Sem preview"}
+                        {selectedConversation.qualification_summary || "-"}
+                      </div>
+                    </div>
+                    <div className="rounded-xl white/[0.02] p-3 text-sm">
+                      <div className="text-xs text-white/30">
+                        Ultimo preview
+                      </div>
+                      <div className="mt-1">
+                        {selectedConversation.last_message_preview ||
+                          "Sem preview"}
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {selectedConversation.operational_status ? (
-                  <div className="rounded-2xl border border-border/50 p-4">
-                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                  <div className="rounded-2xl border border-white/[0.06] p-4">
+                    <div className="text-xs uppercase tracking-wide text-white/30">
                       Resumo operacional
                     </div>
                     <div className="mt-3 grid gap-3 lg:grid-cols-3">
-                      <div className="rounded-xl bg-secondary/20 p-3 text-sm">
-                        <div className="text-xs text-muted-foreground">Acao recomendada</div>
+                      <div className="rounded-xl white/[0.02] p-3 text-sm">
+                        <div className="text-xs text-white/30">
+                          Acao recomendada
+                        </div>
                         <div className="mt-1">
-                          {selectedConversation.operational_status.recommended_action || "-"}
+                          {selectedConversation.operational_status
+                            .recommended_action || "-"}
                         </div>
                       </div>
-                      <div className="rounded-xl bg-secondary/20 p-3 text-sm">
-                        <div className="text-xs text-muted-foreground">Campos faltantes</div>
+                      <div className="rounded-xl white/[0.02] p-3 text-sm">
+                        <div className="text-xs text-white/30">
+                          Campos faltantes
+                        </div>
                         <div className="mt-1">
-                          {selectedConversation.operational_status.missing_fields.join(", ") ||
-                            "-"}
+                          {selectedConversation.operational_status.missing_fields.join(
+                            ", ",
+                          ) || "-"}
                         </div>
                       </div>
-                      <div className="rounded-xl bg-secondary/20 p-3 text-sm">
-                        <div className="text-xs text-muted-foreground">Ultima msg do bot</div>
+                      <div className="rounded-xl white/[0.02] p-3 text-sm">
+                        <div className="text-xs text-white/30">
+                          Ultima msg do bot
+                        </div>
                         <div className="mt-1">
-                          {selectedConversation.operational_status.last_bot_message || "-"}
+                          {selectedConversation.operational_status
+                            .last_bot_message || "-"}
                         </div>
                       </div>
                     </div>
@@ -760,8 +849,8 @@ export default function ConversationsPage() {
                 ) : null}
 
                 <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-                  <div className="rounded-2xl border border-border/50 p-4">
-                    <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                  <div className="rounded-2xl border border-white/[0.06] p-4">
+                    <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-white/30">
                       <MessageSquare className="h-4 w-4" />
                       Mensagens da conversa
                     </div>
@@ -772,23 +861,29 @@ export default function ConversationsPage() {
 
                           return (
                             <div
-                              key={item.id || `${item.timestamp}-${item.content}`}
+                              key={
+                                item.id || `${item.timestamp}-${item.content}`
+                              }
                               className={`flex ${isOutgoing ? "justify-end" : "justify-start"}`}
                             >
                               <div
                                 className={`max-w-[85%] rounded-2xl border p-4 ${
                                   isOutgoing
                                     ? "border-primary/20 bg-primary/10"
-                                    : "border-border/50 bg-secondary/30"
+                                    : "border-white/[0.06] white/[0.02]"
                                 }`}
                               >
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <div className="flex items-center gap-2 text-xs text-white/30">
                                   {isOutgoing ? (
                                     <Bot className="h-3 w-3" />
                                   ) : (
                                     <UserRound className="h-3 w-3" />
                                   )}
-                                  <span>{item.actor_name || item.actor_type || item.direction}</span>
+                                  <span>
+                                    {item.actor_name ||
+                                      item.actor_type ||
+                                      item.direction}
+                                  </span>
                                   <span>·</span>
                                   <span>{formatDateTime(item.timestamp)}</span>
                                 </div>
@@ -800,16 +895,17 @@ export default function ConversationsPage() {
                           );
                         })
                       ) : (
-                        <div className="rounded-xl border border-dashed border-border/50 px-4 py-10 text-center text-sm text-muted-foreground">
-                          Nenhuma mensagem retornada pelo detalhe desta conversa.
+                        <div className="rounded-xl border border-dashed border-white/[0.06] px-4 py-10 text-center text-sm text-white/30">
+                          Nenhuma mensagem retornada pelo detalhe desta
+                          conversa.
                         </div>
                       )}
                     </div>
                   </div>
 
                   <div className="space-y-4">
-                    <div className="rounded-2xl border border-border/50 p-4">
-                      <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                    <div className="rounded-2xl border border-white/[0.06] p-4">
+                      <div className="text-xs uppercase tracking-wide text-white/30">
                         Responder como humano
                       </div>
                       <Textarea
@@ -818,11 +914,13 @@ export default function ConversationsPage() {
                         className="mt-3 min-h-28"
                         placeholder="Digite a mensagem da equipe humana..."
                       />
-                      <label className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+                      <label className="mt-3 flex items-center gap-2 text-sm text-white/30">
                         <input
                           type="checkbox"
                           checked={introduceActor}
-                          onChange={(event) => setIntroduceActor(event.target.checked)}
+                          onChange={(event) =>
+                            setIntroduceActor(event.target.checked)
+                          }
                         />
                         Identificar o atendente nesta mensagem
                       </label>
@@ -836,19 +934,22 @@ export default function ConversationsPage() {
                       </Button>
                     </div>
 
-                    <div className="rounded-2xl border border-border/50 p-4">
-                      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                    <div className="rounded-2xl border border-white/[0.06] p-4">
+                      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-white/30">
                         <Users className="h-4 w-4" />
                         Atribuicao para corretor
                       </div>
                       {corretoresError ? (
                         <div className="mt-3 rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
-                          Lista de corretores indisponivel agora: {corretoresError}
+                          Lista de corretores indisponivel agora:{" "}
+                          {corretoresError}
                         </div>
                       ) : null}
                       <select
                         value={assignedCorretorId}
-                        onChange={(event) => setAssignedCorretorId(event.target.value)}
+                        onChange={(event) =>
+                          setAssignedCorretorId(event.target.value)
+                        }
                         className="mt-3 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                       >
                         <option value="">Selecione um corretor</option>
@@ -868,19 +969,23 @@ export default function ConversationsPage() {
                         variant="outline"
                         className="mt-4 w-full"
                         onClick={() => void handleAssignConversation()}
-                        disabled={!assignedCorretorId || corretores.length === 0}
+                        disabled={
+                          !assignedCorretorId || corretores.length === 0
+                        }
                       >
                         Atribuir conversa
                       </Button>
                     </div>
 
-                    <div className="rounded-2xl border border-border/50 p-4">
-                      <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                    <div className="rounded-2xl border border-white/[0.06] p-4">
+                      <div className="text-xs uppercase tracking-wide text-white/30">
                         Alterar estado humano
                       </div>
                       <Select
                         value={stateValue}
-                        onValueChange={(value) => setStateValue(value || "HUMAN_STANDBY")}
+                        onValueChange={(value) =>
+                          setStateValue(value || "HUMAN_STANDBY")
+                        }
                       >
                         <SelectTrigger className="mt-3">
                           <SelectValue placeholder="Selecione o estado" />
@@ -908,15 +1013,17 @@ export default function ConversationsPage() {
                       </Button>
                     </div>
 
-                    <div className="rounded-2xl border border-border/50 p-4">
-                      <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                    <div className="rounded-2xl border border-white/[0.06] p-4">
+                      <div className="text-xs uppercase tracking-wide text-white/30">
                         Encerrar atendimento humano
                       </div>
                       <Input
                         className="mt-3"
                         placeholder="Motivo do retorno ao bot"
                         value={returnReason}
-                        onChange={(event) => setReturnReason(event.target.value)}
+                        onChange={(event) =>
+                          setReturnReason(event.target.value)
+                        }
                       />
                       <Button
                         variant="outline"
