@@ -1,9 +1,0 @@
-{
-  "backend": "dolt",
-  "database": "dolt",
-  "dolt_database": "atus_dashboard",
-  "dolt_mode": "server",
-  "dolt_server_host": "127.0.0.1",
-  "dolt_server_port": 3307,
-  "project_id": "9254d867-2776-4a25-8a8d-f382f1af964c"
-}

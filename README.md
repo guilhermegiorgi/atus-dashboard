@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Atus Dashboard
 
-## Getting Started
+Dashboard de leads da Atus, construído com Next.js 14, React 18 e Tailwind CSS.
 
-First, run the development server:
+## Scripts
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run build
+npm run start
+npm run test
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Next.js 14
+- React 18
+- Tailwind CSS
+- shadcn/ui
+- Vitest
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Ambiente
 
-## Learn More
+Os valores de produção usados pelo app ficam em `.env.production`.
 
-To learn more about Next.js, take a look at the following resources:
+Variáveis principais:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `NEXT_PUBLIC_API_URL`
+- `NEXT_PUBLIC_API_KEY`
+- `ATUS_BOT_BASE_URL`
+- `ATUS_BOT_API_KEY`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deploy
 
-## Deploy on Vercel
+Fluxo atual:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. publicar mudanças em `origin/main`
+2. rebuildar a imagem Docker
+3. atualizar o serviço `sistemas_atus-dashboard` no EasyPanel
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Arquivos úteis:
+
+- [DEPLOY.md](DEPLOY.md)
+- [EASYPANEL.md](EASYPANEL.md)
+- [.github/workflows/docker.yml](.github/workflows/docker.yml)
+
+## Contexto de Projeto
+
+Contexto de trabalho e prompts do projeto ficam em:
+
+- [.claude](.claude)
+- [.agents/skills](.agents/skills)
+- [docs/design.md](docs/design.md)
