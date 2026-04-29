@@ -73,9 +73,13 @@ function MessageBubble({
 export function ChatArea({ conversation, isLoading }: ChatAreaProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Only scroll to bottom on initial load, not on every message update
+  // This allows user to scroll up and stay there
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [conversation?.messages]);
+    if (conversation?.messages && conversation.messages.length > 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+    }
+  }, [conversation?.lead_id]); // Only trigger when changing conversations, not when messages update
 
   if (isLoading) {
     return (
