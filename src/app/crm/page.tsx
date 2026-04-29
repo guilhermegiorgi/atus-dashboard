@@ -96,7 +96,7 @@ export default function CRMPage() {
   };
 
   return (
-    <div className="flex flex-1 bg-dd-primary overflow-hidden">
+    <div className="flex flex-1 h-full bg-dd-primary overflow-hidden">
       {/* Conversation List - 320px */}
       <div className="w-80 flex-shrink-0 h-full border-r border-dd-border-subtle overflow-hidden">
         <ConversationList
@@ -108,7 +108,7 @@ export default function CRMPage() {
       </div>
 
       {/* Chat Area - flex-1 */}
-      <div className="flex flex-1 flex-col h-full overflow-hidden">
+      <div className="flex flex-1 flex-col min-h-0">
         <ChatHeader
           conversation={selectedConversation}
           isLoading={detailLoading}
