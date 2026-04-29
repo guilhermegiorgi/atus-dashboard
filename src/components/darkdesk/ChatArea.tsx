@@ -81,7 +81,7 @@ export function ChatArea({ conversation, isLoading }: ChatAreaProps) {
     return (
       <div className="flex h-full flex-col">
         {/* Messages area */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 h-0 overflow-y-auto p-4">
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
               <div
@@ -135,7 +135,7 @@ export function ChatArea({ conversation, isLoading }: ChatAreaProps) {
   return (
     <div className="flex h-full flex-col">
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 h-0 overflow-y-auto p-4">
         {conversation.messages.length === 0 ? (
           <div className="flex h-full items-center justify-center">
             <p className="text-sm text-dd-on-muted">Nenhuma mensagem ainda</p>

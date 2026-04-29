@@ -135,7 +135,7 @@ export function ConversationList({
       </div>
 
       {/* Conversation List */}
-      <div className="flex-1 overflow-y-auto p-2">
+      <div className="flex-1 h-0 overflow-y-auto p-2">
         {filteredConversations.length === 0 ? (
           <div className="flex h-32 items-center justify-center text-center">
             <p className="text-sm text-dd-on-muted">
