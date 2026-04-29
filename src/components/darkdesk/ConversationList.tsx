@@ -224,6 +224,25 @@ export function ConversationList({
                           </span>
                         )}
                       </div>
+
+                      {/* Tags */}
+                      {conversation.tags && conversation.tags.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {conversation.tags.slice(0, 5).map((tag, index) => (
+                            <span
+                              key={index}
+                              className="inline-flex items-center rounded-full bg-dd-accent-purple/20 px-2 py-0.5 text-[10px] font-medium text-dd-accent-purple"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                          {conversation.tags.length > 5 && (
+                            <span className="inline-flex items-center rounded-full bg-dd-surface-overlay px-2 py-0.5 text-[10px] text-dd-on-muted">
+                              +{conversation.tags.length - 5}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </button>

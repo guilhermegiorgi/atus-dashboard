@@ -16,6 +16,12 @@ function asNullableString(value: unknown) {
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((v): v is string => typeof v === "string")
+    : [];
+}
+
 function baseSummary(raw: RawValue): InboxConversationSummary {
   return {
     lead_id: asString(raw.lead_id),
@@ -35,6 +41,7 @@ function baseSummary(raw: RawValue): InboxConversationSummary {
     qualification_summary: asString(raw.qualification_summary),
     last_message_preview: asString(raw.last_message_preview),
     last_message_direction: asString(raw.last_message_direction),
+    tags: asStringArray(raw.tags),
     updated_at: asString(raw.updated_at),
   };
 }
@@ -57,13 +64,13 @@ function normalizeInboxMessage(raw: unknown): InboxMessage {
 }
 
 export function normalizeInboxConversationSummary(
-  raw: RawValue
+  raw: RawValue,
 ): InboxConversationSummary {
   return baseSummary(raw);
 }
 
 export function normalizeInboxConversationDetail(
-  raw: RawValue
+  raw: RawValue,
 ): InboxConversationDetail {
   const lead =
     typeof raw.lead === "object" && raw.lead ? (raw.lead as RawValue) : {};
@@ -77,15 +84,19 @@ export function normalizeInboxConversationDetail(
     ...baseSummary({ ...lead, ...raw }),
     email: asString(lead.email || raw.email),
     tracked_codigo_ref: asString(
-      lead.tracked_codigo_ref || raw.tracked_codigo_ref
+      lead.tracked_codigo_ref || raw.tracked_codigo_ref,
     ),
     link_click_id: asNullableString(lead.link_click_id || raw.link_click_id),
     messages: messages.map(normalizeInboxMessage),
-    operational_status: operational ? normalizeOperationalStatus(operational) : null,
+    operational_status: operational
+      ? normalizeOperationalStatus(operational)
+      : null,
   };
 }
 
-export function buildInboxConversationsQuery(filters: InboxConversationFilters) {
+export function buildInboxConversationsQuery(
+  filters: InboxConversationFilters,
+) {
   const params = new URLSearchParams();
 
   if (filters.state) params.set("state", filters.state);
@@ -102,7 +113,8 @@ export function buildInboxConversationsQuery(filters: InboxConversationFilters) 
   if (filters.status) params.set("status", filters.status);
   if (filters.fase) params.set("fase", filters.fase);
   if (filters.limit !== undefined) params.set("limit", String(filters.limit));
-  if (filters.offset !== undefined) params.set("offset", String(filters.offset));
+  if (filters.offset !== undefined)
+    params.set("offset", String(filters.offset));
 
   return params;
 }

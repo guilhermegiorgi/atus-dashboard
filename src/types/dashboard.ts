@@ -209,6 +209,7 @@ export interface InboxConversationSummary {
   qualification_summary: string;
   last_message_preview: string;
   last_message_direction: string;
+  tags: string[];
   updated_at: string;
 }
 
