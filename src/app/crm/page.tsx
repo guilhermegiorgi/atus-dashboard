@@ -95,6 +95,58 @@ export default function CRMPage() {
     await loadInbox();
   };
 
+  const handleSendAttachment = async (file: File) => {
+    if (!selectedConversation?.telefone) return;
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = reader.result as string;
+      const fileType = file.type.startsWith("image/") ? "image" : "document";
+
+      const result =
+        fileType === "image"
+          ? await api.sendWhatsAppImage(
+              selectedConversation.telefone,
+              base64,
+              file.name,
+            )
+          : await api.sendWhatsAppDocument(
+              selectedConversation.telefone,
+              base64,
+              file.name,
+            );
+
+      if (result.error) {
+        console.error("Erro ao enviar arquivo:", result.error);
+      } else {
+        await loadConversationDetail(selectedLeadId);
+        await loadInbox();
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSendAudio = async (audioBlob: Blob) => {
+    if (!selectedConversation?.telefone) return;
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = reader.result as string;
+      const result = await api.sendWhatsAppAudio(
+        selectedConversation.telefone,
+        base64,
+      );
+
+      if (result.error) {
+        console.error("Erro ao enviar áudio:", result.error);
+      } else {
+        await loadConversationDetail(selectedLeadId);
+        await loadInbox();
+      }
+    };
+    reader.readAsDataURL(audioBlob);
+  };
+
   return (
     <div className="flex flex-1 h-full bg-dd-primary overflow-hidden">
       {/* Conversation List - 320px */}
@@ -120,6 +172,8 @@ export default function CRMPage() {
         {selectedConversation && (
           <ChatInput
             onSend={handleSendMessage}
+            onAttachment={handleSendAttachment}
+            onAudio={handleSendAudio}
             disabled={detailLoading}
             placeholder="Digite uma mensagem..."
           />

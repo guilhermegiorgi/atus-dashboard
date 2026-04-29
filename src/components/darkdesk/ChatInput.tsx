@@ -5,14 +5,16 @@ import { Send, Paperclip, Smile, Mic, X, Pause } from "lucide-react";
 
 interface ChatInputProps {
   onSend?: (message: string) => void;
-  onSendAudio?: (audioBlob: Blob) => void;
+  onAttachment?: (file: File) => void;
+  onAudio?: (audioBlob: Blob) => void;
   disabled?: boolean;
   placeholder?: string;
 }
 
 export function ChatInput({
   onSend,
-  onSendAudio,
+  onAttachment,
+  onAudio,
   disabled = false,
   placeholder = "Digite uma mensagem...",
 }: ChatInputProps) {
@@ -39,15 +41,12 @@ export function ChatInput({
   const handleAttachment = () => {
     const input = document.createElement("input");
     input.type = "file";
-    input.multiple = true;
+    input.multiple = false;
     input.accept = "image/*,.pdf,.doc,.docx,.xls,.xlsx";
     input.onchange = (e) => {
       const files = (e.target as HTMLInputElement).files;
-      if (files && files.length > 0) {
-        console.log(
-          "Arquivos selecionados:",
-          Array.from(files).map((f) => f.name),
-        );
+      if (files && files.length > 0 && onAttachment) {
+        onAttachment(files[0]);
       }
     };
     input.click();
@@ -78,8 +77,8 @@ export function ChatInput({
         const audioBlob = new Blob(audioChunksRef.current, {
           type: "audio/webm",
         });
-        if (onSendAudio && audioChunksRef.current.length > 0) {
-          onSendAudio(audioBlob);
+        if (onAudio && audioChunksRef.current.length > 0) {
+          onAudio(audioBlob);
         }
         stream.getTracks().forEach((track) => track.stop());
       };
@@ -95,7 +94,7 @@ export function ChatInput({
     } catch (error) {
       console.error("Erro ao iniciar gravação:", error);
     }
-  }, [onSendAudio]);
+  }, [onAudio]);
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording) {
