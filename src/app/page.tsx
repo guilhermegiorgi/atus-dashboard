@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Zap,
@@ -13,92 +14,133 @@ import {
   Target,
   Clock,
   CheckCircle2,
+  Loader2,
 } from "lucide-react";
+import { api } from "@/lib/api/client";
 
-const quickStats = [
-  {
-    label: "total leads",
-    value: "2,847",
-    change: "+12%",
-    icon: Users,
-    trend: "up",
-  },
-  { label: "new today", value: "156", change: "+8%", icon: Users, trend: "up" },
-  {
-    label: "conversions",
-    value: "847",
-    change: "+23%",
-    icon: TrendingUp,
-    trend: "up",
-  },
-  {
-    label: "revenue",
-    value: "R$ 1.2M",
-    change: "+18%",
-    icon: BarChart3,
-    trend: "up",
-  },
-];
-
-const features = [
-  {
-    title: "leads",
-    description: "Gerencie e acompanhe todos os seus leads em um só lugar",
-    icon: Users,
-    href: "/leads",
-    count: "2.847",
-  },
-  {
-    title: "analytics",
-    description: "Visualize métricas e estatísticas em tempo real",
-    icon: BarChart3,
-    href: "/analytics",
-    count: "12",
-  },
-  {
-    title: "inbox",
-    description: "Acompanhe todas as conversas com seus leads",
-    icon: MessageSquare,
-    href: "/conversations",
-    count: "48",
-  },
-  {
-    title: "pipeline",
-    description: "Monitore seu funil de vendas e conversões",
-    icon: TrendingUp,
-    href: "/pipeline",
-    count: "156",
-  },
-];
-
-const recentActivity = [
-  {
-    type: "lead",
-    message: "Novo lead: João Silva",
-    time: "2 min atrás",
-    icon: Users,
-  },
-  {
-    type: "conversion",
-    message: "Conversão: R$ 450.000",
-    time: "15 min atrás",
-    icon: CheckCircle2,
-  },
-  {
-    type: "followup",
-    message: "Follow-up enviado: Maria Santos",
-    time: "32 min atrás",
-    icon: Clock,
-  },
-  {
-    type: "tracking",
-    message: "Nova conversão de link rastreado",
-    time: "1h atrás",
-    icon: Link2,
-  },
-];
+interface StatsData {
+  total: number;
+  novos: number;
+  em_atendimento: number;
+  convertidos: number;
+  perdidos: number;
+}
 
 export default function HomePage() {
+  const [stats, setStats] = useState<StatsData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      const [statsResult] = await Promise.all([api.getLeadsStats()]);
+
+      if (statsResult.data) {
+        setStats(statsResult.data);
+      }
+
+      setLoading(false);
+    }
+
+    loadData();
+  }, []);
+
+  const quickStats = [
+    {
+      label: "total leads",
+      value: stats?.total?.toLocaleString("pt-BR") || "0",
+      change: stats?.novos ? `+${stats.novos}` : "+0",
+      icon: Users,
+      trend: "up",
+    },
+    {
+      label: "new today",
+      value: stats?.novos?.toString() || "0",
+      change: "+0%",
+      icon: Users,
+      trend: "up",
+    },
+    {
+      label: "conversions",
+      value: stats?.convertidos?.toLocaleString("pt-BR") || "0",
+      change: "+0%",
+      icon: TrendingUp,
+      trend: "up",
+    },
+    {
+      label: "em atendimento",
+      value: stats?.em_atendimento?.toString() || "0",
+      change: "+0%",
+      icon: BarChart3,
+      trend: "up",
+    },
+  ];
+
+  const features = [
+    {
+      title: "leads",
+      description: "Gerencie e acompanhe todos os seus leads em um só lugar",
+      icon: Users,
+      href: "/leads",
+      count: stats?.total?.toString() || "0",
+    },
+    {
+      title: "analytics",
+      description: "Visualize métricas e estatísticas em tempo real",
+      icon: BarChart3,
+      href: "/analytics",
+      count: "-",
+    },
+    {
+      title: "inbox",
+      description: "Acompanhe todas as conversas com seus leads",
+      icon: MessageSquare,
+      href: "/conversations",
+      count: "-",
+    },
+    {
+      title: "pipeline",
+      description: "Monitore seu funil de vendas e conversões",
+      icon: TrendingUp,
+      href: "/pipeline",
+      count: stats?.em_atendimento?.toString() || "0",
+    },
+  ];
+
+  const recentActivity = [
+    {
+      type: "lead",
+      message: "Sistema de leads ativo",
+      time: "Online",
+      icon: Users,
+    },
+    {
+      type: "conversion",
+      message: "Dashboard conectado à API",
+      time: "Tempo real",
+      icon: CheckCircle2,
+    },
+    {
+      type: "followup",
+      message: "Follow-up automatizado disponível",
+      time: "Configurado",
+      icon: Clock,
+    },
+    {
+      type: "tracking",
+      message: "Links rastreados disponíveis",
+      time: "Pronto",
+      icon: Link2,
+    },
+  ];
+
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-dd-accent-green" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-10">
       {/* Header */}
@@ -209,7 +251,7 @@ export default function HomePage() {
         {/* Activity */}
         <div className="space-y-3">
           <div className="text-[10px] uppercase tracking-widest text-white/25 px-0.5">
-            Recent
+            Status
           </div>
           <div
             className="card-premium p-4 space-y-4 opacity-0 animate-in"

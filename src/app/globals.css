@@ -4,40 +4,85 @@
 
 @layer base {
   :root {
-    /* Premium Blackstar Design */
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
+    /* DarkDesk Design System */
 
-    --text-primary: 0 0% 100%;
-    --text-secondary: 0 0% 100%;
-    --text-muted: 0 0% 100%;
-    --text-subtle: 0 0% 100%;
+    /* Core surfaces - escala de luminância */
+    --dd-primary: #0F0F0F;
+    --dd-surface: #1A1A1A;
+    --dd-surface-raised: #242424;
+    --dd-surface-overlay: #2E2E2E;
 
-    --border-subtle: 0 0% 100%;
-    --border-hover: 0 0% 100%;
-    --border-active: 0 0% 100%;
+    /* Borders */
+    --dd-border: #3A3A3A;
+    --dd-border-subtle: #2A2A2A;
 
-    --surface: 0 0% 100%;
-    --surface-raised: 0 0% 100%;
+    /* Neutros */
+    --dd-secondary: #6B6B6B;
+    --dd-muted: #4A4A4A;
 
-    /* Cards and elevated surfaces */
-    --card: 0 0% 4%;
-    --card-foreground: 0 0% 100%;
-    --popover: 0 0% 4%;
-    --popover-foreground: 0 0% 100%;
-    --primary: 0 0% 100%;
-    --primary-foreground: 0 0% 0%;
-    --secondary: 0 0% 6%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 0 0% 6%;
-    --muted-foreground: 0 0% 100%;
-    --accent: 0 0% 8%;
-    --accent-foreground: 0 0% 100%;
+    /* Text hierarchy */
+    --dd-on-primary: #F0F0F0;
+    --dd-on-surface: #D4D4D4;
+    --dd-on-muted: #9A9A9A;
+
+    /* Functional accents */
+    --dd-accent-green: #1DB954;
+    --dd-accent-green-muted: #1A3A28;
+    --dd-accent-pink: #E91E8C;
+    --dd-accent-pink-muted: #3A1228;
+    --dd-accent-purple: #8B5CF6;
+    --dd-accent-purple-muted: #2A1A4A;
+    --dd-accent-orange: #F97316;
+    --dd-accent-orange-muted: #3A2010;
+    --dd-accent-blue: #3B82F6;
+    --dd-accent-blue-muted: #0F1E3A;
+
+    /* Status badges */
+    --dd-badge-new: #1DB954;
+    --dd-badge-waiting: #F97316;
+    --dd-badge-urgent: #EF4444;
+    --dd-badge-indicated: #8B5CF6;
+
+    /* Conversation states */
+    --dd-conversation-active: #1E2A1E;
+    --dd-conversation-hover: #1E1E1E;
+
+    /* Scrollbar & selection */
+    --dd-scrollbar: #3A3A3A;
+    --dd-selection: #1E3A2E;
+
+    /* Shadcn compatibility mapping */
+    --background: 0 0% 6%;
+    --foreground: 0 0% 94%;
+
+    --text-primary: 0 0% 94%;
+    --text-secondary: 0 0% 83%;
+    --text-muted: 0 0% 60%;
+
+    --border-subtle: 0 0% 17%;
+    --border-hover: 0 0% 23%;
+    --border-active: 0 0% 29%;
+
+    --surface: 0 0% 10%;
+    --surface-raised: 0 0% 14%;
+
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 94%;
+    --popover: 0 0% 14%;
+    --popover-foreground: 0 0% 94%;
+    --primary: 0 0% 94%;
+    --primary-foreground: 0 0% 6%;
+    --secondary: 0 0% 18%;
+    --secondary-foreground: 0 0% 94%;
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 0 0% 18%;
+    --accent-foreground: 0 0% 94%;
     --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 100%;
-    --input: 0 0% 100%;
-    --ring: 0 0% 100%;
+    --destructive-foreground: 0 0% 94%;
+    --border: 0 0% 23%;
+    --input: 0 0% 14%;
+    --ring: 0 0% 94%;
     --radius: 0.5rem;
   }
 }
@@ -56,25 +101,31 @@
   body {
     @apply bg-background text-foreground;
     letter-spacing: 0;
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height: 100%;
+  }
+
+  html {
+    height: 100%;
   }
 
   ::selection {
-    background-color: rgba(255, 255, 255, 0.15);
+    background-color: rgba(30, 58, 46, 0.8);
   }
 
   ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
+    width: 6px;
+    height: 6px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 2px;
+    background: var(--dd-scrollbar);
+    border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--dd-secondary);
   }
 }
 
@@ -88,6 +139,38 @@
   .stagger-3 { animation-delay: 0.15s; }
   .stagger-4 { animation-delay: 0.2s; }
   .stagger-5 { animation-delay: 0.25s; }
+
+  /* DarkDesk semantic utilities */
+  .dd-surface { background-color: var(--dd-surface); }
+  .dd-surface-raised { background-color: var(--dd-surface-raised); }
+  .dd-surface-overlay { background-color: var(--dd-surface-overlay); }
+  .dd-primary { background-color: var(--dd-primary); }
+
+  .dd-text-primary { color: var(--dd-on-primary); }
+  .dd-text-surface { color: var(--dd-on-surface); }
+  .dd-text-muted { color: var(--dd-on-muted); }
+
+  .dd-border { border-color: var(--dd-border); }
+  .dd-border-subtle { border-color: var(--dd-border-subtle); }
+
+  .dd-accent-green { color: var(--dd-accent-green); }
+  .dd-accent-green-muted { background-color: var(--dd-accent-green-muted); }
+
+  .dd-accent-pink { color: var(--dd-accent-pink); }
+  .dd-accent-pink-muted { background-color: var(--dd-accent-pink-muted); }
+
+  .dd-accent-purple { color: var(--dd-accent-purple); }
+  .dd-accent-purple-muted { background-color: var(--dd-accent-purple-muted); }
+
+  .dd-accent-orange { color: var(--dd-accent-orange); }
+  .dd-accent-orange-muted { background-color: var(--dd-accent-orange-muted); }
+
+  .dd-accent-blue { color: var(--dd-accent-blue); }
+  .dd-accent-blue-muted { background-color: var(--dd-accent-blue-muted); }
+
+  /* Conversation states */
+  .dd-conversation-active { background-color: var(--dd-conversation-active); }
+  .dd-conversation-hover { background-color: var(--dd-conversation-hover); }
 }
 
 @keyframes fadeIn {
@@ -106,8 +189,32 @@
   }
 }
 
+@keyframes slideInUp {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse-gentle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
 .animate-slide-in-right {
   animation: slideInRight 0.25s ease-out forwards;
+}
+
+.animate-slide-in-up {
+  animation: slideInUp 0.2s ease-out forwards;
+}
+
+.animate-pulse-gentle {
+  animation: pulse-gentle 2s ease-in-out infinite;
 }
 
 /* Premium text utilities */
@@ -116,37 +223,176 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: hsl(var(--text-muted) / 0.5);
+  color: var(--dd-on-muted);
 }
 
 .text-secondary {
-  color: hsl(var(--text-secondary) / 0.6);
+  color: var(--dd-on-surface);
 }
 
 .text-muted {
-  color: hsl(var(--text-muted) / 0.4);
+  color: var(--dd-on-muted);
 }
 
 .text-subtle {
-  color: hsl(var(--text-subtle) / 0.3);
+  color: rgba(154, 154, 154, 0.7);
 }
 
 /* Surface variants */
 .surface {
-  background-color: hsl(var(--surface) / 0.02);
+  background-color: var(--dd-surface);
 }
 
 .surface-raised {
-  background-color: hsl(var(--surface-raised) / 0.05);
+  background-color: var(--dd-surface-raised);
 }
 
 .card-premium {
-  background-color: #0a0a0a;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background-color: var(--dd-surface);
+  border: 1px solid var(--dd-border-subtle);
   border-radius: 8px;
 }
 
 .card-premium-hover {
-  background-color: #0f0f0f;
-  border-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--dd-surface-raised);
+  border-color: var(--dd-border);
+}
+
+/* DarkDesk specific overrides */
+.bg-dd-primary { background-color: var(--dd-primary); }
+.bg-dd-surface { background-color: var(--dd-surface); }
+.bg-dd-surface-raised { background-color: var(--dd-surface-raised); }
+.bg-dd-surface-overlay { background-color: var(--dd-surface-overlay); }
+
+.text-dd-on-primary { color: var(--dd-on-primary); }
+.text-dd-on-surface { color: var(--dd-on-surface); }
+.text-dd-on-muted { color: var(--dd-on-muted); }
+
+.border-dd-border { border-color: var(--dd-border); }
+.border-dd-border-subtle { border-color: var(--dd-border-subtle); }
+
+.rounded-dd { border-radius: 8px; }
+.rounded-dd-lg { border-radius: 12px; }
+.rounded-dd-full { border-radius: 9999px; }
+
+/* Custom focus states */
+.focus-ring:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--dd-primary), 0 0 0 4px var(--dd-accent-green);
+}
+
+/* Avatar styles */
+.avatar-base {
+  background-color: var(--dd-surface-overlay);
+  color: var(--dd-on-muted);
+  border-radius: 9999px;
+}
+
+.avatar-unread {
+  background-color: var(--dd-accent-green);
+  color: white;
+}
+
+/* Badge variants */
+.badge-new {
+  background-color: var(--dd-badge-new);
+  color: white;
+}
+
+.badge-waiting {
+  background-color: var(--dd-accent-orange-muted);
+  color: var(--dd-accent-orange);
+}
+
+.badge-urgent {
+  background-color: #3A1010;
+  color: #EF4444;
+}
+
+.badge-indicated {
+  background-color: var(--dd-accent-purple-muted);
+  color: var(--dd-accent-purple);
+}
+
+.badge-channel {
+  background-color: var(--dd-surface-overlay);
+  color: var(--dd-on-muted);
+}
+
+.badge-bot {
+  background-color: #1A2A3A;
+  color: var(--dd-accent-blue);
+}
+
+.badge-human {
+  background-color: #3A1A1A;
+  color: #F87171;
+}
+
+/* Chat bubble variants */
+.chat-bubble-inbound {
+  background-color: var(--dd-surface-raised);
+  color: var(--dd-on-surface);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.chat-bubble-outbound {
+  background-color: var(--dd-accent-green-muted);
+  color: var(--dd-on-surface);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+/* AI action buttons */
+.ai-button-summarize {
+  background-color: var(--dd-accent-pink-muted);
+  color: var(--dd-accent-pink);
+  border-radius: 9999px;
+  padding: 6px 14px;
+}
+
+.ai-button-followup {
+  background-color: var(--dd-accent-purple-muted);
+  color: var(--dd-accent-purple);
+  border-radius: 9999px;
+  padding: 6px 14px;
+}
+
+/* Primary button */
+.btn-primary {
+  background-color: var(--dd-accent-green);
+  color: white;
+  border-radius: 8px;
+  padding: 10px 16px;
+}
+
+.btn-primary:hover {
+  background-color: #17a348;
+}
+
+/* Secondary button */
+.btn-secondary {
+  background-color: var(--dd-surface-overlay);
+  color: var(--dd-on-surface);
+  border-radius: 8px;
+  padding: 8px 14px;
+}
+
+.btn-secondary:hover {
+  background-color: var(--dd-border);
+}
+
+/* Unread counter */
+.unread-counter {
+  background-color: var(--dd-accent-green);
+  color: white;
+  border-radius: 9999px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
 }
