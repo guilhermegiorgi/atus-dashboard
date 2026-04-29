@@ -96,7 +96,7 @@ export default function CRMPage() {
   };
 
   return (
-    <div className="flex h-full bg-dd-primary">
+    <div className="flex flex-1 bg-dd-primary">
       {/* Conversation List - 320px */}
       <div className="w-80 flex-shrink-0 border-r border-dd-border-subtle">
         <ConversationList

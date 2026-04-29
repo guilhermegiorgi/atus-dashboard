@@ -15,9 +15,9 @@ export function AppContent({ children }: AppContentProps) {
   return (
     <main
       className={cn(
-        "flex-1 flex flex-col",
+        "flex-1 flex flex-col h-full",
         !isCRMPage && "p-8 overflow-auto",
-        isCRMPage && "h-full overflow-hidden",
+        isCRMPage && "overflow-hidden",
       )}
     >
       {!isCRMPage && (
@@ -25,7 +25,7 @@ export function AppContent({ children }: AppContentProps) {
           <GlobalSearch />
         </div>
       )}
-      <div className={cn(isCRMPage && "h-full")}>{children}</div>
+      {children}
     </main>
   );
 }
