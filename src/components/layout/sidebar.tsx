@@ -33,6 +33,12 @@ const navigation = [
   },
   { name: "crm", href: "/crm", icon: MessageCircle, label: "CRM Chat" },
   { name: "pipeline", href: "/pipeline", icon: TrendingUp, label: "Pipeline" },
+  {
+    name: "settings",
+    href: "/settings",
+    icon: Settings,
+    label: "Configurações",
+  },
 ];
 
 export function Sidebar() {
@@ -81,16 +87,9 @@ export function Sidebar() {
       {/* Dashboard link at bottom */}
       <div className="border-t border-dd-border-subtle py-3">
         <Link
-          href="/settings"
-          title="Configurações"
-          className="group flex h-11 w-11 items-center justify-center rounded-dd mx-auto transition-all duration-150 text-dd-muted hover:bg-dd-surface hover:text-dd-on-surface"
-        >
-          <Settings className="h-5 w-5 transition-colors group-hover:text-dd-on-surface" />
-        </Link>
-        <Link
           href="/dashboard"
           title="Dashboard"
-          className="group flex h-11 w-11 items-center justify-center rounded-dd mx-auto transition-all duration-150 text-dd-muted hover:bg-dd-surface hover:text-dd-on-surface mt-1"
+          className="group flex h-11 w-11 items-center justify-center rounded-dd mx-auto transition-all duration-150 text-dd-muted hover:bg-dd-surface hover:text-dd-on-surface"
         >
           <LayoutDashboard className="h-5 w-5 transition-colors group-hover:text-dd-on-surface" />
         </Link>
