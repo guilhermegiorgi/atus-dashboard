@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 
-const WUZAPI_URL = process.env.WUZAPI_URL || "http://localhost:8080";
+const WUZAPI_URL = process.env.WUZAPI_URL || process.env.NEXT_PUBLIC_ATUS_BOT_URL || "http://localhost:80";
 
-async function getWuzapiToken(): Promise<string | null> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.token) return null;
-  return session.user.token;
+function getWuzapiToken(request: NextRequest): string | null {
+  const auth = request.headers.get("Authorization");
+  if (!auth?.startsWith("Bearer ")) return null;
+  return auth.slice(7);
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const token = await getWuzapiToken();
+    const token = getWuzapiToken(request);
     if (!token) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
