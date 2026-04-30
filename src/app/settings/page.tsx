@@ -11,12 +11,12 @@ import {
   Trash2,
   Edit3,
   UserPlus,
-  Shield,
   Mail,
   Smartphone,
   Monitor,
   Moon,
   Sun,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -100,36 +100,93 @@ const mockNotifications = [
   },
 ];
 
+function ToggleSwitch({
+  enabled,
+  onChange,
+}: {
+  enabled: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <button
+      onClick={() => onChange(!enabled)}
+      className={cn(
+        "w-11 h-6 rounded-full transition-colors relative shrink-0",
+        enabled ? "bg-dd-accent-green" : "bg-dd-border-subtle",
+      )}
+    >
+      <span
+        className={cn(
+          "absolute top-1 w-4 h-4 rounded-full bg-white transition-transform",
+          enabled ? "left-6" : "left-1",
+        )}
+      />
+    </button>
+  );
+}
+
+function Card({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-DD bg-dd-surface border border-dd-border-subtle",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("tags");
   const [tags] = useState(mockTags);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [notifications, setNotifications] = useState(mockNotifications);
+
+  const toggleNotification = (id: string, enabled: boolean) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, enabled } : n)),
+    );
+  };
 
   return (
     <div className="flex flex-1 h-full bg-dd-primary">
-      {/* Sidebar de config */}
-      <div className="w-56 border-r border-dd-border-subtle bg-dd-surface flex flex-col">
+      {/* Sidebar - estilo DarkDesk */}
+      <div className="w-56 border-r border-dd-border-subtle bg-dd-primary flex flex-col">
         <div className="p-4 border-b border-dd-border-subtle">
           <h1 className="flex items-center gap-2 text-lg font-semibold text-dd-on-primary">
-            <SettingsIcon className="h-5 w-5 text-dd-accent-green" />
+            <SettingsIcon className="h-5 w-5" />
             Configurações
           </h1>
         </div>
 
-        <nav className="flex-1 p-3 space-y-1">
+        <nav className="flex-1 p-2 space-y-0.5">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "flex w-full items-center gap-3 rounded-dd px-3 py-2.5 text-left text-sm font-medium transition-all",
+                "w-full flex items-center gap-3 rounded-DD px-3 py-2.5 text-left text-sm font-medium transition-all",
                 activeTab === tab.id
-                  ? "bg-dd-surface-raised text-dd-on-surface border border-dd-border-subtle"
-                  : "text-dd-muted hover:bg-dd-surface-overlay hover:text-dd-on-surface border border-transparent",
+                  ? "bg-dd-surface-raised text-dd-on-primary"
+                  : "text-dd-muted hover:bg-dd-surface hover:text-dd-on-surface",
               )}
             >
               <tab.icon className="h-4 w-4" />
               {tab.label}
+              <ChevronRight
+                className={cn(
+                  "h-3 w-3 ml-auto transition-transform",
+                  activeTab === tab.id ? "rotate-90" : "opacity-0",
+                )}
+              />
             </button>
           ))}
         </nav>
@@ -148,37 +205,36 @@ export default function SettingsPage() {
                   Crie e gerencie tags para classificar seus leads
                 </p>
               </div>
-              <button className="flex items-center gap-2 px-4 py-2 bg-dd-accent-green text-white rounded-dd text-sm font-medium hover:bg-[#17a348] transition-colors">
+              <button className="flex items-center gap-2 px-4 py-2 bg-dd-accent-green text-white rounded-DD text-sm font-medium hover:bg-[#17a348] transition-colors">
                 <Plus className="h-4 w-4" />
                 Nova Tag
               </button>
             </div>
 
-            {/* Lista de tags */}
-            <div className="space-y-2">
+            <div className="space-y-1">
               {tags.map((tag) => (
                 <div
                   key={tag.id}
-                  className="flex items-center justify-between p-4 rounded-dd bg-dd-surface border border-dd-border-subtle hover:border-dd-border transition-colors"
+                  className="flex items-center justify-between p-3 rounded-DD bg-dd-surface border border-dd-border-subtle hover:border-dd-border transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className="h-4 w-4 rounded-full ring-2 ring-dd-border-subtle"
+                      className="h-3 w-3 rounded-full"
                       style={{ backgroundColor: tag.color }}
                     />
                     <span className="text-sm font-medium text-dd-on-surface">
                       {tag.name}
                     </span>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <span className="text-xs text-dd-muted bg-dd-surface-raised px-2 py-1 rounded">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-dd-muted mr-2">
                       {tag.count} leads
                     </span>
-                    <button className="p-1.5 text-dd-muted hover:text-dd-on-surface hover:bg-dd-surface-raised rounded transition-colors">
-                      <Edit3 className="h-4 w-4" />
+                    <button className="p-1.5 text-dd-muted hover:text-dd-on-surface rounded transition-colors">
+                      <Edit3 className="h-3.5 w-3.5" />
                     </button>
-                    <button className="p-1.5 text-dd-muted hover:text-dd-accent-red hover:bg-dd-surface-raised rounded transition-colors">
-                      <Trash2 className="h-4 w-4" />
+                    <button className="p-1.5 text-dd-muted hover:text-dd-accent-red rounded transition-colors">
+                      <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 </div>
@@ -198,20 +254,20 @@ export default function SettingsPage() {
                   Gerencie usuários e permissões do sistema
                 </p>
               </div>
-              <button className="flex items-center gap-2 px-4 py-2 bg-dd-accent-green text-white rounded-dd text-sm font-medium hover:bg-[#17a348] transition-colors">
+              <button className="flex items-center gap-2 px-4 py-2 bg-dd-accent-green text-white rounded-DD text-sm font-medium hover:bg-[#17a348] transition-colors">
                 <UserPlus className="h-4 w-4" />
                 Novo Usuário
               </button>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               {mockUsers.map((user) => (
                 <div
                   key={user.id}
-                  className="flex items-center justify-between p-4 rounded-dd bg-dd-surface border border-dd-border-subtle hover:border-dd-border transition-colors"
+                  className="flex items-center justify-between p-3 rounded-DD bg-dd-surface border border-dd-border-subtle hover:border-dd-border transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-dd-surface-raised flex items-center justify-center text-dd-muted font-medium">
+                    <div className="h-9 w-9 rounded-full bg-dd-surface-raised flex items-center justify-center text-dd-muted font-medium text-sm">
                       {user.name.charAt(0)}
                     </div>
                     <div>
@@ -221,7 +277,7 @@ export default function SettingsPage() {
                       <p className="text-xs text-dd-muted">{user.email}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <span
                       className={cn(
                         "text-xs px-2 py-1 rounded",
@@ -235,8 +291,8 @@ export default function SettingsPage() {
                     <span className="text-xs text-dd-muted bg-dd-surface-raised px-2 py-1 rounded capitalize">
                       {user.role}
                     </span>
-                    <button className="p-1.5 text-dd-muted hover:text-dd-on-surface hover:bg-dd-surface-raised rounded transition-colors">
-                      <Edit3 className="h-4 w-4" />
+                    <button className="p-1.5 text-dd-muted hover:text-dd-on-surface rounded transition-colors">
+                      <Edit3 className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 </div>
@@ -256,29 +312,29 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            <div className="space-y-2">
-              {mockNotifications.map((notification) => (
+            <div className="space-y-1">
+              {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className="flex items-center justify-between p-4 rounded-dd bg-dd-surface border border-dd-border-subtle hover:border-dd-border transition-colors"
+                  className="flex items-center justify-between p-3 rounded-DD bg-dd-surface border border-dd-border-subtle"
                 >
                   <div className="flex items-center gap-3">
                     <div
                       className={cn(
-                        "p-2 rounded-DD",
+                        "p-1.5 rounded",
                         notification.enabled
                           ? "bg-dd-accent-green/20 text-dd-accent-green"
                           : "bg-dd-surface-raised text-dd-muted",
                       )}
                     >
                       {notification.channel === "email" && (
-                        <Mail className="h-4 w-4" />
+                        <Mail className="h-3.5 w-3.5" />
                       )}
                       {notification.channel === "push" && (
-                        <Smartphone className="h-4 w-4" />
+                        <Smartphone className="h-3.5 w-3.5" />
                       )}
                       {notification.channel === "all" && (
-                        <Bell className="h-4 w-4" />
+                        <Bell className="h-3.5 w-3.5" />
                       )}
                     </div>
                     <div>
@@ -290,21 +346,10 @@ export default function SettingsPage() {
                       </p>
                     </div>
                   </div>
-                  <button
-                    className={cn(
-                      "w-11 h-6 rounded-full transition-colors relative",
-                      notification.enabled
-                        ? "bg-dd-accent-green"
-                        : "bg-dd-surface-raised",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "absolute top-1 w-4 h-4 rounded-full bg-white transition-transform",
-                        notification.enabled ? "left-6" : "left-1",
-                      )}
-                    />
-                  </button>
+                  <ToggleSwitch
+                    enabled={notification.enabled}
+                    onChange={(v) => toggleNotification(notification.id, v)}
+                  />
                 </div>
               ))}
             </div>
@@ -324,7 +369,7 @@ export default function SettingsPage() {
 
             <div className="space-y-4">
               {/* Theme Selection */}
-              <div className="p-4 rounded-dd bg-dd-surface border border-dd-border-subtle">
+              <Card className="p-4">
                 <h3 className="text-sm font-medium text-dd-on-surface mb-3 flex items-center gap-2">
                   <Monitor className="h-4 w-4" />
                   Tema
@@ -333,52 +378,46 @@ export default function SettingsPage() {
                   <button
                     onClick={() => setTheme("dark")}
                     className={cn(
-                      "flex-1 p-4 rounded-DD border transition-all",
+                      "flex-1 p-3 rounded-DD border transition-all",
                       theme === "dark"
-                        ? "border-dd-accent-green bg-dd-accent-green/10"
+                        ? "border-dd-accent-green bg-dd-accent-green/5"
                         : "border-dd-border-subtle hover:border-dd-border",
                     )}
                   >
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between mb-1">
                       <Moon className="h-4 w-4 text-dd-muted" />
                       {theme === "dark" && (
                         <span className="w-2 h-2 rounded-full bg-dd-accent-green" />
                       )}
                     </div>
-                    <p className="text-sm font-medium text-dd-on-surface">
+                    <p className="text-sm font-medium text-dd-on-surface text-left">
                       Escuro
-                    </p>
-                    <p className="text-xs text-dd-muted mt-1">
-                      Interface escura otimizada
                     </p>
                   </button>
                   <button
                     onClick={() => setTheme("light")}
                     className={cn(
-                      "flex-1 p-4 rounded-DD border transition-all",
+                      "flex-1 p-3 rounded-DD border transition-all",
                       theme === "light"
-                        ? "border-dd-accent-green bg-dd-accent-green/10"
+                        ? "border-dd-accent-green bg-dd-accent-green/5"
                         : "border-dd-border-subtle hover:border-dd-border",
                     )}
                   >
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between mb-1">
                       <Sun className="h-4 w-4 text-dd-muted" />
                       {theme === "light" && (
                         <span className="w-2 h-2 rounded-full bg-dd-accent-green" />
                       )}
                     </div>
-                    <p className="text-sm font-medium text-dd-on-surface">
+                    <p className="text-sm font-medium text-dd-on-surface text-left">
                       Claro
-                    </p>
-                    <p className="text-xs text-dd-muted mt-1">
-                      Interface clara clássica
                     </p>
                   </button>
                 </div>
-              </div>
+              </Card>
 
               {/* Accent Color */}
-              <div className="p-4 rounded-dd bg-dd-surface border border-dd-border-subtle">
+              <Card className="p-4">
                 <h3 className="text-sm font-medium text-dd-on-surface mb-3 flex items-center gap-2">
                   <Palette className="h-4 w-4" />
                   Cor de Destaque
@@ -389,7 +428,7 @@ export default function SettingsPage() {
                       <button
                         key={color}
                         className={cn(
-                          "w-10 h-10 rounded-full border-2 transition-all",
+                          "w-9 h-9 rounded-full border-2 transition-all",
                           color === "#22C55E"
                             ? "border-white"
                             : "border-transparent hover:border-dd-border",
@@ -399,25 +438,7 @@ export default function SettingsPage() {
                     ),
                   )}
                 </div>
-              </div>
-
-              {/* Sidebar Position */}
-              <div className="p-4 rounded-dd bg-dd-surface border border-dd-border-subtle">
-                <h3 className="text-sm font-medium text-dd-on-surface mb-3 flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  Posição da Sidebar
-                </h3>
-                <div className="flex gap-3">
-                  <button className="flex-1 p-3 rounded-DD border border-dd-accent-green bg-dd-accent-green/10 text-center">
-                    <p className="text-sm font-medium text-dd-on-surface">
-                      Esquerda
-                    </p>
-                  </button>
-                  <button className="flex-1 p-3 rounded-DD border border-dd-border-subtle hover:border-dd-border text-center">
-                    <p className="text-sm font-medium text-dd-muted">Direita</p>
-                  </button>
-                </div>
-              </div>
+              </Card>
             </div>
           </div>
         )}
