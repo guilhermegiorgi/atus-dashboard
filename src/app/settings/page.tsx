@@ -17,6 +17,8 @@ import {
   Moon,
   Sun,
   ChevronRight,
+  X,
+  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,7 +31,27 @@ const tabs: { id: Tab; label: string; icon: typeof SettingsIcon }[] = [
   { id: "appearance", label: "Aparência", icon: Palette },
 ];
 
-const mockTags = [
+const COLOR_OPTIONS = [
+  "#EF4444",
+  "#F97316",
+  "#EAB308",
+  "#22C55E",
+  "#14B8A6",
+  "#3B82F6",
+  "#6366F1",
+  "#8B5CF6",
+  "#EC4899",
+  "#6B7280",
+];
+
+interface Tag {
+  id: string;
+  name: string;
+  color: string;
+  count: number;
+}
+
+const mockTags: Tag[] = [
   { id: "1", name: "Quente", color: "#EF4444", count: 12 },
   { id: "2", name: "Frio", color: "#3B82F6", count: 8 },
   { id: "3", name: "Follow-up", color: "#F97316", count: 24 },
@@ -125,30 +147,179 @@ function ToggleSwitch({
   );
 }
 
-function Card({
+function Modal({
+  isOpen,
+  onClose,
+  title,
   children,
-  className,
 }: {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
   children: React.ReactNode;
-  className?: string;
 }) {
+  if (!isOpen) return null;
   return (
-    <div
-      className={cn(
-        "rounded-DD bg-dd-surface border border-dd-border-subtle",
-        className,
-      )}
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <div className="relative bg-dd-surface border border-dd-border-subtle rounded-DD w-full max-w-md mx-4 shadow-2xl">
+        <div className="flex items-center justify-between p-4 border-b border-dd-border-subtle">
+          <h3 className="text-lg font-semibold text-dd-on-primary">{title}</h3>
+          <button
+            onClick={onClose}
+            className="p-1 text-dd-muted hover:text-dd-on-surface rounded"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="p-4">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function TagModal({
+  isOpen,
+  onClose,
+  tag,
+  onSave,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  tag?: Tag | null;
+  onSave: (tag: Tag) => void;
+}) {
+  const [name, setName] = useState(tag?.name || "");
+  const [color, setColor] = useState(tag?.color || COLOR_OPTIONS[0]);
+
+  const handleSave = () => {
+    if (!name.trim()) return;
+    onSave({
+      id: tag?.id || Date.now().toString(),
+      name: name.trim(),
+      color,
+      count: tag?.count || 0,
+    });
+    onClose();
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={tag ? "Editar Tag" : "Nova Tag"}
     >
-      {children}
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-dd-on-surface mb-2">
+            Nome da Tag
+          </label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Ex: Quente, Frio, Follow-up..."
+            className="w-full px-3 py-2 bg-dd-primary border border-dd-border-subtle rounded-DD text-dd-on-surface placeholder:text-dd-muted focus:outline-none focus:border-dd-accent-green"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-dd-on-surface mb-2">
+            Cor
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {COLOR_OPTIONS.map((c) => (
+              <button
+                key={c}
+                onClick={() => setColor(c)}
+                className={cn(
+                  "w-8 h-8 rounded-full border-2 transition-all",
+                  color === c
+                    ? "border-white scale-110"
+                    : "border-transparent hover:scale-105",
+                )}
+                style={{ backgroundColor: c }}
+              />
+            ))}
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm text-dd-muted hover:text-dd-on-surface"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={!name.trim()}
+            className="flex items-center gap-2 px-4 py-2 bg-dd-accent-green text-white rounded-DD text-sm font-medium hover:bg-[#17a348] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Check className="h-4 w-4" />
+            Salvar
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function DeleteModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  message: string;
+}) {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <div className="relative bg-dd-surface border border-dd-border-subtle rounded-DD w-full max-w-sm mx-4 shadow-2xl">
+        <div className="p-6 text-center">
+          <div className="mx-auto w-12 h-12 rounded-full bg-dd-accent-red/20 flex items-center justify-center mb-4">
+            <Trash2 className="h-6 w-6 text-dd-accent-red" />
+          </div>
+          <h3 className="text-lg font-semibold text-dd-on-primary mb-2">
+            {title}
+          </h3>
+          <p className="text-sm text-dd-muted mb-6">{message}</p>
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-2 text-sm text-dd-muted hover:text-dd-on-surface border border-dd-border-subtle rounded-DD"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={onConfirm}
+              className="flex-1 px-4 py-2 text-sm bg-dd-accent-red text-white rounded-DD hover:bg-red-600 transition-colors"
+            >
+              Excluir
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("tags");
-  const [tags] = useState(mockTags);
+  const [tags, setTags] = useState<Tag[]>(mockTags);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [notifications, setNotifications] = useState(mockNotifications);
+
+  // Modal states
+  const [tagModalOpen, setTagModalOpen] = useState(false);
+  const [editingTag, setEditingTag] = useState<Tag | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deletingTag, setDeletingTag] = useState<Tag | null>(null);
 
   const toggleNotification = (id: string, enabled: boolean) => {
     setNotifications((prev) =>
@@ -156,9 +327,40 @@ export default function SettingsPage() {
     );
   };
 
+  const handleNewTag = () => {
+    setEditingTag(null);
+    setTagModalOpen(true);
+  };
+
+  const handleEditTag = (tag: Tag) => {
+    setEditingTag(tag);
+    setTagModalOpen(true);
+  };
+
+  const handleDeleteTag = (tag: Tag) => {
+    setDeletingTag(tag);
+    setDeleteModalOpen(true);
+  };
+
+  const handleSaveTag = (tag: Tag) => {
+    if (editingTag) {
+      setTags((prev) => prev.map((t) => (t.id === tag.id ? tag : t)));
+    } else {
+      setTags((prev) => [...prev, tag]);
+    }
+  };
+
+  const handleConfirmDelete = () => {
+    if (deletingTag) {
+      setTags((prev) => prev.filter((t) => t.id !== deletingTag.id));
+    }
+    setDeleteModalOpen(false);
+    setDeletingTag(null);
+  };
+
   return (
     <div className="flex flex-1 h-full bg-dd-primary">
-      {/* Sidebar - estilo DarkDesk */}
+      {/* Sidebar */}
       <div className="w-56 border-r border-dd-border-subtle bg-dd-primary flex flex-col">
         <div className="p-4 border-b border-dd-border-subtle">
           <h1 className="flex items-center gap-2 text-lg font-semibold text-dd-on-primary">
@@ -205,7 +407,10 @@ export default function SettingsPage() {
                   Crie e gerencie tags para classificar seus leads
                 </p>
               </div>
-              <button className="flex items-center gap-2 px-4 py-2 bg-dd-accent-green text-white rounded-DD text-sm font-medium hover:bg-[#17a348] transition-colors">
+              <button
+                onClick={handleNewTag}
+                className="flex items-center gap-2 px-4 py-2 bg-dd-accent-green text-white rounded-DD text-sm font-medium hover:bg-[#17a348] transition-colors"
+              >
                 <Plus className="h-4 w-4" />
                 Nova Tag
               </button>
@@ -230,10 +435,16 @@ export default function SettingsPage() {
                     <span className="text-xs text-dd-muted mr-2">
                       {tag.count} leads
                     </span>
-                    <button className="p-1.5 text-dd-muted hover:text-dd-on-surface rounded transition-colors">
+                    <button
+                      onClick={() => handleEditTag(tag)}
+                      className="p-1.5 text-dd-muted hover:text-dd-on-surface rounded transition-colors"
+                    >
                       <Edit3 className="h-3.5 w-3.5" />
                     </button>
-                    <button className="p-1.5 text-dd-muted hover:text-dd-accent-red rounded transition-colors">
+                    <button
+                      onClick={() => handleDeleteTag(tag)}
+                      className="p-1.5 text-dd-muted hover:text-dd-accent-red rounded transition-colors"
+                    >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
@@ -368,8 +579,7 @@ export default function SettingsPage() {
             </div>
 
             <div className="space-y-4">
-              {/* Theme Selection */}
-              <Card className="p-4">
+              <div className="p-4 rounded-DD bg-dd-surface border border-dd-border-subtle">
                 <h3 className="text-sm font-medium text-dd-on-surface mb-3 flex items-center gap-2">
                   <Monitor className="h-4 w-4" />
                   Tema
@@ -414,35 +624,54 @@ export default function SettingsPage() {
                     </p>
                   </button>
                 </div>
-              </Card>
+              </div>
 
-              {/* Accent Color */}
-              <Card className="p-4">
+              <div className="p-4 rounded-DD bg-dd-surface border border-dd-border-subtle">
                 <h3 className="text-sm font-medium text-dd-on-surface mb-3 flex items-center gap-2">
                   <Palette className="h-4 w-4" />
                   Cor de Destaque
                 </h3>
                 <div className="flex gap-3">
-                  {["#22C55E", "#3B82F6", "#8B5CF6", "#F97316", "#EF4444"].map(
-                    (color) => (
-                      <button
-                        key={color}
-                        className={cn(
-                          "w-9 h-9 rounded-full border-2 transition-all",
-                          color === "#22C55E"
-                            ? "border-white"
-                            : "border-transparent hover:border-dd-border",
-                        )}
-                        style={{ backgroundColor: color }}
-                      />
-                    ),
-                  )}
+                  {COLOR_OPTIONS.map((color) => (
+                    <button
+                      key={color}
+                      className={cn(
+                        "w-9 h-9 rounded-full border-2 transition-all",
+                        color === "#22C55E"
+                          ? "border-white"
+                          : "border-transparent hover:border-dd-border",
+                      )}
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
                 </div>
-              </Card>
+              </div>
             </div>
           </div>
         )}
       </div>
+
+      {/* Modais */}
+      <TagModal
+        isOpen={tagModalOpen}
+        onClose={() => {
+          setTagModalOpen(false);
+          setEditingTag(null);
+        }}
+        tag={editingTag}
+        onSave={handleSaveTag}
+      />
+
+      <DeleteModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setDeletingTag(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Excluir Tag"
+        message={`Tem certeza que deseja excluir a tag "${deletingTag?.name}"? Esta ação não pode ser desfeita.`}
+      />
     </div>
   );
 }
