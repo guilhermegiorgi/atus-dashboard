@@ -118,7 +118,7 @@ export default function CRMPage() {
 
       if (result.error) {
         console.error("Erro ao enviar arquivo:", result.error);
-      } else {
+      } else if (selectedLeadId) {
         await loadConversationDetail(selectedLeadId);
         await loadInbox();
       }
@@ -139,7 +139,7 @@ export default function CRMPage() {
 
       if (result.error) {
         console.error("Erro ao enviar áudio:", result.error);
-      } else {
+      } else if (selectedLeadId) {
         await loadConversationDetail(selectedLeadId);
         await loadInbox();
       }
