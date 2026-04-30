@@ -3,7 +3,24 @@
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-import { Search, ArrowDownUp } from "lucide-react";
+import {
+  Search,
+  ArrowDownUp,
+  MoreVertical,
+  UserPlus,
+  Eye,
+  RotateCcw,
+  Hand,
+  Archive,
+  Tag,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { InboxConversationSummary } from "@/types/dashboard";
 
 interface ConversationListProps {
@@ -11,6 +28,7 @@ interface ConversationListProps {
   selectedId?: string | null;
   onSelect: (id: string) => void;
   isLoading?: boolean;
+  onAction?: (action: string, leadId: string) => void;
 }
 
 function formatTimeAgo(dateString?: string | null): string {
@@ -61,6 +79,7 @@ export function ConversationList({
   selectedId,
   onSelect,
   isLoading,
+  onAction,
 }: ConversationListProps) {
   const [search, setSearch] = useState("");
   const [sortOrder, setSortOrder] = useState<"recent" | "oldest">("recent");
@@ -186,9 +205,73 @@ export function ConversationList({
                             conversation.telefone ||
                             "Sem nome"}
                         </span>
-                        <span className="flex-shrink-0 text-timestamp text-dd-on-muted">
-                          {formatTimeAgo(conversation.updated_at)}
-                        </span>
+                        <div className="flex items-center gap-1">
+                          <span className="flex-shrink-0 text-timestamp text-dd-on-muted">
+                            {formatTimeAgo(conversation.updated_at)}
+                          </span>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger>
+                              <button
+                                onClick={(e) => e.stopPropagation()}
+                                className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-dd-surface-overlay transition-all"
+                              >
+                                <MoreVertical className="h-4 w-4 text-dd-muted" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  onAction?.("view", conversation.lead_id)
+                                }
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                Ver detalhes
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  onAction?.("assign", conversation.lead_id)
+                                }
+                              >
+                                <UserPlus className="h-4 w-4 mr-2" />
+                                Atribuir corretor
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  onAction?.("tags", conversation.lead_id)
+                                }
+                              >
+                                <Tag className="h-4 w-4 mr-2" />
+                                Editar tags
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  onAction?.("intervene", conversation.lead_id)
+                                }
+                              >
+                                <Hand className="h-4 w-4 mr-2" />
+                                Intervenção humana
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  onAction?.("release", conversation.lead_id)
+                                }
+                              >
+                                <RotateCcw className="h-4 w-4 mr-2" />
+                                Liberar follow-up
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  onAction?.("archive", conversation.lead_id)
+                                }
+                              >
+                                <Archive className="h-4 w-4 mr-2" />
+                                Arquivar conversa
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
 
                       {/* Preview */}
