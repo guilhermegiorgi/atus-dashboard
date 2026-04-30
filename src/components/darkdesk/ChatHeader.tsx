@@ -2,10 +2,27 @@
 
 import { cn } from "@/lib/utils";
 import type { InboxConversationDetail } from "@/types/dashboard";
+import {
+  MoreVertical,
+  Eye,
+  UserPlus,
+  Tag,
+  Hand,
+  RotateCcw,
+  Archive,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface ChatHeaderProps {
   conversation: InboxConversationDetail | null;
   isLoading?: boolean;
+  onAction?: (action: string, leadId: string) => void;
 }
 
 function getStatusColor(state?: string) {
@@ -46,7 +63,11 @@ function getStatusLabel(state?: string) {
   }
 }
 
-export function ChatHeader({ conversation, isLoading }: ChatHeaderProps) {
+export function ChatHeader({
+  conversation,
+  isLoading,
+  onAction,
+}: ChatHeaderProps) {
   if (isLoading) {
     return (
       <div className="flex h-16 shrink-0 items-center justify-between border-b border-gray-700 bg-gray-900 px-4">
@@ -115,6 +136,53 @@ export function ChatHeader({ conversation, isLoading }: ChatHeaderProps) {
             {conversation.fase}
           </span>
         )}
+        <DropdownMenu>
+          <DropdownMenuTrigger>
+            <button className="p-1.5 rounded hover:bg-gray-800 transition-colors">
+              <MoreVertical className="h-4 w-4 text-gray-500" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem
+              onClick={() => onAction?.("view", conversation.lead_id)}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Ver detalhes
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onAction?.("assign", conversation.lead_id)}
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              Atribuir corretor
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onAction?.("tags", conversation.lead_id)}
+            >
+              <Tag className="h-4 w-4 mr-2" />
+              Editar tags
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => onAction?.("intervene", conversation.lead_id)}
+            >
+              <Hand className="h-4 w-4 mr-2" />
+              Intervenção humana
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onAction?.("release", conversation.lead_id)}
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Liberar follow-up
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => onAction?.("archive", conversation.lead_id)}
+            >
+              <Archive className="h-4 w-4 mr-2" />
+              Arquivar conversa
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
