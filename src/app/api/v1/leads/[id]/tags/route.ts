@@ -1,0 +1,22 @@
+export { dynamic, revalidate } from "@/lib/server/atus-route";
+
+import { proxyAtusJson } from "@/lib/server/atus-proxy";
+
+type RouteContext = {
+  params: Promise<{ id: string }>;
+};
+
+export async function GET(_: Request, { params }: RouteContext) {
+  const { id } = await params;
+  return proxyAtusJson({ path: `/api/v1/leads/${id}/tags` });
+}
+
+export async function POST(request: Request, { params }: RouteContext) {
+  const { id } = await params;
+  const body = await request.json();
+  return proxyAtusJson({
+    path: `/api/v1/leads/${id}/tags`,
+    method: "POST",
+    body,
+  });
+}
