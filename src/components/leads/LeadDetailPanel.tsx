@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { X, Edit, Send, UserCheck, UserX, RotateCcw } from "lucide-react";
 import { api } from "@/lib/api/client";
-import { Conversa, Lead, Mensagem } from "@/types/leads";
+import { Conversa, Lead, Mensagem, Tag } from "@/types/leads";
+import { TagManager } from "./TagManager";
 import {
   LeadAction,
   LeadHumanIntervention,
@@ -80,6 +81,7 @@ export function LeadDetailPanel({
     string | null
   >(null);
   const [messages, setMessages] = useState<Mensagem[]>([]);
+  const [leadTags, setLeadTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(false);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -98,11 +100,13 @@ export function LeadDetailPanel({
         humanResult,
         actionsResult,
         conversationsResult,
+        tagsResult,
       ] = await Promise.all([
         api.getLeadOperationalStatus(lead.id),
         api.getLeadHumanIntervention(lead.id),
         api.getLeadActions(lead.id, 10, 0),
         api.getLeadConversations(lead.id),
+        api.getLeadTags(lead.id),
       ]);
 
       if (cancelled) return;
@@ -112,6 +116,7 @@ export function LeadDetailPanel({
         humanResult.error ??
         actionsResult.error ??
         conversationsResult.error ??
+        tagsResult.error ??
         null;
 
       if (firstError) {
@@ -127,6 +132,7 @@ export function LeadDetailPanel({
       setActions(actionsResult.data?.data ?? []);
       setConversations(nextConversations);
       setSelectedConversationId(nextConversations[0]?.id ?? null);
+      setLeadTags(tagsResult.data ?? []);
       setLoading(false);
     }
 
@@ -291,6 +297,18 @@ export function LeadDetailPanel({
                   Follow-up ativo
                 </Badge>
               )}
+            </div>
+
+            {/* Tags do Lead */}
+            <div className="border border-white/[0.12] rounded-lg p-3 bg-white/[0.02]">
+              <TagManager
+                leadId={lead.id}
+                leadTags={leadTags}
+                onTagsUpdated={async () => {
+                  const result = await api.getLeadTags(lead.id);
+                  if (result.data) setLeadTags(result.data);
+                }}
+              />
             </div>
 
             {/* Quick Actions */}

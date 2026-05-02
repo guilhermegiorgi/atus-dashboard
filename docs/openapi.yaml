@@ -1,0 +1,1827 @@
+
+openapi: 3.0.3
+info:
+  title: atus-bot API
+  description: API REST para gestão de leads, chatbot WhatsApp e analytics
+  version: 1.0.0
+  contact:
+    name: Equipe Átus
+
+servers:
+  - url: https://atusbot.atusbr.com.br
+    description: Produção
+  - url: http://localhost:8080
+    description: Desenvolvimento
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+
+  # ====================
+  # LEADS
+  # ====================
+  /api/v1/leads:
+    get:
+      summary: Lista leads com filtros
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [NOVO, EM_ATENDIMENTO, CONVERTIDO, PERDIDO]
+        - name: fase
+          in: query
+          schema:
+            type: string
+            enum: [DESCOBERTA, QUALIFICACAO, PROPOSTA, NEGOCIACAO, FECHAMENTO]
+        - name: tipo_interesse
+          in: query
+          schema:
+            type: string
+            enum: [COMPRA, VENDA, LOCACAO, LANCAMENTOS]
+        - name: em_follow_up
+          in: query
+          schema:
+            type: boolean
+        - name: canal_origem
+          in: query
+          schema:
+            type: string
+        - name: sistema_origem
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Lista de leads
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Lead'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+
+    post:
+      summary: Cria novo lead
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - telefone
+              properties:
+                telefone:
+                  type: string
+                nome_completo:
+                  type: string
+                email:
+                  type: string
+                tipo_interesse:
+                  type: string
+                  enum: [COMPRA, VENDA, LOCACAO, LANCAMENTOS]
+      responses:
+        '201':
+          description: Lead criado
+
+  /api/v1/leads/{id}:
+    get:
+      summary: Busca lead por ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Lead encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lead'
+        '404':
+          description: Lead não encontrado
+
+    put:
+      summary: Atualiza lead
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nome_completo:
+                  type: string
+                email:
+                  type: string
+                status:
+                  type: string
+                fase:
+                  type: string
+                renda_comprovada:
+                  type: number
+                entrada:
+                  type: number
+      responses:
+        '200':
+          description: Lead atualizado
+
+    delete:
+      summary: Remove lead
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Lead removido
+
+  /api/v1/leads/{id}/reset:
+    post:
+      summary: Reseta lead para estado inicial
+      description: Limpa conversa, reseta fase para DESCOBERTA, status para NOVO
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Motivo do reset
+      responses:
+        '200':
+          description: Lead resetado
+
+  /api/v1/leads/{id}/intervene:
+    post:
+      summary: Marca intervenção humana
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - intervention_type
+              properties:
+                intervention_type:
+                  type: string
+                  enum: [HUMAN_TAKEOVER, MANUAL_REVIEW, ESCALATION]
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Intervenção marcada
+
+  /api/v1/leads/{id}/release-intervention:
+    post:
+      summary: Libera intervenção humana
+      description: Retorna lead para o bot
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                actor_name:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Intervenção liberada
+
+  /api/v1/leads/{id}/release-followup:
+    post:
+      summary: Libera follow-up manualmente
+      description: Remove lead da fila de follow-up
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Follow-up liberado
+
+  /api/v1/leads/{id}/follow-up-status:
+    get:
+      summary: Status de follow-up do lead
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Status follow-up
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  em_follow_up:
+                    type: boolean
+                  followup_rodadas:
+                    type: integer
+                  followup_expira_em:
+                    type: string
+                    format: date-time
+                  intervention_type:
+                    type: string
+
+  # ====================
+  # LEAD TAGS
+  # ====================
+  /api/v1/leads/{id}/tags:
+    get:
+      summary: Lista tags do lead
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Tags do lead
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Tag'
+
+    post:
+      summary: Adiciona tags ao lead
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tag_ids
+              properties:
+                tag_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        '200':
+          description: Tags adicionadas
+
+  /api/v1/leads/{id}/tags/{tagId}:
+    delete:
+      summary: Remove tag do lead
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: tagId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Tag removida
+
+  # ====================
+  # LEAD FEATURE FLAGS
+  # ====================
+  /api/v1/leads/{id}/flags:
+    get:
+      summary: Lista feature flags do lead
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Flags do lead
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FeatureFlag'
+
+  /api/v1/leads/{id}/flags/{flagName}:
+    put:
+      summary: Define flag para lead
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: flagName
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - enabled
+              properties:
+                enabled:
+                  type: boolean
+      responses:
+        '200':
+          description: Flag definida
+
+    delete:
+      summary: Remove flag do lead
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: flagName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Flag removida
+
+  # ====================
+  # TAGS
+  # ====================
+  /api/v1/tags:
+    get:
+      summary: Lista todas as tags
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Lista de tags
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Tag'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+
+    post:
+      summary: Cria nova tag
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  maxLength: 50
+                color:
+                  type: string
+                  pattern: '^#[0-9A-Fa-f]{6}$'
+                  default: '#6B7280'
+      responses:
+        '201':
+          description: Tag criada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+        '409':
+          description: Nome já existe
+
+  /api/v1/tags/{id}:
+    put:
+      summary: Atualiza tag
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                color:
+                  type: string
+      responses:
+        '200':
+          description: Tag atualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+        '404':
+          description: Tag não encontrada
+        '409':
+          description: Nome já existe
+
+    delete:
+      summary: Remove tag
+      description: Remove tag e todas associações com leads
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Tag removida
+        '404':
+          description: Tag não encontrada
+
+  # ====================
+  # USERS
+  # ====================
+  /api/v1/users:
+    get:
+      summary: Lista usuarios
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [owner, admin, corretor, viewer]
+        - name: ativo
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Lista de usuarios
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+
+    post:
+      summary: Cria novo usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - nome
+                - role
+                - senha
+              properties:
+                email:
+                  type: string
+                  format: email
+                nome:
+                  type: string
+                telefone:
+                  type: string
+                role:
+                  type: string
+                  enum: [owner, admin, corretor, viewer]
+                senha:
+                  type: string
+                  minLength: 6
+      responses:
+        '201':
+          description: Usuario criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '409':
+          description: Email ja cadastrado
+
+  /api/v1/users/{id}:
+    get:
+      summary: Busca usuario por ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Usuario encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Usuario não encontrado
+
+    put:
+      summary: Atualiza usuario
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nome:
+                  type: string
+                telefone:
+                  type: string
+                role:
+                  type: string
+                  enum: [owner, admin, corretor, viewer]
+                ativo:
+                  type: boolean
+      responses:
+        '200':
+          description: Usuario atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '403':
+          description: Não pode alterar role para owner
+
+    delete:
+      summary: Desativa usuario
+      description: Soft delete - usuario marcado como inativo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Usuario desativado
+        '403':
+          description: Não pode desativar ultimo owner
+
+  /api/v1/users/{id}/status:
+    put:
+      summary: Ativa/desativa usuario
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ativo
+              properties:
+                ativo:
+                  type: boolean
+      responses:
+        '200':
+          description: Status atualizado
+        '403':
+          description: Não pode desativar ultimo owner
+
+  /api/v1/users/{id}/password:
+    post:
+      summary: Altera senha do usuario
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - senha_atual
+                - senha_nova
+              properties:
+                senha_atual:
+                  type: string
+                senha_nova:
+                  type: string
+                  minLength: 6
+      responses:
+        '200':
+          description: Senha alterada
+        '401':
+          description: Senha atual incorreta
+
+  /api/v1/users/{id}/notifications:
+    get:
+      summary: Configuracoes de notificacao do usuario
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Configuracoes de notificacao
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  email_notifications:
+                    type: boolean
+                  push_notifications:
+                    type: boolean
+                  sms_notifications:
+                    type: boolean
+                  notification_types:
+                    type: object
+                    properties:
+                      new_lead:
+                        type: boolean
+                      lead_conversion:
+                        type: boolean
+                      follow_up_reminder:
+                        type: boolean
+                      intervention_alert:
+                        type: boolean
+
+    put:
+      summary: Atualiza configuracoes de notificacao
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email_notifications:
+                  type: boolean
+                push_notifications:
+                  type: boolean
+                sms_notifications:
+                  type: boolean
+                notification_types:
+                  type: object
+                  properties:
+                    new_lead:
+                      type: boolean
+                    lead_conversion:
+                      type: boolean
+                    follow_up_reminder:
+                      type: boolean
+                    intervention_alert:
+                      type: boolean
+      responses:
+        '200':
+          description: Configuracoes atualizadas
+
+  # ====================
+  # AUTH
+  # ====================
+  /api/v1/auth/login:
+    post:
+      summary: Autentica usuario
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - senha
+              properties:
+                email:
+                  type: string
+                  format: email
+                senha:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Credenciais invalidas
+
+  # ====================
+  # TRACKED LINKS
+  # ====================
+  /api/v1/tracked-links:
+    get:
+      summary: Lista links rastreados
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: ativo
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Lista de links
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TrackedLink'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+
+    post:
+      summary: Cria link rastreado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nome
+                - whatsapp_num
+              properties:
+                nome:
+                  type: string
+                nome_campanha:
+                  type: string
+                source:
+                  type: string
+                medium:
+                  type: string
+                content:
+                  type: string
+                term:
+                  type: string
+                whatsapp_num:
+                  type: string
+                whatsapp_msg:
+                  type: string
+                url_base:
+                  type: string
+                expira_em:
+                  type: string
+                  format: date
+      responses:
+        '201':
+          description: Link criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrackedLink'
+
+  /api/v1/tracked-links/{id}:
+    get:
+      summary: Busca link por ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Link encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrackedLink'
+        '404':
+          description: Link não encontrado
+
+    put:
+      summary: Atualiza link rastreado
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nome:
+                  type: string
+                nome_campanha:
+                  type: string
+                source:
+                  type: string
+                medium:
+                  type: string
+                content:
+                  type: string
+                term:
+                  type: string
+                whatsapp_num:
+                  type: string
+                whatsapp_msg:
+                  type: string
+                url_base:
+                  type: string
+                ativo:
+                  type: boolean
+                expira_em:
+                  type: string
+                  format: date
+      responses:
+        '200':
+          description: Link atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrackedLink'
+        '404':
+          description: Link não encontrado
+
+    delete:
+      summary: Remove link
+      description: Soft delete - link marcado como inativo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Link desativado
+        '404':
+          description: Link não encontrado
+
+  /api/v1/tracked-links/{id}/stats:
+    get:
+      summary: Estatisticas de um link
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: since
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Estatisticas do link
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkStats'
+
+  /api/v1/tracked-links/{id}/clicks:
+    get:
+      summary: Cliques de um link
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Lista de cliques
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LinkClick'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+
+  # ====================
+  # STATS & TRACKING
+  # ====================
+  /api/v1/stats/tracking:
+    get:
+      summary: Overview de tracking
+      parameters:
+        - name: since
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Estatisticas gerais
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrackingOverview'
+
+  # ====================
+  # FEATURE FLAGS
+  # ====================
+  /api/v1/flags:
+    get:
+      summary: Lista feature flags globais
+      responses:
+        '200':
+          description: Lista de flags
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FeatureFlag'
+
+  /api/v1/flags/{flagName}:
+    put:
+      summary: Atualiza feature flag global
+      parameters:
+        - name: flagName
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - value
+              properties:
+                value:
+                  type: boolean
+                descricao:
+                  type: string
+      responses:
+        '200':
+          description: Flag atualizada
+
+    delete:
+      summary: Remove feature flag global
+      parameters:
+        - name: flagName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Flag removida
+
+  # ====================
+  # CORRETORES
+  # ====================
+  /api/v1/corretores:
+    get:
+      summary: Lista corretores ativos
+      responses:
+        '200':
+          description: Lista de corretores
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Corretor'
+
+    post:
+      summary: Cria novo corretor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nome
+              properties:
+                nome:
+                  type: string
+                telefone:
+                  type: string
+                email:
+                  type: string
+                  format: email
+      responses:
+        '201':
+          description: Corretor criado
+
+  /api/v1/corretores/{id}:
+    put:
+      summary: Atualiza corretor
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nome:
+                  type: string
+                telefone:
+                  type: string
+                email:
+                  type: string
+                ativo:
+                  type: boolean
+      responses:
+        '200':
+          description: Corretor atualizado
+
+    delete:
+      summary: Desativa corretor
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Corretor desativado
+
+  # ====================
+  # INBOX
+  # ====================
+  /api/v1/inbox/conversations:
+    get:
+      summary: Lista conversas do inbox
+      parameters:
+        - name: state
+          in: query
+          schema:
+            type: string
+            enum: [BOT_ACTIVE, TRIAGE_HUMAN, HUMAN_ACTIVE, HUMAN_STANDBY, RETURNED_TO_BOT, CLOSED]
+        - name: owner_user_name
+          in: query
+          schema:
+            type: string
+        - name: assigned_corretor_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: canal_origem
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Lista de conversas
+
+  /api/v1/inbox/conversations/{leadId}:
+    get:
+      summary: Detalhes de uma conversa
+      parameters:
+        - name: leadId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Detalhes da conversa
+
+    post:
+      summary: Envia mensagem humana
+      parameters:
+        - name: leadId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+                actor_name:
+                  type: string
+                actor_type:
+                  type: string
+                introduce_actor:
+                  type: boolean
+                  default: true
+      responses:
+        '200':
+          description: Mensagem enviada
+
+  /api/v1/inbox/conversations/{leadId}/assign:
+    post:
+      summary: Atribui conversa a corretor
+      parameters:
+        - name: leadId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - assigned_corretor_id
+              properties:
+                assigned_corretor_id:
+                  type: string
+                  format: uuid
+                assigned_by:
+                  type: string
+                note:
+                  type: string
+      responses:
+        '200':
+          description: Conversa atribuida
+
+  /api/v1/inbox/conversations/{leadId}/state:
+    post:
+      summary: Altera estado da conversa
+      parameters:
+        - name: leadId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - state
+              properties:
+                state:
+                  type: string
+                  enum: [TRIAGE_HUMAN, HUMAN_ACTIVE, HUMAN_STANDBY, CLOSED]
+                actor_name:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Estado alterado
+
+  /api/v1/inbox/conversations/{leadId}/return-to-bot:
+    post:
+      summary: Retorna conversa para o bot
+      parameters:
+        - name: leadId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                actor_name:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Retornado ao bot
+
+  # ====================
+  # ANALYTICS
+  # ====================
+  /api/v1/analytics/overview:
+    get:
+      summary: Metricas consolidadas
+      parameters:
+        - name: date_from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: canal_origem
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Metricas overview
+
+  /api/v1/analytics/timeseries:
+    get:
+      summary: Dados em serie temporal
+      parameters:
+        - name: date_from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Timeseries data
+
+  /api/v1/analytics/sources:
+    get:
+      summary: Analytics por fonte
+      responses:
+        '200':
+          description: Metricas por fonte
+
+  /api/v1/analytics/campaigns:
+    get:
+      summary: Analytics por campanha
+      responses:
+        '200':
+          description: Metricas por campanha
+
+  /api/v1/analytics/corretores:
+    get:
+      summary: Analytics por corretor
+      responses:
+        '200':
+          description: Metricas por corretor
+
+  /api/v1/analytics/leads:
+    get:
+      summary: Lista leads com scores
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Leads com scores
+
+  /api/v1/analytics/rankings/origins:
+    get:
+      summary: Ranking por origem
+      responses:
+        '200':
+          description: Ranking de origens
+
+  /api/v1/analytics/rankings/campaigns:
+    get:
+      summary: Ranking por campanha
+      responses:
+        '200':
+          description: Ranking de campanhas
+
+  /api/v1/analytics/rankings/corretors:
+    get:
+      summary: Ranking por corretor
+      responses:
+        '200':
+          description: Ranking de corretores
+
+  /api/v1/analytics/rankings/triage-ready:
+    get:
+      summary: Ranking leads prontos para triagem
+      responses:
+        '200':
+          description: Ranking triage-ready
+
+  /api/v1/analytics/rankings/lead-scores:
+    get:
+      summary: Ranking por scores de leads
+      responses:
+        '200':
+          description: Ranking de scores
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+
+  schemas:
+    PaginationMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    Lead:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        telefone:
+          type: string
+        nome_completo:
+          type: string
+        email:
+          type: string
+        tipo_interesse:
+          type: string
+          enum: [COMPRA, VENDA, LOCACAO, LANCAMENTOS]
+        estado_civil:
+          type: string
+        renda_comprovada:
+          type: number
+        entrada:
+          type: number
+        status:
+          type: string
+          enum: [NOVO, EM_ATENDIMENTO, CONVERTIDO, PERDIDO]
+        fase:
+          type: string
+          enum: [DESCOBERTA, QUALIFICACAO, PROPOSTA, NEGOCIACAO, FECHAMENTO]
+        canal_origem:
+          type: string
+        sistema_origem:
+          type: string
+        conversation_state:
+          type: string
+          enum: [BOT_ACTIVE, TRIAGE_HUMAN, HUMAN_ACTIVE, HUMAN_STANDBY, RETURNED_TO_BOT, CLOSED]
+        em_follow_up:
+          type: boolean
+        intervention_type:
+          type: string
+        assigned_corretor_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Tag:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        nome:
+          type: string
+        telefone:
+          type: string
+        role:
+          type: string
+          enum: [owner, admin, corretor, viewer]
+        ativo:
+          type: boolean
+        last_login:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Corretor:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nome:
+          type: string
+        telefone:
+          type: string
+        email:
+          type: string
+        ativo:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    TrackedLink:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nome:
+          type: string
+        nome_campanha:
+          type: string
+        source:
+          type: string
+        medium:
+          type: string
+        content:
+          type: string
+        term:
+          type: string
+        codigo_ref:
+          type: string
+        whatsapp_num:
+          type: string
+        whatsapp_msg:
+          type: string
+        url_base:
+          type: string
+        clicks:
+          type: integer
+        leads_convertidos:
+          type: integer
+        ativo:
+          type: boolean
+        expira_em:
+          type: string
+          format: date
+        created_at:
+          type: string
+          format: date-time
+
+    LinkStats:
+      type: object
+      properties:
+        link_id:
+          type: string
+          format: uuid
+        link_name:
+          type: string
+        total_clicks:
+          type: integer
+        unique_visitors:
+          type: integer
+        leads_generated:
+          type: integer
+        conversion_rate:
+          type: number
+        clicks_by_date:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+              clicks:
+                type: integer
+              leads:
+                type: integer
+        top_sources:
+          type: array
+          items:
+            type: object
+            properties:
+              source:
+                type: string
+              clicks:
+                type: integer
+              leads:
+                type: integer
+        devices:
+          type: object
+          properties:
+            mobile:
+              type: string
+            desktop:
+              type: string
+            tablet:
+              type: string
+
+    LinkClick:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tracked_link_id:
+          type: string
+          format: uuid
+        ip:
+          type: string
+        user_agent:
+          type: string
+        referer:
+          type: string
+        utm_source:
+          type: string
+        utm_medium:
+          type: string
+        utm_campaign:
+          type: string
+        utm_content:
+          type: string
+        utm_term:
+          type: string
+        codigo_ref:
+          type: string
+        lead_id:
+          type: string
+          format: uuid
+        convertido:
+          type: boolean
+        clicked_at:
+          type: string
+          format: date-time
+
+    TrackingOverview:
+      type: object
+      properties:
+        total_clicks:
+          type: integer
+        unique_visitors:
+          type: integer
+        leads_generated:
+          type: integer
+        conversion_rate:
+          type: number
+        active_links:
+          type: integer
+        total_links:
+          type: integer
+
+    FeatureFlag:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nome:
+          type: string
+        valor:
+          type: boolean
+        descricao:
+          type: string
+        lead_id:
+          type: string
+          format: uuid
+        updated_at:
+          type: string
+          format: date-time

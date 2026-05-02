@@ -14,11 +14,15 @@ import {
   LeadHumanIntervention,
   LeadAction,
   LeadStats,
+  LinkStats,
   OperationalQueueItem,
   OperationalStatus,
   SlaMetrics,
   TrackedLink,
   TrackedLinksFilters,
+  UpdateTrackedLinkValues,
+  LeadResetResult,
+  LeadResetValues,
 } from "@/types/dashboard";
 import { ApiResult, PaginatedResponse } from "@/types/api";
 import {
@@ -28,9 +32,21 @@ import {
   LeadFilterOptions,
   LeadFormValues,
   LeadListFilters,
+  LeadFlag,
+  GlobalFlag,
   Mensagem,
   Note,
   StatsData,
+  Tag,
+  CreateTagValues,
+  UpdateTagValues,
+  User,
+  CreateUserValues,
+  UpdateUserValues,
+  UpdateUserStatusValues,
+  UserNotificationSettings,
+  SetLeadFlagValues,
+  SetGlobalFlagValues,
 } from "@/types/leads";
 import {
   buildInboundLeadPayload,
@@ -1125,7 +1141,377 @@ class AtusAPI {
       message: response.message,
     };
   }
+
+  // ============ TAGS ============
+  async getTags(limit = 50, offset = 0): Promise<ApiResult<Tag[]>> {
+    const response = await this.request<{ data: Tag[] }>(
+      `/api/v1/tags?limit=${limit}&offset=${offset}`,
+    );
+    return {
+      data: response.data?.data || [],
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  async getTag(id: string): Promise<ApiResult<Tag>> {
+    const response = await this.request<{ data: Tag }>(`/api/v1/tags/${id}`);
+    return {
+      data: response.data?.data,
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  async createTag(values: CreateTagValues): Promise<ApiResult<Tag>> {
+    const response = await this.request<{ data: Tag }>("/api/v1/tags", {
+      method: "POST",
+      body: JSON.stringify(values),
+    });
+    return {
+      data: response.data?.data,
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  async updateTag(
+    id: string,
+    values: UpdateTagValues,
+  ): Promise<ApiResult<Tag>> {
+    const response = await this.request<{ data: Tag }>(`/api/v1/tags/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(values),
+    });
+    return {
+      data: response.data?.data,
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  async deleteTag(id: string): Promise<ApiResult<void>> {
+    const response = await this.request(`/api/v1/tags/${id}`, {
+      method: "DELETE",
+    });
+    return {
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  // ============ LEAD TAGS ============
+  async getLeadTags(leadId: string): Promise<ApiResult<Tag[]>> {
+    const response = await this.request<{ data: Tag[] }>(
+      `/api/v1/leads/${leadId}/tags`,
+    );
+    return {
+      data: response.data?.data || [],
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  async addLeadTags(
+    leadId: string,
+    tagIds: string[],
+  ): Promise<ApiResult<void>> {
+    const response = await this.request(`/api/v1/leads/${leadId}/tags`, {
+      method: "POST",
+      body: JSON.stringify({ tag_ids: tagIds }),
+    });
+    return {
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  async removeLeadTag(leadId: string, tagId: string): Promise<ApiResult<void>> {
+    const response = await this.request(
+      `/api/v1/leads/${leadId}/tags/${tagId}`,
+      {
+        method: "DELETE",
+      },
+    );
+    return {
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  // ============ LEAD FLAGS ============
+  async getLeadFlags(leadId: string): Promise<ApiResult<LeadFlag[]>> {
+    const response = await this.request<{ data: LeadFlag[] }>(
+      `/api/v1/leads/${leadId}/flags`,
+    );
+    return {
+      data: response.data?.data || [],
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  async setLeadFlag(
+    leadId: string,
+    flagName: string,
+    values: SetLeadFlagValues,
+  ): Promise<ApiResult<void>> {
+    const response = await this.request(
+      `/api/v1/leads/${leadId}/flags/${flagName}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(values),
+      },
+    );
+    return {
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  async removeLeadFlag(
+    leadId: string,
+    flagName: string,
+  ): Promise<ApiResult<void>> {
+    const response = await this.request(
+      `/api/v1/leads/${leadId}/flags/${flagName}`,
+      {
+        method: "DELETE",
+      },
+    );
+    return {
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  // ============ GLOBAL FLAGS ============
+  async getGlobalFlags(): Promise<ApiResult<GlobalFlag[]>> {
+    const response = await this.request<{ data: GlobalFlag[] }>(
+      "/api/v1/flags",
+    );
+    return {
+      data: response.data?.data || [],
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  async setGlobalFlag(
+    flagName: string,
+    values: SetGlobalFlagValues,
+  ): Promise<ApiResult<void>> {
+    const response = await this.request(`/api/v1/flags/${flagName}`, {
+      method: "PUT",
+      body: JSON.stringify(values),
+    });
+    return {
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  async removeGlobalFlag(flagName: string): Promise<ApiResult<void>> {
+    const response = await this.request(`/api/v1/flags/${flagName}`, {
+      method: "DELETE",
+    });
+    return {
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  // ============ USERS ============
+  async getUsers(
+    limit = 20,
+    offset = 0,
+    role?: string,
+    ativo?: boolean,
+  ): Promise<ApiResult<User[]>> {
+    let url = `/api/v1/users?limit=${limit}&offset=${offset}`;
+    if (role) url += `&role=${role}`;
+    if (ativo !== undefined) url += `&ativo=${ativo}`;
+    const response = await this.request<{ data: User[] }>(url);
+    return {
+      data: response.data?.data || [],
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  async getUser(id: string): Promise<ApiResult<User>> {
+    const response = await this.request<{ data: User }>(`/api/v1/users/${id}`);
+    return {
+      data: response.data?.data,
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  async createUser(values: CreateUserValues): Promise<ApiResult<User>> {
+    const response = await this.request<{ data: User }>("/api/v1/users", {
+      method: "POST",
+      body: JSON.stringify(values),
+    });
+    return {
+      data: response.data?.data,
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  async updateUser(
+    id: string,
+    values: UpdateUserValues,
+  ): Promise<ApiResult<User>> {
+    const response = await this.request<{ data: User }>(`/api/v1/users/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(values),
+    });
+    return {
+      data: response.data?.data,
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  async deleteUser(id: string): Promise<ApiResult<void>> {
+    const response = await this.request(`/api/v1/users/${id}`, {
+      method: "DELETE",
+    });
+    return {
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  async updateUserStatus(
+    id: string,
+    values: UpdateUserStatusValues,
+  ): Promise<ApiResult<User>> {
+    const response = await this.request<{ data: User }>(
+      `/api/v1/users/${id}/status`,
+      {
+        method: "PUT",
+        body: JSON.stringify(values),
+      },
+    );
+    return {
+      data: response.data?.data,
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  async getUserNotifications(
+    id: string,
+  ): Promise<ApiResult<UserNotificationSettings>> {
+    const response = await this.request<{ data: UserNotificationSettings }>(
+      `/api/v1/users/${id}/notifications`,
+    );
+    return {
+      data: response.data?.data,
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  async updateUserNotifications(
+    id: string,
+    values: Partial<UserNotificationSettings>,
+  ): Promise<ApiResult<void>> {
+    const response = await this.request(`/api/v1/users/${id}/notifications`, {
+      method: "PUT",
+      body: JSON.stringify(values),
+    });
+    return {
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  // ============ TRACKED LINKS - UPDATE/DELETE ============
+  async updateTrackedLink(
+    id: string,
+    values: UpdateTrackedLinkValues,
+  ): Promise<ApiResult<TrackedLink>> {
+    const response = await this.request<{ data: Record<string, unknown> }>(
+      `/api/v1/tracked-links/${id}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(values),
+      },
+    );
+
+    if (response.error || !response.data) {
+      return {
+        error: response.error,
+        message: response.message,
+      };
+    }
+
+    return {
+      data: normalizeTrackedLink(response.data.data),
+      message: response.message,
+    };
+  }
+
+  async deleteTrackedLink(id: string): Promise<ApiResult<void>> {
+    const response = await this.request(`/api/v1/tracked-links/${id}`, {
+      method: "DELETE",
+    });
+    return {
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  async getTrackedLinkStats(
+    id: string,
+    since?: string,
+  ): Promise<ApiResult<LinkStats>> {
+    let url = `/api/v1/tracked-links/${id}/stats`;
+    if (since) url += `?since=${since}`;
+    const response = await this.request<{ data: LinkStats }>(url);
+    return {
+      data: response.data?.data,
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  // ============ LEAD RESET ============
+  async resetLead(
+    id: string,
+    values?: LeadResetValues,
+  ): Promise<ApiResult<LeadResetResult>> {
+    const response = await this.request<{ data: LeadResetResult }>(
+      `/api/v1/leads/${id}/reset`,
+      {
+        method: "POST",
+        body: values ? JSON.stringify(values) : undefined,
+      },
+    );
+    return {
+      data: response.data?.data,
+      error: response.error,
+      message: response.message,
+    };
+  }
 }
 
 export const api = new AtusAPI();
-export type { Lead, StatsData, Corretor, Conversa, ApiResult };
+export type {
+  Lead,
+  StatsData,
+  Corretor,
+  Conversa,
+  ApiResult,
+  Tag,
+  User,
+  LeadFlag,
+  GlobalFlag,
+  LinkStats,
+  TrackedLink,
+  LeadResetResult,
+};

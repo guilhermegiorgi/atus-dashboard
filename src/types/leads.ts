@@ -147,7 +147,12 @@ export interface LeadListFilters {
   maxRenda?: number;
   temEntrada?: boolean;
   temCarteira?: boolean;
-  sortBy?: "created_at" | "updated_at" | "nome_completo" | "renda_comprovada" | "ultimo_contato";
+  sortBy?:
+    | "created_at"
+    | "updated_at"
+    | "nome_completo"
+    | "renda_comprovada"
+    | "ultimo_contato";
   sortOrder?: "asc" | "desc";
   page?: number;
 }
@@ -188,4 +193,96 @@ export interface LeadFollowup {
   status: "pending" | "completed" | "cancelled";
   created_at: string;
   updated_at: string;
+}
+
+// ============ TAGS ============
+export interface Tag {
+  id: string;
+  name: string;
+  color: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateTagValues {
+  name: string;
+  color?: string;
+}
+
+export interface UpdateTagValues {
+  name?: string;
+  color?: string;
+}
+
+// ============ USERS ============
+export type UserRole = "owner" | "admin" | "corretor" | "viewer";
+export type UserStatus = "active" | "inactive";
+
+export interface User {
+  id: string;
+  email: string;
+  nome: string;
+  telefone?: string;
+  role: UserRole;
+  ativo: boolean;
+  last_login?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateUserValues {
+  email: string;
+  nome: string;
+  telefone?: string;
+  role: UserRole;
+  senha: string;
+}
+
+export interface UpdateUserValues {
+  nome?: string;
+  telefone?: string;
+  role?: UserRole;
+  ativo?: boolean;
+}
+
+export interface UpdateUserStatusValues {
+  ativo: boolean;
+}
+
+export interface UserNotificationSettings {
+  email_notifications: boolean;
+  push_notifications: boolean;
+  sms_notifications: boolean;
+  notification_types: {
+    new_lead: boolean;
+    lead_conversion: boolean;
+    follow_up_reminder: boolean;
+    intervention_alert: boolean;
+  };
+}
+
+// ============ FEATURE FLAGS (Lead) ============
+export interface LeadFlag {
+  nome: string;
+  valor: boolean;
+  descricao?: string;
+  lead_id?: string;
+  updated_at?: string;
+}
+
+export interface SetLeadFlagValues {
+  enabled: boolean;
+}
+
+// ============ FEATURE FLAGS (Global) ============
+export interface GlobalFlag {
+  nome: string;
+  valor: boolean;
+  descricao?: string;
+  updated_at?: string;
+}
+
+export interface SetGlobalFlagValues {
+  value: boolean;
+  descricao?: string;
 }

@@ -252,3 +252,54 @@ export interface LeadHumanIntervention {
   intervention_by: string | null;
   em_follow_up: boolean;
 }
+
+// ============ TRACKED LINK STATS ============
+export interface LinkStats {
+  link_id: string;
+  link_name: string;
+  total_clicks: number;
+  unique_visitors: number;
+  leads_generated: number;
+  conversion_rate: number;
+  clicks_by_date: Array<{
+    date: string;
+    clicks: number;
+    leads: number;
+  }>;
+  top_sources: Array<{
+    source: string;
+    clicks: number;
+    leads: number;
+  }>;
+  devices: {
+    mobile: string;
+    desktop: string;
+    tablet: string;
+  };
+}
+
+export interface UpdateTrackedLinkValues {
+  nome?: string;
+  nome_campanha?: string;
+  source?: string;
+  medium?: string;
+  content?: string;
+  term?: string;
+  whatsapp_num?: string;
+  whatsapp_msg?: string;
+  url_base?: string;
+  ativo?: boolean;
+  expira_em?: string;
+}
+
+// ============ LEAD RESET ============
+export interface LeadResetResult {
+  success: boolean;
+  lead_id: string;
+  previous_status: string;
+  new_status: string;
+}
+
+export interface LeadResetValues {
+  reason?: string;
+}

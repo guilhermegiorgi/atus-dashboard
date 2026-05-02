@@ -10,7 +10,6 @@ import {
   Plus,
   Trash2,
   Edit3,
-  UserPlus,
   Mail,
   Smartphone,
   Monitor,
@@ -21,6 +20,7 @@ import {
   Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { UsersManager } from "@/components/settings/UsersManager";
 
 type Tab = "tags" | "users" | "notifications" | "appearance";
 
@@ -58,30 +58,6 @@ const mockTags: Tag[] = [
   { id: "4", name: "Qualificado", color: "#22C55E", count: 15 },
   { id: "5", name: "Negociando", color: "#8B5CF6", count: 6 },
   { id: "6", name: "Convertido", color: "#10B981", count: 3 },
-];
-
-const mockUsers = [
-  {
-    id: "1",
-    name: "Guilherme Giorgi",
-    email: "guilherme@atus.com.br",
-    role: "admin",
-    status: "active",
-  },
-  {
-    id: "2",
-    name: "Carlos Silva",
-    email: "carlos@atus.com.br",
-    role: "corretor",
-    status: "active",
-  },
-  {
-    id: "3",
-    name: "Ana Paula",
-    email: "ana@atus.com.br",
-    role: "corretor",
-    status: "inactive",
-  },
 ];
 
 const mockNotifications = [
@@ -456,59 +432,7 @@ export default function SettingsPage() {
 
         {activeTab === "users" && (
           <div className="max-w-3xl">
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-dd-on-primary">
-                  Usuários
-                </h2>
-                <p className="text-sm text-dd-muted mt-1">
-                  Gerencie usuários e permissões do sistema
-                </p>
-              </div>
-              <button className="flex items-center gap-2 px-4 py-2 bg-dd-accent-green text-white rounded-DD text-sm font-medium hover:bg-[#17a348] transition-colors">
-                <UserPlus className="h-4 w-4" />
-                Novo Usuário
-              </button>
-            </div>
-
-            <div className="space-y-1">
-              {mockUsers.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center justify-between p-3 rounded-DD bg-dd-surface border border-dd-border-subtle hover:border-dd-border transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-full bg-dd-surface-raised flex items-center justify-center text-dd-muted font-medium text-sm">
-                      {user.name.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-dd-on-surface">
-                        {user.name}
-                      </p>
-                      <p className="text-xs text-dd-muted">{user.email}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={cn(
-                        "text-xs px-2 py-1 rounded",
-                        user.status === "active"
-                          ? "bg-dd-accent-green/20 text-dd-accent-green"
-                          : "bg-dd-surface-raised text-dd-muted",
-                      )}
-                    >
-                      {user.status === "active" ? "Ativo" : "Inativo"}
-                    </span>
-                    <span className="text-xs text-dd-muted bg-dd-surface-raised px-2 py-1 rounded capitalize">
-                      {user.role}
-                    </span>
-                    <button className="p-1.5 text-dd-muted hover:text-dd-on-surface rounded transition-colors">
-                      <Edit3 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <UsersManager />
           </div>
         )}
 
