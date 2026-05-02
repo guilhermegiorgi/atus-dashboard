@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "ATUS Leads Dashboard"
+version = "1.0.0"
+id = "artifacts/leads-dashboard"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23091
+
+[services.development]
+run = "pnpm --filter @workspace/leads-dashboard run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/leads-dashboard", "run", "build" ]
+publicDir = "artifacts/leads-dashboard/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23091"
+BASE_PATH = "/"
