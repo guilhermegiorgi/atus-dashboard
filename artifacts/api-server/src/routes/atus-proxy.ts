@@ -108,6 +108,7 @@ router.get("/internal/analytics/rankings/lead-scores", (req, res) => proxyToAtus
 
 // Stats (legacy internal)
 router.get("/internal/stats", (req, res) => proxyToAtus(req, res, "/api/v1/stats"));
+router.get("/internal/stats/leads", (req, res) => proxyToAtus(req, res, "/api/v1/stats/leads"));
 
 // MCP routes
 router.get("/mcp/lead/:id", (req, res) => proxyToAtus(req, res, `/api/v1/leads/${req.params.id}`));
@@ -116,8 +117,10 @@ router.get("/mcp/leads", (req, res) => proxyToAtus(req, res, "/api/v1/leads"));
 router.get("/mcp/stats", (req, res) => proxyToAtus(req, res, "/api/v1/stats"));
 
 // V1 passthrough routes (direct proxy to Atus /api/v1/*)
-router.all("/v1/*", (req, res) => {
-  const atusPath = `/api/v1/${req.params[0]}`;
+// path-to-regexp v8 uses {*} for named wildcards
+router.all("/v1/{*path}", (req, res) => {
+  const pathParam = (req.params as Record<string, string>)["path"] || "";
+  const atusPath = `/api/v1/${pathParam}`;
   proxyToAtus(req, res, atusPath, req.method);
 });
 
