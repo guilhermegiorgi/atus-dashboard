@@ -240,6 +240,7 @@ export interface CreateUserValues {
 
 export interface UpdateUserValues {
   nome?: string;
+  email?: string;
   telefone?: string;
   role?: UserRole;
   ativo?: boolean;

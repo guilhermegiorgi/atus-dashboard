@@ -55,7 +55,7 @@ export function TagManager({
     setError(null);
     const result = await api.getTags(100, 0);
     if (result.error) {
-      setError(result.message);
+      setError(result.message || "Erro ao carregar tags");
     } else {
       setTags(result.data || []);
     }
@@ -75,7 +75,7 @@ export function TagManager({
       color: newTagColor,
     });
     if (result.error) {
-      setError(result.message);
+      setError(result.message || "Erro ao criar tag");
     } else {
       setNewTagName("");
       setNewTagColor(TAG_COLORS[0]);
@@ -123,7 +123,7 @@ export function TagManager({
           <span className="text-sm font-medium text-white/80">Tags</span>
         </div>
         <Dialog open={isManageOpen} onOpenChange={setIsManageOpen}>
-          <DialogTrigger asChild>
+          <DialogTrigger>
             <Button
               variant="ghost"
               size="sm"
@@ -140,7 +140,7 @@ export function TagManager({
             <div className="space-y-4 py-4">
               {/* Criar nova tag */}
               <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-                <DialogTrigger asChild>
+                <DialogTrigger>
                   <Button
                     variant="outline"
                     size="sm"
@@ -267,7 +267,7 @@ export function TagManager({
         {/* Botão adicionar tags */}
         {leadId && (
           <Dialog>
-            <DialogTrigger asChild>
+            <DialogTrigger>
               <button className="flex items-center gap-1 px-2 py-0.5 rounded text-xs text-white/40 border border-dashed border-white/20 hover:border-white/40 hover:text-white/60 transition-colors">
                 <Plus className="h-3 w-3" />
                 Add

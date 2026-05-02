@@ -104,7 +104,7 @@ export function UsersManager() {
       setIsCreateOpen(false);
       resetForm();
     } else {
-      setError(result.message);
+      setError(result.message || "Erro ao criar usuário");
     }
     setSaving(false);
   };
@@ -124,7 +124,7 @@ export function UsersManager() {
       setIsEditOpen(false);
       resetForm();
     } else {
-      setError(result.message);
+      setError(result.message || "Erro ao criar usuário");
     }
     setSaving(false);
   };
