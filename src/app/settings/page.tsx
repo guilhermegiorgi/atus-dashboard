@@ -1,26 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Settings as SettingsIcon,
   Tags,
   Users,
   Bell,
   Palette,
-  Plus,
-  Trash2,
-  Edit3,
   Mail,
   Smartphone,
   Monitor,
   Moon,
   Sun,
   ChevronRight,
-  X,
-  Check,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api/client";
+import type { UserNotificationSettings } from "@/types/leads";
 import { UsersManager } from "@/components/settings/UsersManager";
+import { TagsManager } from "@/components/settings/TagsManager";
 
 type Tab = "tags" | "users" | "notifications" | "appearance";
 
@@ -44,59 +43,84 @@ const COLOR_OPTIONS = [
   "#6B7280",
 ];
 
-interface Tag {
+const ACCENT_COLOR = "#22C55E";
+
+// TODO: obter de contexto de auth
+const CURRENT_USER_ID = "1";
+
+type NotificationItem = {
   id: string;
-  name: string;
-  color: string;
-  count: number;
+  title: string;
+  description: string;
+  enabled: boolean;
+  channel: "email" | "push" | "all";
+};
+
+function settingsToNotifications(
+  s: UserNotificationSettings,
+): NotificationItem[] {
+  return [
+    {
+      id: "new_lead",
+      title: "Novo lead recebido",
+      description: "Receber notificação quando um novo lead entrar em contato",
+      enabled:
+        s.notification_types.new_lead &&
+        (s.email_notifications || s.push_notifications),
+      channel: "all",
+    },
+    {
+      id: "lead_conversion",
+      title: "Conversão realizada",
+      description: "Notificar quando um lead for convertido",
+      enabled:
+        s.notification_types.lead_conversion &&
+        (s.email_notifications || s.push_notifications),
+      channel: "all",
+    },
+    {
+      id: "follow_up_reminder",
+      title: "Follow-up pendente",
+      description: "Lembrar sobre leads que precisam de follow-up",
+      enabled: s.notification_types.follow_up_reminder && s.push_notifications,
+      channel: "push",
+    },
+    {
+      id: "intervention_alert",
+      title: "Mensagem não respondida",
+      description: "Alertar quando houver mensagens sem resposta",
+      enabled:
+        s.notification_types.intervention_alert &&
+        (s.email_notifications || s.push_notifications),
+      channel: "all",
+    },
+  ];
 }
 
-const mockTags: Tag[] = [
-  { id: "1", name: "Quente", color: "#EF4444", count: 12 },
-  { id: "2", name: "Frio", color: "#3B82F6", count: 8 },
-  { id: "3", name: "Follow-up", color: "#F97316", count: 24 },
-  { id: "4", name: "Qualificado", color: "#22C55E", count: 15 },
-  { id: "5", name: "Negociando", color: "#8B5CF6", count: 6 },
-  { id: "6", name: "Convertido", color: "#10B981", count: 3 },
-];
+function buildPayload(
+  current: UserNotificationSettings,
+  notificationId: string,
+  enabled: boolean,
+): UserNotificationSettings {
+  const types = { ...current.notification_types };
 
-const mockNotifications = [
-  {
-    id: "1",
-    title: "Novo lead recebido",
-    description: "Receber notificação quando um novo lead entrar em contato",
-    enabled: true,
-    channel: "all",
-  },
-  {
-    id: "2",
-    title: "Lead quente",
-    description: "Notificar quando um lead for marcado como quente",
-    enabled: true,
-    channel: "email",
-  },
-  {
-    id: "3",
-    title: "Follow-up pendente",
-    description: "Lembrar sobre leads que precisam de follow-up",
-    enabled: true,
-    channel: "push",
-  },
-  {
-    id: "4",
-    title: "Mensagem não respondida",
-    description: "Alertar quando houver mensagens sem resposta",
-    enabled: false,
-    channel: "all",
-  },
-  {
-    id: "5",
-    title: "Conversão realizada",
-    description: "Notificar quando um lead for convertido",
-    enabled: true,
-    channel: "all",
-  },
-];
+  switch (notificationId) {
+    case "new_lead":
+      types.new_lead = enabled;
+      break;
+    case "lead_conversion":
+      types.lead_conversion = enabled;
+      break;
+    case "follow_up_reminder":
+      types.follow_up_reminder = enabled;
+      break;
+    case "intervention_alert":
+      types.intervention_alert = enabled;
+      break;
+  }
+
+  return { ...current, notification_types: types };
+}
 
 function ToggleSwitch({
   enabled,
@@ -107,7 +131,16 @@ function ToggleSwitch({
 }) {
   return (
     <button
+      role="switch"
+      aria-checked={enabled}
+      aria-label={enabled ? "Desativar" : "Ativar"}
       onClick={() => onChange(!enabled)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onChange(!enabled);
+        }
+      }}
       className={cn(
         "w-11 h-6 rounded-full transition-colors relative shrink-0",
         enabled ? "bg-dd-accent-green" : "bg-dd-border-subtle",
@@ -123,215 +156,49 @@ function ToggleSwitch({
   );
 }
 
-function Modal({
-  isOpen,
-  onClose,
-  title,
-  children,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  children: React.ReactNode;
-}) {
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative bg-dd-surface border border-dd-border-subtle rounded-DD w-full max-w-md mx-4 shadow-2xl">
-        <div className="flex items-center justify-between p-4 border-b border-dd-border-subtle">
-          <h3 className="text-lg font-semibold text-dd-on-primary">{title}</h3>
-          <button
-            onClick={onClose}
-            className="p-1 text-dd-muted hover:text-dd-on-surface rounded"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        <div className="p-4">{children}</div>
-      </div>
-    </div>
-  );
-}
-
-function TagModal({
-  isOpen,
-  onClose,
-  tag,
-  onSave,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  tag?: Tag | null;
-  onSave: (tag: Tag) => void;
-}) {
-  const [name, setName] = useState(tag?.name || "");
-  const [color, setColor] = useState(tag?.color || COLOR_OPTIONS[0]);
-
-  const handleSave = () => {
-    if (!name.trim()) return;
-    onSave({
-      id: tag?.id || Date.now().toString(),
-      name: name.trim(),
-      color,
-      count: tag?.count || 0,
-    });
-    onClose();
-  };
-
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={tag ? "Editar Tag" : "Nova Tag"}
-    >
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-dd-on-surface mb-2">
-            Nome da Tag
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Ex: Quente, Frio, Follow-up..."
-            className="w-full px-3 py-2 bg-dd-primary border border-dd-border-subtle rounded-DD text-dd-on-surface placeholder:text-dd-muted focus:outline-none focus:border-dd-accent-green"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-dd-on-surface mb-2">
-            Cor
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {COLOR_OPTIONS.map((c) => (
-              <button
-                key={c}
-                onClick={() => setColor(c)}
-                className={cn(
-                  "w-8 h-8 rounded-full border-2 transition-all",
-                  color === c
-                    ? "border-white scale-110"
-                    : "border-transparent hover:scale-105",
-                )}
-                style={{ backgroundColor: c }}
-              />
-            ))}
-          </div>
-        </div>
-        <div className="flex justify-end gap-2 pt-2">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm text-dd-muted hover:text-dd-on-surface"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={!name.trim()}
-            className="flex items-center gap-2 px-4 py-2 bg-dd-accent-green text-white rounded-DD text-sm font-medium hover:bg-[#17a348] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Check className="h-4 w-4" />
-            Salvar
-          </button>
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
-function DeleteModal({
-  isOpen,
-  onClose,
-  onConfirm,
-  title,
-  message,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  title: string;
-  message: string;
-}) {
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative bg-dd-surface border border-dd-border-subtle rounded-DD w-full max-w-sm mx-4 shadow-2xl">
-        <div className="p-6 text-center">
-          <div className="mx-auto w-12 h-12 rounded-full bg-dd-accent-red/20 flex items-center justify-center mb-4">
-            <Trash2 className="h-6 w-6 text-dd-accent-red" />
-          </div>
-          <h3 className="text-lg font-semibold text-dd-on-primary mb-2">
-            {title}
-          </h3>
-          <p className="text-sm text-dd-muted mb-6">{message}</p>
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 px-4 py-2 text-sm text-dd-muted hover:text-dd-on-surface border border-dd-border-subtle rounded-DD"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={onConfirm}
-              className="flex-1 px-4 py-2 text-sm bg-dd-accent-red text-white rounded-DD hover:bg-red-600 transition-colors"
-            >
-              Excluir
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("tags");
-  const [tags, setTags] = useState<Tag[]>(mockTags);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [rawSettings, setRawSettings] =
+    useState<UserNotificationSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Modal states
-  const [tagModalOpen, setTagModalOpen] = useState(false);
-  const [editingTag, setEditingTag] = useState<Tag | null>(null);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [deletingTag, setDeletingTag] = useState<Tag | null>(null);
-
-  const toggleNotification = (id: string, enabled: boolean) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, enabled } : n)),
-    );
-  };
-
-  const handleNewTag = () => {
-    setEditingTag(null);
-    setTagModalOpen(true);
-  };
-
-  const handleEditTag = (tag: Tag) => {
-    setEditingTag(tag);
-    setTagModalOpen(true);
-  };
-
-  const handleDeleteTag = (tag: Tag) => {
-    setDeletingTag(tag);
-    setDeleteModalOpen(true);
-  };
-
-  const handleSaveTag = (tag: Tag) => {
-    if (editingTag) {
-      setTags((prev) => prev.map((t) => (t.id === tag.id ? tag : t)));
-    } else {
-      setTags((prev) => [...prev, tag]);
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await api.getUserNotifications(CURRENT_USER_ID);
+        if (result.data) {
+          setRawSettings(result.data);
+          setNotifications(settingsToNotifications(result.data));
+        } else {
+          setError(result.message || "Erro ao carregar notificações");
+        }
+      } catch {
+        setError("Erro ao carregar notificações");
+      } finally {
+        setLoading(false);
+      }
     }
-  };
+    load();
+  }, []);
 
-  const handleConfirmDelete = () => {
-    if (deletingTag) {
-      setTags((prev) => prev.filter((t) => t.id !== deletingTag.id));
+  const toggleNotification = async (id: string, enabled: boolean) => {
+    if (!rawSettings) return;
+
+    const updated = buildPayload(rawSettings, id, enabled);
+    setRawSettings(updated);
+    setNotifications(settingsToNotifications(updated));
+
+    try {
+      await api.updateUserNotifications(CURRENT_USER_ID, updated);
+    } catch {
+      setRawSettings(rawSettings);
+      setNotifications(settingsToNotifications(rawSettings));
     }
-    setDeleteModalOpen(false);
-    setDeletingTag(null);
   };
 
   return (
@@ -374,59 +241,7 @@ export default function SettingsPage() {
       <div className="flex-1 p-6 overflow-y-auto">
         {activeTab === "tags" && (
           <div className="max-w-3xl">
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-dd-on-primary">
-                  Gerenciar Tags
-                </h2>
-                <p className="text-sm text-dd-muted mt-1">
-                  Crie e gerencie tags para classificar seus leads
-                </p>
-              </div>
-              <button
-                onClick={handleNewTag}
-                className="flex items-center gap-2 px-4 py-2 bg-dd-accent-green text-white rounded-DD text-sm font-medium hover:bg-[#17a348] transition-colors"
-              >
-                <Plus className="h-4 w-4" />
-                Nova Tag
-              </button>
-            </div>
-
-            <div className="space-y-1">
-              {tags.map((tag) => (
-                <div
-                  key={tag.id}
-                  className="flex items-center justify-between p-3 rounded-DD bg-dd-surface border border-dd-border-subtle hover:border-dd-border transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="h-3 w-3 rounded-full"
-                      style={{ backgroundColor: tag.color }}
-                    />
-                    <span className="text-sm font-medium text-dd-on-surface">
-                      {tag.name}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-dd-muted mr-2">
-                      {tag.count} leads
-                    </span>
-                    <button
-                      onClick={() => handleEditTag(tag)}
-                      className="p-1.5 text-dd-muted hover:text-dd-on-surface rounded transition-colors"
-                    >
-                      <Edit3 className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteTag(tag)}
-                      className="p-1.5 text-dd-muted hover:text-dd-accent-red rounded transition-colors"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <TagsManager />
           </div>
         )}
 
@@ -447,47 +262,61 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            <div className="space-y-1">
-              {notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className="flex items-center justify-between p-3 rounded-DD bg-dd-surface border border-dd-border-subtle"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={cn(
-                        "p-1.5 rounded",
-                        notification.enabled
-                          ? "bg-dd-accent-green/20 text-dd-accent-green"
-                          : "bg-dd-surface-raised text-dd-muted",
-                      )}
-                    >
-                      {notification.channel === "email" && (
-                        <Mail className="h-3.5 w-3.5" />
-                      )}
-                      {notification.channel === "push" && (
-                        <Smartphone className="h-3.5 w-3.5" />
-                      )}
-                      {notification.channel === "all" && (
-                        <Bell className="h-3.5 w-3.5" />
-                      )}
+            {loading && (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-dd-muted" />
+              </div>
+            )}
+
+            {error && (
+              <div className="mb-4 p-3 rounded bg-dd-accent-red/10 border border-dd-accent-red/20 text-dd-accent-red text-sm">
+                {error}
+              </div>
+            )}
+
+            {!loading && !error && (
+              <div className="space-y-1">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className="flex items-center justify-between p-3 rounded-DD bg-dd-surface border border-dd-border-subtle"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={cn(
+                          "p-1.5 rounded",
+                          notification.enabled
+                            ? "bg-dd-accent-green/20 text-dd-accent-green"
+                            : "bg-dd-surface-raised text-dd-muted",
+                        )}
+                      >
+                        {notification.channel === "email" && (
+                          <Mail className="h-3.5 w-3.5" />
+                        )}
+                        {notification.channel === "push" && (
+                          <Smartphone className="h-3.5 w-3.5" />
+                        )}
+                        {notification.channel === "all" && (
+                          <Bell className="h-3.5 w-3.5" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-dd-on-surface">
+                          {notification.title}
+                        </p>
+                        <p className="text-xs text-dd-muted">
+                          {notification.description}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-dd-on-surface">
-                        {notification.title}
-                      </p>
-                      <p className="text-xs text-dd-muted">
-                        {notification.description}
-                      </p>
-                    </div>
+                    <ToggleSwitch
+                      enabled={notification.enabled}
+                      onChange={(v) => toggleNotification(notification.id, v)}
+                    />
                   </div>
-                  <ToggleSwitch
-                    enabled={notification.enabled}
-                    onChange={(v) => toggleNotification(notification.id, v)}
-                  />
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -561,7 +390,7 @@ export default function SettingsPage() {
                       key={color}
                       className={cn(
                         "w-9 h-9 rounded-full border-2 transition-all",
-                        color === "#22C55E"
+                        color === ACCENT_COLOR
                           ? "border-white"
                           : "border-transparent hover:border-dd-border",
                       )}
@@ -574,28 +403,6 @@ export default function SettingsPage() {
           </div>
         )}
       </div>
-
-      {/* Modais */}
-      <TagModal
-        isOpen={tagModalOpen}
-        onClose={() => {
-          setTagModalOpen(false);
-          setEditingTag(null);
-        }}
-        tag={editingTag}
-        onSave={handleSaveTag}
-      />
-
-      <DeleteModal
-        isOpen={deleteModalOpen}
-        onClose={() => {
-          setDeleteModalOpen(false);
-          setDeletingTag(null);
-        }}
-        onConfirm={handleConfirmDelete}
-        title="Excluir Tag"
-        message={`Tem certeza que deseja excluir a tag "${deletingTag?.name}"? Esta ação não pode ser desfeita.`}
-      />
     </div>
   );
 }

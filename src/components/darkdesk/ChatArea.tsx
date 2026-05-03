@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Bot, User, Sparkles, Zap } from "lucide-react";
 import type { InboxConversationDetail } from "@/types/dashboard";
@@ -72,14 +72,17 @@ function MessageBubble({
 
 export function ChatArea({ conversation, isLoading }: ChatAreaProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesJson = useMemo(
+    () => JSON.stringify(conversation?.messages),
+    [conversation?.messages],
+  );
 
-  // Only scroll to bottom on initial load, not on every message update
-  // This allows user to scroll up and stay there
+  // Scroll to bottom when conversation changes or new messages arrive
   useEffect(() => {
     if (conversation?.messages && conversation.messages.length > 0) {
       messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
     }
-  }, [conversation?.lead_id]); // Only trigger when changing conversations, not when messages update
+  }, [conversation?.lead_id, messagesJson]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isLoading) {
     return (

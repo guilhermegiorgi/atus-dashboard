@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Sidebar } from "@/components/layout/sidebar";
-import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { AppContent } from "@/components/layout/AppContent";
 
 export const metadata: Metadata = {

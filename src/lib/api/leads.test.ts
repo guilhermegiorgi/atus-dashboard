@@ -37,7 +37,7 @@ describe("buildLeadFiltersQuery", () => {
     });
 
     expect(query.toString()).toBe(
-      "status=NOVO&canal_origem=PORTAL&sistema_origem=IMOVELWEB&limit=50&offset=100"
+      "status=NOVO&canal_origem=PORTAL&sistema_origem=IMOVELWEB&limit=50&offset=100",
     );
   });
 });
@@ -52,7 +52,7 @@ describe("buildInboundLeadPayload", () => {
         tipo_interesse: "COMPRA",
         campanha_origem: "manual-dashboard",
         mensagem_inicial: "Cadastro manual da operação",
-      })
+      }),
     ).toEqual({
       canal_origem: "INTERNO",
       sistema_origem: "DASHBOARD",
@@ -72,11 +72,12 @@ describe("buildLeadUpdatePayload", () => {
     expect(
       buildLeadUpdatePayload({
         nome_completo: "Maria Silva",
+        telefone: "(11) 99999-9999",
         email: "maria@email.com",
         tipo_interesse: "COMPRA",
         status: "EM_ATENDIMENTO",
         campanha_origem: "should-not-go",
-      })
+      }),
     ).toEqual({
       nome_completo: "Maria Silva",
       email: "maria@email.com",

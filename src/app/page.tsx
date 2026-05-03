@@ -9,11 +9,8 @@ import {
   MessageSquare,
   TrendingUp,
   ArrowUpRight,
-  Link2,
   LayoutDashboard,
   Target,
-  Clock,
-  CheckCircle2,
   Loader2,
 } from "lucide-react";
 import { api } from "@/lib/api/client";
@@ -26,17 +23,41 @@ interface StatsData {
   perdidos: number;
 }
 
+interface AnalyticsData {
+  total_leads: number;
+  taxa_conversao_operacional: number;
+}
+
+interface ActivityItem {
+  id: string;
+  type: string;
+  message: string;
+  time: string;
+}
+
 export default function HomePage() {
   const [stats, setStats] = useState<StatsData | null>(null);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [inboxCount, setInboxCount] = useState<number | null>(null);
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
-      const [statsResult] = await Promise.all([api.getLeadsStats()]);
+      const [statsResult, analyticsResult, inboxResult, activityResult] =
+        await Promise.all([
+          api.getLeadsStats(),
+          api.getAnalyticsOverview(),
+          api.getInboxConversations({ limit: 1 }),
+          fetch("/api/v1/activity").then(
+            (r) => r.json() as Promise<{ data: ActivityItem[] }>,
+          ),
+        ]);
 
-      if (statsResult.data) {
-        setStats(statsResult.data);
-      }
+      if (statsResult.data) setStats(statsResult.data);
+      if (analyticsResult.data) setAnalytics(analyticsResult.data);
+      if (inboxResult.data?.meta) setInboxCount(inboxResult.data.meta.total);
+      if (activityResult.data) setActivity(activityResult.data);
 
       setLoading(false);
     }
@@ -88,14 +109,14 @@ export default function HomePage() {
       description: "Visualize métricas e estatísticas em tempo real",
       icon: BarChart3,
       href: "/analytics",
-      count: "-",
+      count: analytics?.total_leads?.toString() || "0",
     },
     {
       title: "inbox",
       description: "Acompanhe todas as conversas com seus leads",
       icon: MessageSquare,
       href: "/conversations",
-      count: "-",
+      count: inboxCount?.toString() || "0",
     },
     {
       title: "pipeline",
@@ -103,33 +124,6 @@ export default function HomePage() {
       icon: TrendingUp,
       href: "/pipeline",
       count: stats?.em_atendimento?.toString() || "0",
-    },
-  ];
-
-  const recentActivity = [
-    {
-      type: "lead",
-      message: "Sistema de leads ativo",
-      time: "Online",
-      icon: Users,
-    },
-    {
-      type: "conversion",
-      message: "Dashboard conectado à API",
-      time: "Tempo real",
-      icon: CheckCircle2,
-    },
-    {
-      type: "followup",
-      message: "Follow-up automatizado disponível",
-      time: "Configurado",
-      icon: Clock,
-    },
-    {
-      type: "tracking",
-      message: "Links rastreados disponíveis",
-      time: "Pronto",
-      icon: Link2,
     },
   ];
 
@@ -257,17 +251,22 @@ export default function HomePage() {
             className="card-premium p-4 space-y-4 opacity-0 animate-in"
             style={{ animationDelay: "0.3s" }}
           >
-            {recentActivity.map((activity, i) => (
-              <div key={i} className="flex items-start gap-3">
+            {activity.length === 0 && (
+              <p className="text-[11px] text-white/30">
+                Nenhuma atividade recente
+              </p>
+            )}
+            {activity.map((item) => (
+              <div key={item.id} className="flex items-start gap-3">
                 <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border border-white/[0.06] bg-white/[0.02]">
-                  <activity.icon className="h-3 w-3 text-white/30" />
+                  <Users className="h-3 w-3 text-white/30" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[11px] text-white/70 leading-snug">
-                    {activity.message}
+                    {item.message}
                   </p>
                   <p className="text-[10px] text-white/25 mt-0.5">
-                    {activity.time}
+                    {item.time}
                   </p>
                 </div>
               </div>
