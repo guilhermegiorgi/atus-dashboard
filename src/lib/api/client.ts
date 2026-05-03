@@ -352,19 +352,6 @@ class AtusAPI {
     };
   }
 
-  async sendWhatsAppMessage(
-    id: string,
-    mensagem: string,
-    followUp = false,
-  ): Promise<
-    ApiResult<{ success: boolean; message_id: string; status: string }>
-  > {
-    return this.request(`/api/v1/leads/${id}/send-message`, {
-      method: "POST",
-      body: JSON.stringify({ mensagem, follow_up: followUp }),
-    });
-  }
-
   // Follow-up Intervention
   async interveneLead(
     id: string,
@@ -877,58 +864,6 @@ class AtusAPI {
         }),
       },
     );
-  }
-
-  // Send Media (WhatsApp)
-  async sendWhatsAppMedia(
-    phone: string,
-    mediaType: "image" | "audio" | "document",
-    mediaBase64: string,
-    options?: { fileName?: string; caption?: string },
-  ): Promise<ApiResult<{ success: boolean; id: string }>> {
-    return this.request(`/api/v1/whatsapp/send-media`, {
-      method: "POST",
-      body: JSON.stringify({
-        Phone: phone,
-        ...(mediaType === "image" && {
-          Image: mediaBase64,
-          Caption: options?.caption,
-        }),
-        ...(mediaType === "audio" && { Audio: mediaBase64 }),
-        ...(mediaType === "document" && {
-          Document: mediaBase64,
-          FileName: options?.fileName,
-          Caption: options?.caption,
-        }),
-      }),
-    });
-  }
-
-  async sendWhatsAppImage(
-    phone: string,
-    imageBase64: string,
-    caption?: string,
-  ): Promise<ApiResult<{ success: boolean; id: string }>> {
-    return this.sendWhatsAppMedia(phone, "image", imageBase64, { caption });
-  }
-
-  async sendWhatsAppAudio(
-    phone: string,
-    audioBase64: string,
-  ): Promise<ApiResult<{ success: boolean; id: string }>> {
-    return this.sendWhatsAppMedia(phone, "audio", audioBase64);
-  }
-
-  async sendWhatsAppDocument(
-    phone: string,
-    documentBase64: string,
-    fileName: string,
-    caption?: string,
-  ): Promise<ApiResult<{ success: boolean; id: string }>> {
-    return this.sendWhatsAppMedia(phone, "document", documentBase64, {
-      fileName,
-      caption,
-    });
   }
 
   async assignInboxConversation(

@@ -190,7 +190,12 @@ export function LeadDetailPanel({
     if (!newMessage.trim()) return;
 
     setSendingMessage(true);
-    const result = await api.sendWhatsAppMessage(lead.id, newMessage);
+    const result = await api.sendInboxMessage(lead.id, {
+      message: newMessage,
+      actor_name: "Dashboard",
+      actor_type: "admin",
+      introduce_actor: false,
+    });
 
     if (result.error) {
       setError(result.error);
