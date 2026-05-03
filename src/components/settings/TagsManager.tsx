@@ -247,7 +247,7 @@ export function TagsManager() {
                     aria-label={`Selecionar cor ${color}`}
                     className={`w-6 h-6 rounded-full border-2 focus-visible:ring-2 focus-visible:ring-dd-accent-green ${
                       formColor === color
-                        ? "border-white"
+                        ? "border-dd-on-primary"
                         : "border-transparent"
                     }`}
                     style={{ backgroundColor: color }}

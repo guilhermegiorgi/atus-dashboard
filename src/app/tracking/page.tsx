@@ -198,8 +198,8 @@ export default function TrackingPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-8 w-8 rounded-full border-2 border-white/10 border-t-white/30 animate-spin" />
-          <p className="text-white/40 text-xs">Carregando...</p>
+          <div className="h-8 w-8 rounded-full border-2 border-dd-border-subtle border-t-dd-on-muted animate-spin" />
+          <p className="text-dd-on-muted text-xs">Carregando...</p>
         </div>
       </div>
     );
@@ -210,7 +210,7 @@ export default function TrackingPage() {
       <div className="flex items-center justify-center h-64">
         <div className="text-dd-accent-red text-center">
           <p className="text-sm font-medium">Erro ao carregar</p>
-          <p className="text-xs text-white/40 mt-1">{error}</p>
+          <p className="text-xs text-dd-on-muted mt-1">{error}</p>
         </div>
       </div>
     );
@@ -222,7 +222,7 @@ export default function TrackingPage() {
         <h1 className="text-3xl font-bold tracking-tight">
           Tracking e Campanhas
         </h1>
-        <p className="text-white/30">
+        <p className="text-dd-on-muted">
           Painel canonico de `/tracked-links`, com criacao, listagem e detalhe
           real
         </p>
@@ -231,20 +231,20 @@ export default function TrackingPage() {
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <Card className="card-premium">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-white/30">
+            <CardTitle className="text-sm font-medium text-dd-on-muted">
               Links na pagina
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{links.length}</div>
-            <p className="mt-1 text-xs text-white/30">
+            <p className="mt-1 text-xs text-dd-on-muted">
               `limit` e `offset` reais do endpoint
             </p>
           </CardContent>
         </Card>
         <Card className="card-premium">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-white/30">
+            <CardTitle className="text-sm font-medium text-dd-on-muted">
               Clicks somados
             </CardTitle>
           </CardHeader>
@@ -252,14 +252,14 @@ export default function TrackingPage() {
             <div className="text-3xl font-bold text-primary">
               {links.reduce((total, item) => total + item.clicks, 0)}
             </div>
-            <p className="mt-1 text-xs text-white/30">
+            <p className="mt-1 text-xs text-dd-on-muted">
               Indicador do lote atual
             </p>
           </CardContent>
         </Card>
         <Card className="card-premium">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-white/30">
+            <CardTitle className="text-sm font-medium text-dd-on-muted">
               Leads convertidos
             </CardTitle>
           </CardHeader>
@@ -267,18 +267,18 @@ export default function TrackingPage() {
             <div className="text-3xl font-bold text-dd-accent-green">
               {links.reduce((total, item) => total + item.leads_convertidos, 0)}
             </div>
-            <p className="mt-1 text-xs text-white/30">
+            <p className="mt-1 text-xs text-dd-on-muted">
               Total devolvido pela API
             </p>
           </CardContent>
         </Card>
         <Card className="card-premium">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-white/30">
+            <CardTitle className="text-sm font-medium text-dd-on-muted">
               Regra de atribuicao
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-white/30">
+          <CardContent className="text-sm text-dd-on-muted">
             Leads devem ser lidos por `tracked_codigo_ref` e `link_click_id`,
             nao por `lead.codigo_ref`.
           </CardContent>
@@ -356,7 +356,7 @@ export default function TrackingPage() {
                   <TableRow>
                     <TableCell
                       colSpan={5}
-                      className="text-center text-white/30"
+                      className="text-center text-dd-on-muted"
                     >
                       Nenhum tracked-link encontrado
                     </TableCell>
@@ -370,7 +370,7 @@ export default function TrackingPage() {
                     >
                       <TableCell>
                         <div className="font-medium">{link.nome}</div>
-                        <div className="text-xs text-white/30">
+                        <div className="text-xs text-dd-on-muted">
                           {link.nome_campanha || "sem campanha"}
                         </div>
                       </TableCell>
@@ -394,7 +394,9 @@ export default function TrackingPage() {
             </Table>
 
             <div className="flex items-center justify-between">
-              <div className="text-xs text-white/30">Pagina atual {page}</div>
+              <div className="text-xs text-dd-on-muted">
+                Pagina atual {page}
+              </div>
               <div className="flex gap-2">
                 <Button
                   variant="outline"
@@ -547,24 +549,24 @@ export default function TrackingPage() {
         </CardHeader>
         <CardContent>
           {detailLoading ? (
-            <div className="flex items-center justify-center py-12 text-white/30">
+            <div className="flex items-center justify-center py-12 text-dd-on-muted">
               Carregando detalhe...
             </div>
           ) : !selectedLink ? (
-            <div className="py-12 text-center text-white/30">
+            <div className="py-12 text-center text-dd-on-muted">
               Selecione um tracked-link para ver o detalhe
             </div>
           ) : (
             <div className="grid gap-6 xl:grid-cols-3">
               <div className="space-y-3">
-                <div className="text-xs uppercase tracking-wide text-white/30">
+                <div className="text-xs uppercase tracking-wide text-dd-on-muted">
                   Identificacao
                 </div>
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+                <div className="rounded-2xl border border-dd-border-subtle bg-dd-surface-raised p-4">
                   <div className="text-lg font-semibold">
                     {selectedLink.nome}
                   </div>
-                  <div className="text-sm text-white/30">
+                  <div className="text-sm text-dd-on-muted">
                     {selectedLink.nome_campanha || "sem campanha"}
                   </div>
                   <div className="mt-3">
@@ -579,31 +581,31 @@ export default function TrackingPage() {
               </div>
 
               <div className="space-y-3">
-                <div className="text-xs uppercase tracking-wide text-white/30">
+                <div className="text-xs uppercase tracking-wide text-dd-on-muted">
                   Tracking
                 </div>
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 text-sm">
+                <div className="rounded-2xl border border-dd-border-subtle bg-dd-surface-raised p-4 text-sm">
                   <div className="flex items-center gap-2 font-medium">
                     <Ticket className="h-4 w-4 text-primary" />
                     {selectedLink.codigo_ref}
                   </div>
-                  <div className="mt-3 text-white/30">
+                  <div className="mt-3 text-dd-on-muted">
                     {selectedLink.source || "-"} / {selectedLink.medium || "-"}
                   </div>
-                  <div className="text-white/30">
+                  <div className="text-dd-on-muted">
                     {selectedLink.content || "-"} / {selectedLink.term || "-"}
                   </div>
-                  <div className="mt-3 break-all text-xs text-white/30">
+                  <div className="mt-3 break-all text-xs text-dd-on-muted">
                     {selectedLink.link || "-"}
                   </div>
                 </div>
               </div>
 
               <div className="space-y-3">
-                <div className="text-xs uppercase tracking-wide text-white/30">
+                <div className="text-xs uppercase tracking-wide text-dd-on-muted">
                   Performance
                 </div>
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 text-sm">
+                <div className="rounded-2xl border border-dd-border-subtle bg-dd-surface-raised p-4 text-sm">
                   <div className="flex items-center gap-2">
                     <MousePointerClick className="h-4 w-4 text-primary" />
                     {selectedLink.clicks} click(s)
@@ -612,28 +614,28 @@ export default function TrackingPage() {
                     <Target className="h-4 w-4 text-dd-accent-green" />
                     {selectedLink.leads_convertidos} lead(s) convertidos
                   </div>
-                  <div className="mt-3 text-white/30">
+                  <div className="mt-3 text-dd-on-muted">
                     Expira em: {formatDateTime(selectedLink.expira_em)}
                   </div>
-                  <div className="text-white/30">
+                  <div className="text-dd-on-muted">
                     Criado em: {formatDateTime(selectedLink.created_at)}
                   </div>
                 </div>
               </div>
 
               <div className="xl:col-span-3 grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 text-sm">
+                <div className="rounded-2xl border border-dd-border-subtle bg-dd-surface-raised p-4 text-sm">
                   <div className="font-medium">WhatsApp</div>
-                  <div className="mt-2 text-white/30">
+                  <div className="mt-2 text-dd-on-muted">
                     {selectedLink.whatsapp_num}
                   </div>
-                  <div className="mt-2 text-white/30">
+                  <div className="mt-2 text-dd-on-muted">
                     {selectedLink.whatsapp_msg || "-"}
                   </div>
                 </div>
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 text-sm">
+                <div className="rounded-2xl border border-dd-border-subtle bg-dd-surface-raised p-4 text-sm">
                   <div className="font-medium">URL base</div>
-                  <div className="mt-2 break-all text-white/30">
+                  <div className="mt-2 break-all text-dd-on-muted">
                     {selectedLink.url_base || "-"}
                   </div>
                 </div>

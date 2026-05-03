@@ -96,11 +96,11 @@ function actionTone(action: string) {
     case "reset_then_followup":
       return "border-dd-accent-orange/20 bg-dd-accent-orange/10 text-dd-accent-orange";
     case "manual_review":
-      return "border-orange-500/20 bg-orange-500/10 text-orange-300";
+      return "border-dd-accent-orange/20 bg-dd-accent-orange/10 text-dd-accent-orange";
     case "human_takeover_active":
       return "border-dd-accent-blue/20 bg-dd-accent-blue/10 text-dd-accent-blue";
     default:
-      return "border-white/[0.06] white/[0.02] text-foreground";
+      return "border-dd-border-subtle bg-dd-surface-overlay/10 text-foreground";
   }
 }
 
@@ -196,8 +196,8 @@ export default function PipelinePage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-8 w-8 rounded-full border-2 border-white/10 border-t-white/30 animate-spin" />
-          <p className="text-white/40 text-xs">Carregando...</p>
+          <div className="h-8 w-8 rounded-full border-2 border-dd-border-subtle border-t-dd-on-muted animate-spin" />
+          <p className="text-dd-on-muted text-xs">Carregando...</p>
         </div>
       </div>
     );
@@ -208,7 +208,7 @@ export default function PipelinePage() {
       <div className="flex items-center justify-center h-64">
         <div className="text-dd-accent-red text-center">
           <p className="text-sm font-medium">Erro ao carregar</p>
-          <p className="text-xs text-white/40 mt-1">{error}</p>
+          <p className="text-xs text-dd-on-muted mt-1">{error}</p>
         </div>
       </div>
     );
@@ -218,7 +218,7 @@ export default function PipelinePage() {
     <div className="space-y-8 animate-fade-in">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Fila Operacional</h1>
-        <p className="text-white/30">
+        <p className="text-dd-on-muted">
           Leads travados, contaminados ou prontos para retomada automatica
         </p>
       </div>
@@ -226,20 +226,20 @@ export default function PipelinePage() {
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <Card className="card-premium">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-white/30">
+            <CardTitle className="text-sm font-medium text-dd-on-muted">
               Na fila
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{meta.total}</div>
-            <p className="mt-1 text-xs text-white/30">
+            <p className="mt-1 text-xs text-dd-on-muted">
               Total paginado da fila operacional
             </p>
           </CardContent>
         </Card>
         <Card className="card-premium">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-white/30">
+            <CardTitle className="text-sm font-medium text-dd-on-muted">
               Expirados
             </CardTitle>
           </CardHeader>
@@ -247,29 +247,29 @@ export default function PipelinePage() {
             <div className="text-3xl font-bold text-dd-accent-orange">
               {metrics.expired_followups}
             </div>
-            <p className="mt-1 text-xs text-white/30">
+            <p className="mt-1 text-xs text-dd-on-muted">
               Precisam de retomada imediata
             </p>
           </CardContent>
         </Card>
         <Card className="card-premium">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-white/30">
+            <CardTitle className="text-sm font-medium text-dd-on-muted">
               Contaminados
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-orange-300">
+            <div className="text-3xl font-bold text-dd-accent-orange">
               {metrics.contaminated_leads}
             </div>
-            <p className="mt-1 text-xs text-white/30">
+            <p className="mt-1 text-xs text-dd-on-muted">
               Exigem revisao antes de lote
             </p>
           </CardContent>
         </Card>
         <Card className="card-premium">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-white/30">
+            <CardTitle className="text-sm font-medium text-dd-on-muted">
               Respostas Hoje
             </CardTitle>
           </CardHeader>
@@ -277,7 +277,7 @@ export default function PipelinePage() {
             <div className="text-3xl font-bold text-dd-accent-green">
               {metrics.followup_responses_today}
             </div>
-            <p className="mt-1 text-xs text-white/30">
+            <p className="mt-1 text-xs text-dd-on-muted">
               Retornos capturados pelo follow-up
             </p>
           </CardContent>
@@ -413,11 +413,11 @@ export default function PipelinePage() {
         </CardHeader>
         <CardContent>
           {queue.length === 0 ? (
-            <div className="py-16 text-center text-white/30">
+            <div className="py-16 text-center text-dd-on-muted">
               Nenhum lead encontrado para os filtros atuais.
             </div>
           ) : (
-            <div className="overflow-hidden rounded-xl border border-white/[0.06]">
+            <div className="overflow-hidden rounded-xl border border-dd-border-subtle">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -434,13 +434,15 @@ export default function PipelinePage() {
                     <TableRow
                       key={item.lead_id}
                       className={
-                        item.lead_id === selectedLeadId ? "white/[0.02]" : ""
+                        item.lead_id === selectedLeadId
+                          ? "bg-dd-surface-overlay/10"
+                          : ""
                       }
                     >
                       <TableCell>
                         <div className="space-y-1">
                           <div className="font-medium">{item.telefone}</div>
-                          <div className="text-xs text-white/30">
+                          <div className="text-xs text-dd-on-muted">
                             {item.qualification_summary ||
                               "Sem resumo de qualificacao"}
                           </div>
@@ -448,7 +450,7 @@ export default function PipelinePage() {
                             {item.is_contaminated && (
                               <Badge
                                 variant="outline"
-                                className="border-orange-500/20 bg-orange-500/10 text-orange-300"
+                                className="border-dd-accent-orange/20 bg-dd-accent-orange/10 text-dd-accent-orange"
                               >
                                 Contaminado
                               </Badge>
@@ -467,7 +469,7 @@ export default function PipelinePage() {
                       <TableCell>
                         <div className="space-y-1">
                           <div>{item.status || "-"}</div>
-                          <div className="text-xs text-white/30">
+                          <div className="text-xs text-dd-on-muted">
                             {item.fase || "-"}
                           </div>
                         </div>
@@ -475,7 +477,7 @@ export default function PipelinePage() {
                       <TableCell>
                         <div className="space-y-1">
                           <div>{item.canal_origem || "-"}</div>
-                          <div className="text-xs text-white/30">
+                          <div className="text-xs text-dd-on-muted">
                             {item.sistema_origem || "-"}
                           </div>
                         </div>
@@ -483,7 +485,7 @@ export default function PipelinePage() {
                       <TableCell>
                         {item.next_field || "-"}
                         {item.missing_fields.length > 0 && (
-                          <div className="text-xs text-white/30">
+                          <div className="text-xs text-dd-on-muted">
                             Faltando: {item.missing_fields.join(", ")}
                           </div>
                         )}
@@ -563,20 +565,22 @@ export default function PipelinePage() {
         </CardHeader>
         <CardContent>
           {!selectedLeadId ? (
-            <div className="py-12 text-white/30">Nenhum lead selecionado.</div>
+            <div className="py-12 text-dd-on-muted">
+              Nenhum lead selecionado.
+            </div>
           ) : detailLoading ? (
-            <div className="py-12 text-white/30">
+            <div className="py-12 text-dd-on-muted">
               Carregando detalhe operacional...
             </div>
           ) : !selectedStatus ? (
-            <div className="py-12 text-white/30">
+            <div className="py-12 text-dd-on-muted">
               Sem detalhe operacional disponível.
             </div>
           ) : (
             <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
               <div className="space-y-4">
-                <div className="rounded-xl border border-white/[0.06] p-4">
-                  <div className="text-xs uppercase tracking-wide text-white/30">
+                <div className="rounded-xl border border-dd-border-subtle p-4">
+                  <div className="text-xs uppercase tracking-wide text-dd-on-muted">
                     Recomendacao atual
                   </div>
                   <div className="mt-2">
@@ -592,16 +596,16 @@ export default function PipelinePage() {
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
-                  <div className="rounded-xl border border-white/[0.06] p-4">
-                    <div className="text-xs uppercase tracking-wide text-white/30">
+                  <div className="rounded-xl border border-dd-border-subtle p-4">
+                    <div className="text-xs uppercase tracking-wide text-dd-on-muted">
                       Proximo campo
                     </div>
                     <div className="mt-2 font-medium">
                       {selectedStatus.next_field || "-"}
                     </div>
                   </div>
-                  <div className="rounded-xl border border-white/[0.06] p-4">
-                    <div className="text-xs uppercase tracking-wide text-white/30">
+                  <div className="rounded-xl border border-dd-border-subtle p-4">
+                    <div className="text-xs uppercase tracking-wide text-dd-on-muted">
                       Tracking
                     </div>
                     <div className="mt-2 font-medium">
@@ -612,8 +616,8 @@ export default function PipelinePage() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-white/[0.06] p-4">
-                  <div className="text-xs uppercase tracking-wide text-white/30">
+                <div className="rounded-xl border border-dd-border-subtle p-4">
+                  <div className="text-xs uppercase tracking-wide text-dd-on-muted">
                     Campos faltantes
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -624,22 +628,22 @@ export default function PipelinePage() {
                         </Badge>
                       ))
                     ) : (
-                      <span className="text-sm text-white/30">
+                      <span className="text-sm text-dd-on-muted">
                         Nenhum campo faltante.
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-white/[0.06] p-4">
-                  <div className="text-xs uppercase tracking-wide text-white/30">
+                <div className="rounded-xl border border-dd-border-subtle p-4">
+                  <div className="text-xs uppercase tracking-wide text-dd-on-muted">
                     Ultima interacao
                   </div>
                   <div className="mt-3 space-y-3 text-sm">
                     <div className="flex items-start gap-2">
                       <Bot className="mt-0.5 h-4 w-4 text-primary" />
                       <div>
-                        <div className="text-xs text-white/30">
+                        <div className="text-xs text-dd-on-muted">
                           Ultima mensagem do bot
                         </div>
                         <div>{selectedStatus.last_bot_message || "-"}</div>
@@ -648,20 +652,20 @@ export default function PipelinePage() {
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="mt-0.5 h-4 w-4 text-dd-accent-green" />
                       <div>
-                        <div className="text-xs text-white/30">
+                        <div className="text-xs text-dd-on-muted">
                           Ultima mensagem do lead
                         </div>
                         <div>{selectedStatus.last_lead_message || "-"}</div>
                       </div>
                     </div>
-                    <div className="text-xs text-white/30">
+                    <div className="text-xs text-dd-on-muted">
                       Direcao: {selectedStatus.last_message_direction || "-"}
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-white/[0.06] p-4">
-                  <div className="text-xs uppercase tracking-wide text-white/30">
+                <div className="rounded-xl border border-dd-border-subtle p-4">
+                  <div className="text-xs uppercase tracking-wide text-dd-on-muted">
                     Resumo de qualificacao
                   </div>
                   <div className="mt-2 text-sm">
@@ -671,8 +675,8 @@ export default function PipelinePage() {
               </div>
 
               <div className="space-y-4">
-                <div className="rounded-xl border border-white/[0.06] p-4">
-                  <div className="text-xs uppercase tracking-wide text-white/30">
+                <div className="rounded-xl border border-dd-border-subtle p-4">
+                  <div className="text-xs uppercase tracking-wide text-dd-on-muted">
                     Sinais operacionais
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -686,7 +690,7 @@ export default function PipelinePage() {
                       variant="outline"
                       className={
                         selectedStatus.is_contaminated
-                          ? "border-orange-500/20 bg-orange-500/10 text-orange-300"
+                          ? "border-dd-accent-orange/20 bg-dd-accent-orange/10 text-dd-accent-orange"
                           : "border-dd-accent-green/20 bg-dd-accent-green/10 text-dd-accent-green"
                       }
                     >
@@ -699,7 +703,7 @@ export default function PipelinePage() {
                       className={
                         selectedStatus.confirmation_pending
                           ? "border-dd-accent-blue/20 bg-dd-accent-blue/10 text-dd-accent-blue"
-                          : "border-white/[0.06]"
+                          : "border-dd-border-subtle"
                       }
                     >
                       {selectedStatus.confirmation_pending
@@ -718,8 +722,8 @@ export default function PipelinePage() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-white/[0.06] p-4">
-                  <div className="text-xs uppercase tracking-wide text-white/30">
+                <div className="rounded-xl border border-dd-border-subtle p-4">
+                  <div className="text-xs uppercase tracking-wide text-dd-on-muted">
                     Timeline de acoes
                   </div>
                   <div className="mt-3 space-y-3">
@@ -727,7 +731,7 @@ export default function PipelinePage() {
                       selectedActions.map((item) => (
                         <div
                           key={item.id}
-                          className="rounded-lg border border-white/[0.06] p-3"
+                          className="rounded-lg border border-dd-border-subtle p-3"
                         >
                           <div className="flex items-center justify-between gap-3">
                             <div className="font-medium">
@@ -735,19 +739,19 @@ export default function PipelinePage() {
                             </div>
                             <Badge variant="outline">{item.status}</Badge>
                           </div>
-                          <div className="mt-1 text-xs text-white/30">
+                          <div className="mt-1 text-xs text-dd-on-muted">
                             Ator: {item.actor} ·{" "}
                             {new Date(item.created_at).toLocaleString("pt-BR")}
                           </div>
                           {item.details && (
-                            <div className="mt-2 text-xs text-white/30 break-all">
+                            <div className="mt-2 text-xs text-dd-on-muted break-all">
                               {item.details}
                             </div>
                           )}
                         </div>
                       ))
                     ) : (
-                      <div className="text-sm text-white/30">
+                      <div className="text-sm text-dd-on-muted">
                         Nenhuma acao recente.
                       </div>
                     )}

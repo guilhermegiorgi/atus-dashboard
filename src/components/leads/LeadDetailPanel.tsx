@@ -48,7 +48,7 @@ function toneForState(value?: string | null) {
     case "CLOSED":
       return "border-dd-border-subtle bg-dd-surface-overlay/10 text-dd-on-surface";
     default:
-      return "border-white/[0.12] bg-white/[0.04] text-white/60";
+      return "border-dd-border bg-dd-surface-overlay/40 text-dd-on-muted";
   }
 }
 
@@ -63,7 +63,7 @@ function toneForStatus(value?: string) {
     case "PERDIDO":
       return "border-dd-accent-red/20 bg-dd-accent-red/10 text-dd-accent-red";
     default:
-      return "border-white/[0.12] bg-white/[0.04] text-white/60";
+      return "border-dd-border bg-dd-surface-overlay/40 text-dd-on-muted";
   }
 }
 
@@ -248,21 +248,21 @@ export function LeadDetailPanel({
   };
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 w-[min(480px,100vw)] border-l border-white/[0.12] bg-dd-primary shadow-2xl animate-slide-in-right">
+    <div className="fixed inset-y-0 right-0 z-50 w-[min(480px,100vw)] border-l border-dd-border bg-dd-primary shadow-2xl animate-slide-in-right">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/[0.12] px-5 py-4">
+      <div className="flex items-center justify-between border-b border-dd-border px-5 py-4">
         <div className="min-w-0 flex-1">
-          <h2 className="truncate text-lg font-medium text-white">
+          <h2 className="truncate text-lg font-medium text-dd-on-primary">
             {lead.nome_completo || "Lead sem nome"}
           </h2>
-          <p className="text-xs text-white/40">{lead.telefone}</p>
+          <p className="text-xs text-dd-on-muted">{lead.telefone}</p>
         </div>
         <Button
           variant="ghost"
           size="icon"
           onClick={onClose}
           aria-label="Fechar painel"
-          className="shrink-0 h-8 w-8 hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-dd-accent-green"
+          className="shrink-0 h-8 w-8 hover:bg-dd-surface-overlay hover:text-dd-on-surface focus-visible:ring-2 focus-visible:ring-dd-accent-green"
         >
           <X className="h-4 w-4" />
         </Button>
@@ -276,7 +276,7 @@ export function LeadDetailPanel({
               <Skeleton className="h-5 w-20" />
               <Skeleton className="h-5 w-24" />
             </div>
-            <div className="border border-white/[0.12] rounded-lg p-3 bg-white/[0.02] space-y-2">
+            <div className="border border-dd-border-subtle rounded-lg p-3 bg-dd-surface-raised space-y-2">
               <Skeleton className="h-4 w-24" />
               <div className="flex gap-1.5">
                 <Skeleton className="h-5 w-16" />
@@ -288,7 +288,7 @@ export function LeadDetailPanel({
               <Skeleton className="h-8 w-28" />
               <Skeleton className="h-8 w-16" />
             </div>
-            <div className="border border-white/[0.12] rounded-lg p-4 bg-white/[0.02] space-y-3">
+            <div className="border border-dd-border-subtle rounded-lg p-4 bg-dd-surface-raised space-y-3">
               <Skeleton className="h-3 w-20" />
               <div className="grid grid-cols-2 gap-2">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -299,7 +299,7 @@ export function LeadDetailPanel({
                 ))}
               </div>
             </div>
-            <div className="border border-white/[0.12] rounded-lg p-4 bg-white/[0.02] space-y-3">
+            <div className="border border-dd-border-subtle rounded-lg p-4 bg-dd-surface-raised space-y-3">
               <Skeleton className="h-3 w-20" />
               {[1, 2, 3].map((i) => (
                 <Skeleton key={i} className="h-12 w-full" />
@@ -339,7 +339,7 @@ export function LeadDetailPanel({
             </div>
 
             {/* Tags do Lead */}
-            <div className="border border-white/[0.12] rounded-lg p-3 bg-white/[0.02]">
+            <div className="border border-dd-border-subtle rounded-lg p-3 bg-dd-surface-raised">
               <TagManager
                 leadId={lead.id}
                 leadTags={leadTags}
@@ -357,7 +357,7 @@ export function LeadDetailPanel({
                 variant="outline"
                 onClick={() => onEdit(lead)}
                 aria-label="Editar lead"
-                className="border-white/[0.12] bg-white/[0.04] hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-dd-accent-green"
+                className="border-dd-border-subtle bg-dd-surface-overlay/30 hover:bg-dd-surface-overlay hover:text-dd-on-surface focus-visible:ring-2 focus-visible:ring-dd-accent-green"
               >
                 <Edit className="mr-1.5 h-3.5 w-3.5" />
                 Editar
@@ -368,7 +368,7 @@ export function LeadDetailPanel({
                   variant="outline"
                   onClick={() => handleHumanIntervention("release")}
                   aria-label="Liberar para bot"
-                  className="border-white/[0.12] bg-white/[0.04] hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-dd-accent-green"
+                  className="border-dd-border-subtle bg-dd-surface-overlay/30 hover:bg-dd-surface-overlay hover:text-dd-on-surface focus-visible:ring-2 focus-visible:ring-dd-accent-green"
                 >
                   <UserX className="mr-1.5 h-3.5 w-3.5" />
                   Liberar para Bot
@@ -379,7 +379,7 @@ export function LeadDetailPanel({
                   variant="outline"
                   onClick={() => handleHumanIntervention("intervene")}
                   aria-label="Intervir na conversa"
-                  className="border-white/[0.12] bg-white/[0.04] hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-dd-accent-green"
+                  className="border-dd-border-subtle bg-dd-surface-overlay/30 hover:bg-dd-surface-overlay hover:text-dd-on-surface focus-visible:ring-2 focus-visible:ring-dd-accent-green"
                 >
                   <UserCheck className="mr-1.5 h-3.5 w-3.5" />
                   Intervir
@@ -390,7 +390,7 @@ export function LeadDetailPanel({
                 variant="outline"
                 onClick={handleResetLead}
                 aria-label="Resetar dados do lead"
-                className="border-white/[0.12] bg-white/[0.04] hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-dd-accent-green"
+                className="border-dd-border-subtle bg-dd-surface-overlay/30 hover:bg-dd-surface-overlay hover:text-dd-on-surface focus-visible:ring-2 focus-visible:ring-dd-accent-green"
               >
                 <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
                 Resetar
@@ -398,50 +398,54 @@ export function LeadDetailPanel({
             </div>
 
             {/* Cadastro */}
-            <section className="rounded-lg border border-white/[0.12] bg-white/[0.02] p-4">
-              <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-white/40">
+            <section className="rounded-lg border border-dd-border-subtle bg-dd-surface-raised p-4">
+              <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-dd-on-muted">
                 Cadastro
               </h3>
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                 <div>
-                  <span className="text-white/40">Email:</span>{" "}
-                  <span className="text-white">{lead.email || "-"}</span>
+                  <span className="text-dd-on-muted">Email:</span>{" "}
+                  <span className="text-dd-on-primary">
+                    {lead.email || "-"}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-white/40">Tipo:</span>{" "}
-                  <span className="text-white">
+                  <span className="text-dd-on-muted">Tipo:</span>{" "}
+                  <span className="text-dd-on-primary">
                     {lead.tipo_interesse || "-"}
                   </span>
                 </div>
                 <div>
-                  <span className="text-white/40">Estado civil:</span>{" "}
-                  <span className="text-white">{lead.estado_civil || "-"}</span>
+                  <span className="text-dd-on-muted">Estado civil:</span>{" "}
+                  <span className="text-dd-on-primary">
+                    {lead.estado_civil || "-"}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-white/40">Aniversário:</span>{" "}
-                  <span className="text-white">
+                  <span className="text-dd-on-muted">Aniversário:</span>{" "}
+                  <span className="text-dd-on-primary">
                     {formatDate(lead.aniversario)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-white/40">Renda:</span>{" "}
-                  <span className="text-white">
+                  <span className="text-dd-on-muted">Renda:</span>{" "}
+                  <span className="text-dd-on-primary">
                     {lead.renda_comprovada
                       ? `R$ ${lead.renda_comprovada.toLocaleString("pt-BR")}`
                       : "-"}
                   </span>
                 </div>
                 <div>
-                  <span className="text-white/40">Entrada:</span>{" "}
-                  <span className="text-white">
+                  <span className="text-dd-on-muted">Entrada:</span>{" "}
+                  <span className="text-dd-on-primary">
                     {lead.tem_entrada
                       ? `R$ ${(lead.entrada || 0).toLocaleString("pt-BR")}`
                       : "-"}
                   </span>
                 </div>
                 <div className="col-span-2">
-                  <span className="text-white/40">FGTS:</span>{" "}
-                  <span className="text-white">
+                  <span className="text-dd-on-muted">FGTS:</span>{" "}
+                  <span className="text-dd-on-primary">
                     R${" "}
                     {(
                       (lead.fgts || 0) + (lead.fgts_conjuge || 0)
@@ -452,36 +456,38 @@ export function LeadDetailPanel({
             </section>
 
             {/* Origem */}
-            <section className="rounded-lg border border-white/[0.12] bg-white/[0.02] p-4">
-              <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-white/40">
+            <section className="rounded-lg border border-dd-border-subtle bg-dd-surface-raised p-4">
+              <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-dd-on-muted">
                 Origem
               </h3>
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                 <div>
-                  <span className="text-white/40">Canal:</span>{" "}
-                  <span className="text-white">{lead.canal_origem || "-"}</span>
+                  <span className="text-dd-on-muted">Canal:</span>{" "}
+                  <span className="text-dd-on-primary">
+                    {lead.canal_origem || "-"}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-white/40">Sistema:</span>{" "}
-                  <span className="text-white">
+                  <span className="text-dd-on-muted">Sistema:</span>{" "}
+                  <span className="text-dd-on-primary">
                     {lead.sistema_origem || "-"}
                   </span>
                 </div>
                 <div>
-                  <span className="text-white/40">Campanha:</span>{" "}
-                  <span className="text-white">
+                  <span className="text-dd-on-muted">Campanha:</span>{" "}
+                  <span className="text-dd-on-primary">
                     {lead.campanha_origem || "-"}
                   </span>
                 </div>
                 <div>
-                  <span className="text-white/40">Tracked:</span>{" "}
-                  <span className="text-white">
+                  <span className="text-dd-on-muted">Tracked:</span>{" "}
+                  <span className="text-dd-on-primary">
                     {lead.tracked_codigo_ref || "-"}
                   </span>
                 </div>
                 <div className="col-span-2">
-                  <span className="text-white/40">Criado em:</span>{" "}
-                  <span className="text-white">
+                  <span className="text-dd-on-muted">Criado em:</span>{" "}
+                  <span className="text-dd-on-primary">
                     {formatDateTime(lead.created_at)}
                   </span>
                 </div>
@@ -491,11 +497,11 @@ export function LeadDetailPanel({
             {/* Resumo de Qualificação */}
             {(lead.resumo_qualificacao ||
               operationalStatus?.qualification_summary) && (
-              <section className="rounded-lg border border-white/[0.12] bg-white/[0.02] p-4">
-                <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-white/40">
+              <section className="rounded-lg border border-dd-border-subtle bg-dd-surface-raised p-4">
+                <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-dd-on-muted">
                   Qualificação
                 </h3>
-                <p className="text-sm text-white/80">
+                <p className="text-sm text-dd-on-surface">
                   {lead.resumo_qualificacao ||
                     operationalStatus?.qualification_summary}
                 </p>
@@ -503,13 +509,13 @@ export function LeadDetailPanel({
             )}
 
             {/* Conversas */}
-            <section className="rounded-lg border border-white/[0.12] bg-white/[0.02] p-4">
-              <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-white/40">
+            <section className="rounded-lg border border-dd-border-subtle bg-dd-surface-raised p-4">
+              <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-dd-on-muted">
                 Conversas ({conversations.length})
               </h3>
               <div className="space-y-2">
                 {conversations.length === 0 ? (
-                  <p className="text-sm text-white/30">Nenhuma conversa</p>
+                  <p className="text-sm text-dd-on-muted">Nenhuma conversa</p>
                 ) : (
                   conversations.slice(0, 3).map((conversation) => (
                     <button
@@ -518,19 +524,19 @@ export function LeadDetailPanel({
                       onClick={() => setSelectedConversationId(conversation.id)}
                       className={`w-full rounded-lg border p-2 text-left text-sm transition-colors ${
                         selectedConversationId === conversation.id
-                          ? "border-white/[0.25] bg-white/[0.06]"
-                          : "border-white/[0.08] hover:border-white/[0.16]"
+                          ? "border-dd-accent-green/40 bg-dd-accent-green/10"
+                          : "border-dd-border-subtle hover:border-dd-border"
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-white">
+                        <span className="text-dd-on-primary">
                           {conversation.status}
                         </span>
-                        <span className="text-xs text-white/40">
+                        <span className="text-xs text-dd-on-muted">
                           {conversation.message_count} msgs
                         </span>
                       </div>
-                      <div className="text-xs text-white/30">
+                      <div className="text-xs text-dd-on-muted/70">
                         {formatDateTime(conversation.started_at)}
                       </div>
                     </button>
@@ -541,8 +547,8 @@ export function LeadDetailPanel({
 
             {/* Mensagens */}
             {selectedConversation && (
-              <section className="rounded-lg border border-white/[0.12] bg-white/[0.02] p-4">
-                <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-white/40">
+              <section className="rounded-lg border border-dd-border-subtle bg-dd-surface-raised p-4">
+                <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-dd-on-muted">
                   Mensagens
                 </h3>
 
@@ -553,8 +559,8 @@ export function LeadDetailPanel({
                         key={i}
                         className={`rounded-lg border p-2 ${
                           i % 2 === 0
-                            ? "border-white/[0.12] bg-white/[0.04]"
-                            : "border-white/[0.08]"
+                            ? "border-dd-border bg-dd-surface-overlay/30"
+                            : "border-dd-border-subtle"
                         }`}
                       >
                         <div className="flex items-center justify-between">
@@ -567,7 +573,7 @@ export function LeadDetailPanel({
                     ))}
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="py-4 text-center text-sm text-white/30">
+                  <div className="py-4 text-center text-sm text-dd-on-muted">
                     Sem mensagens
                   </div>
                 ) : (
@@ -577,15 +583,15 @@ export function LeadDetailPanel({
                         key={message.id}
                         className={`rounded-lg border p-2 ${
                           message.direcao === "SAIDA"
-                            ? "border-white/[0.12] bg-white/[0.04]"
-                            : "border-white/[0.08]"
+                            ? "border-dd-border bg-dd-surface-overlay/30"
+                            : "border-dd-border-subtle"
                         }`}
                       >
-                        <div className="flex items-center justify-between text-xs text-white/30">
+                        <div className="flex items-center justify-between text-xs text-dd-on-muted/70">
                           <span>{message.direcao}</span>
                           <span>{formatDateTime(message.timestamp)}</span>
                         </div>
-                        <p className="mt-1 text-sm text-white/80 line-clamp-3">
+                        <p className="mt-1 text-sm text-dd-on-surface line-clamp-3">
                           {message.conteudo}
                         </p>
                       </div>
@@ -600,7 +606,7 @@ export function LeadDetailPanel({
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Digite uma mensagem..."
-                    className="flex-1 rounded-lg border border-white/[0.12] bg-white/[0.04] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/25 focus:outline-none"
+                    className="flex-1 rounded-lg border border-dd-border-subtle bg-dd-surface-overlay/30 px-3 py-2 text-sm text-dd-on-primary placeholder:text-dd-on-muted/50 focus:border-dd-accent-green focus:outline-none"
                     onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
                   />
                   <Button
@@ -608,7 +614,7 @@ export function LeadDetailPanel({
                     onClick={handleSendMessage}
                     disabled={sendingMessage || !newMessage.trim()}
                     aria-label="Enviar mensagem"
-                    className="shrink-0 bg-white text-black hover:bg-white/90 focus-visible:ring-2 focus-visible:ring-dd-accent-green"
+                    className="shrink-0 bg-dd-on-primary text-dd-primary hover:bg-dd-on-primary/90 focus-visible:ring-2 focus-visible:ring-dd-accent-green"
                   >
                     <Send className="h-4 w-4" />
                   </Button>
@@ -618,23 +624,25 @@ export function LeadDetailPanel({
 
             {/* Auditoria */}
             {actions.length > 0 && (
-              <section className="rounded-lg border border-white/[0.12] bg-white/[0.02] p-4">
-                <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-white/40">
+              <section className="rounded-lg border border-dd-border-subtle bg-dd-surface-raised p-4">
+                <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-dd-on-muted">
                   Auditoria
                 </h3>
                 <div className="space-y-2">
                   {actions.slice(0, 5).map((action) => (
                     <div
                       key={action.id}
-                      className="rounded-lg border border-white/[0.08] p-2"
+                      className="rounded-lg border border-dd-border-subtle p-2"
                     >
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-white">{action.action}</span>
-                        <span className="text-xs text-white/30">
+                        <span className="text-dd-on-primary">
+                          {action.action}
+                        </span>
+                        <span className="text-xs text-dd-on-muted/70">
                           {formatDateTime(action.created_at)}
                         </span>
                       </div>
-                      <div className="text-xs text-white/40">
+                      <div className="text-xs text-dd-on-muted">
                         {action.actor || "-"}
                       </div>
                     </div>

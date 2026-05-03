@@ -3,7 +3,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Filter, RefreshCw, Search, X } from "lucide-react";
 import { LEAD_STATUSES, LeadListFilters } from "@/types/leads";
@@ -59,24 +65,28 @@ export function LeadFilters({
                   onFiltersChange({ ...filters, search: event.target.value })
                 }
                 placeholder="Nome, email ou telefone"
-                className="border-white/10 bg-secondary/50 pl-10"
+                className="border-dd-border-subtle bg-dd-surface-raised pl-10"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-dd-on-primary">Status</label>
+            <label className="text-sm font-medium text-dd-on-primary">
+              Status
+            </label>
             <Select
               value={filters.status ?? "all"}
               onValueChange={(value) =>
                 onFiltersChange({
                   ...filters,
                   status:
-                    value === "all" ? undefined : (value as LeadListFilters["status"]),
+                    value === "all"
+                      ? undefined
+                      : (value as LeadListFilters["status"]),
                 })
               }
             >
-              <SelectTrigger className="border-white/10 bg-secondary/50">
+              <SelectTrigger className="border-dd-border-subtle bg-dd-surface-raised">
                 <SelectValue placeholder="Todos os status" />
               </SelectTrigger>
               <SelectContent>
@@ -91,14 +101,19 @@ export function LeadFilters({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-dd-on-primary">Fase</label>
+            <label className="text-sm font-medium text-dd-on-primary">
+              Fase
+            </label>
             <Input
               value={filters.fase ?? ""}
               onChange={(event) =>
-                onFiltersChange({ ...filters, fase: event.target.value || undefined })
+                onFiltersChange({
+                  ...filters,
+                  fase: event.target.value || undefined,
+                })
               }
               placeholder="Ex.: COLETA"
-              className="border-white/10 bg-secondary/50"
+              className="border-dd-border-subtle bg-dd-surface-raised"
             />
           </div>
 
@@ -108,7 +123,9 @@ export function LeadFilters({
             </label>
             <Select
               value={
-                filters.em_follow_up === undefined ? "all" : String(filters.em_follow_up)
+                filters.em_follow_up === undefined
+                  ? "all"
+                  : String(filters.em_follow_up)
               }
               onValueChange={(value) =>
                 onFiltersChange({
@@ -117,7 +134,7 @@ export function LeadFilters({
                 })
               }
             >
-              <SelectTrigger className="border-white/10 bg-secondary/50">
+              <SelectTrigger className="border-dd-border-subtle bg-dd-surface-raised">
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
@@ -141,7 +158,7 @@ export function LeadFilters({
                 })
               }
               placeholder="Ex.: COMPRA"
-              className="border-white/10 bg-secondary/50"
+              className="border-dd-border-subtle bg-dd-surface-raised"
             />
           </div>
 
@@ -158,7 +175,7 @@ export function LeadFilters({
                 })
               }
               placeholder="Ex.: PORTAL"
-              className="border-white/10 bg-secondary/50"
+              className="border-dd-border-subtle bg-dd-surface-raised"
             />
           </div>
 
@@ -175,14 +192,20 @@ export function LeadFilters({
                 })
               }
               placeholder="Ex.: IMOVELWEB"
-              className="border-white/10 bg-secondary/50"
+              className="border-dd-border-subtle bg-dd-surface-raised"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-dd-on-primary">Com Nome</label>
+            <label className="text-sm font-medium text-dd-on-primary">
+              Com Nome
+            </label>
             <Select
-              value={filters.has_nome === undefined ? "all" : String(filters.has_nome)}
+              value={
+                filters.has_nome === undefined
+                  ? "all"
+                  : String(filters.has_nome)
+              }
               onValueChange={(value) =>
                 onFiltersChange({
                   ...filters,
@@ -190,7 +213,7 @@ export function LeadFilters({
                 })
               }
             >
-              <SelectTrigger className="border-white/10 bg-secondary/50">
+              <SelectTrigger className="border-dd-border-subtle bg-dd-surface-raised">
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
@@ -202,9 +225,15 @@ export function LeadFilters({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-dd-on-primary">Com Email</label>
+            <label className="text-sm font-medium text-dd-on-primary">
+              Com Email
+            </label>
             <Select
-              value={filters.has_email === undefined ? "all" : String(filters.has_email)}
+              value={
+                filters.has_email === undefined
+                  ? "all"
+                  : String(filters.has_email)
+              }
               onValueChange={(value) =>
                 onFiltersChange({
                   ...filters,
@@ -212,7 +241,7 @@ export function LeadFilters({
                 })
               }
             >
-              <SelectTrigger className="border-white/10 bg-secondary/50">
+              <SelectTrigger className="border-dd-border-subtle bg-dd-surface-raised">
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
@@ -225,7 +254,7 @@ export function LeadFilters({
         </div>
 
         {activeFilters.length > 0 && (
-          <div className="flex flex-wrap gap-2 border-t border-white/10 pt-4">
+          <div className="flex flex-wrap gap-2 border-t border-dd-border-subtle pt-4">
             {activeFilters.map(([key, value]) => (
               <Badge key={key} variant="secondary" className="gap-1">
                 {key}: {String(value)}

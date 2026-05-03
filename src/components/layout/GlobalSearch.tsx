@@ -79,11 +79,11 @@ export function GlobalSearch({ onSelectLead }: GlobalSearchProps) {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 rounded-lg border border-white/[0.12] bg-white/[0.04] px-3 py-1.5 text-sm text-white/40 hover:border-white/25 hover:text-white/60 transition-colors"
+        className="flex items-center gap-2 rounded-lg border border-dd-border bg-dd-surface px-3 py-1.5 text-sm text-dd-on-muted hover:border-dd-border hover:text-dd-on-surface transition-colors"
       >
         <Search className="h-3.5 w-3.5" />
         <span>Buscar...</span>
-        <kbd className="hidden rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-white/30 sm:inline-flex">
+        <kbd className="hidden rounded bg-dd-surface-raised px-1.5 py-0.5 text-[10px] text-dd-on-muted sm:inline-flex">
           Ctrl+K
         </kbd>
       </button>
@@ -96,23 +96,23 @@ export function GlobalSearch({ onSelectLead }: GlobalSearchProps) {
       onClick={() => setIsOpen(false)}
     >
       <div
-        className="w-full max-w-xl rounded-xl border border-white/[0.12] bg-dd-primary shadow-2xl animate-in"
+        className="w-full max-w-xl rounded-xl border border-dd-border bg-dd-primary shadow-2xl animate-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input */}
-        <div className="flex items-center gap-3 border-b border-white/[0.12] px-4 py-3">
-          <Search className="h-5 w-5 text-white/40" />
+        <div className="flex items-center gap-3 border-b border-dd-border px-4 py-3">
+          <Search className="h-5 w-5 text-dd-on-muted" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar leads por nome, telefone ou email..."
-            className="flex-1 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none"
+            className="flex-1 bg-transparent text-sm text-dd-on-primary placeholder:text-dd-on-muted focus:outline-none"
             autoFocus
           />
           <button
             onClick={() => setIsOpen(false)}
-            className="rounded p-1 hover:bg-white/10 text-white/40 hover:text-white"
+            className="rounded p-1 hover:bg-dd-surface text-dd-on-muted hover:text-dd-on-primary"
           >
             <X className="h-4 w-4" />
           </button>
@@ -121,11 +121,11 @@ export function GlobalSearch({ onSelectLead }: GlobalSearchProps) {
         {/* Results */}
         <div className="max-h-[400px] overflow-y-auto p-2">
           {loading ? (
-            <div className="py-8 text-center text-sm text-white/30">
+            <div className="py-8 text-center text-sm text-dd-on-muted">
               Buscando...
             </div>
           ) : query && results.length === 0 ? (
-            <div className="py-8 text-center text-sm text-white/30">
+            <div className="py-8 text-center text-sm text-dd-on-muted">
               Nenhum resultado para &quot;{query}&quot;
             </div>
           ) : query ? (
@@ -134,26 +134,28 @@ export function GlobalSearch({ onSelectLead }: GlobalSearchProps) {
                 <button
                   key={lead.id}
                   onClick={() => handleSelect(lead)}
-                  className="w-full flex items-center gap-3 rounded-lg p-3 text-left hover:bg-white/[0.04] transition-colors"
+                  className="w-full flex items-center gap-3 rounded-lg p-3 text-left hover:bg-dd-surface transition-colors"
                 >
-                  <div className="h-9 w-9 rounded-full bg-white/[0.06] flex items-center justify-center text-sm font-medium text-white">
+                  <div className="h-9 w-9 rounded-full bg-dd-surface-raised flex items-center justify-center text-sm font-medium text-dd-on-primary">
                     {(lead.nome_completo || "SN").charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-white">
+                    <p className="truncate text-sm font-medium text-dd-on-primary">
                       {lead.nome_completo || "Sem nome"}
                     </p>
-                    <p className="truncate text-xs text-white/40">
+                    <p className="truncate text-xs text-dd-on-muted">
                       {lead.telefone} {lead.email && `· ${lead.email}`}
                     </p>
                   </div>
-                  <span className="text-xs text-white/30">{lead.status}</span>
+                  <span className="text-xs text-dd-on-muted">
+                    {lead.status}
+                  </span>
                 </button>
               ))}
             </div>
           ) : (
             <div className="space-y-2">
-              <div className="px-3 py-2 text-xs font-medium uppercase text-white/30 flex items-center gap-2">
+              <div className="px-3 py-2 text-xs font-medium uppercase text-dd-on-muted flex items-center gap-2">
                 <Clock className="h-3 w-3" />
                 Recentes
               </div>
@@ -161,20 +163,22 @@ export function GlobalSearch({ onSelectLead }: GlobalSearchProps) {
                 <button
                   key={lead.id}
                   onClick={() => handleSelect(lead)}
-                  className="w-full flex items-center gap-3 rounded-lg p-3 text-left hover:bg-white/[0.04] transition-colors"
+                  className="w-full flex items-center gap-3 rounded-lg p-3 text-left hover:bg-dd-surface transition-colors"
                 >
-                  <div className="h-9 w-9 rounded-full bg-white/[0.06] flex items-center justify-center text-sm font-medium text-white">
+                  <div className="h-9 w-9 rounded-full bg-dd-surface-raised flex items-center justify-center text-sm font-medium text-dd-on-primary">
                     {(lead.nome_completo || "SN").charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-white">
+                    <p className="truncate text-sm font-medium text-dd-on-primary">
                       {lead.nome_completo || "Sem nome"}
                     </p>
-                    <p className="truncate text-xs text-white/40">
+                    <p className="truncate text-xs text-dd-on-muted">
                       {lead.telefone}
                     </p>
                   </div>
-                  <span className="text-xs text-white/30">{lead.status}</span>
+                  <span className="text-xs text-dd-on-muted">
+                    {lead.status}
+                  </span>
                 </button>
               ))}
             </div>
@@ -182,14 +186,18 @@ export function GlobalSearch({ onSelectLead }: GlobalSearchProps) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-white/[0.12] px-4 py-2 text-xs text-white/30">
+        <div className="flex items-center justify-between border-t border-dd-border px-4 py-2 text-xs text-dd-on-muted">
           <div className="flex items-center gap-4">
             <span>
-              <kbd className="rounded bg-white/[0.06] px-1.5 py-0.5">Enter</kbd>{" "}
+              <kbd className="rounded bg-dd-surface-raised px-1.5 py-0.5">
+                Enter
+              </kbd>{" "}
               para selecionar
             </span>
             <span>
-              <kbd className="rounded bg-white/[0.06] px-1.5 py-0.5">Esc</kbd>{" "}
+              <kbd className="rounded bg-dd-surface-raised px-1.5 py-0.5">
+                Esc
+              </kbd>{" "}
               para fechar
             </span>
           </div>

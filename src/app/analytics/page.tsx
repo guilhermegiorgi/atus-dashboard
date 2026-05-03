@@ -111,17 +111,17 @@ function SummaryCard({
   return (
     <Card className="card-premium p-4">
       <div className="flex items-center justify-between gap-3 mb-3">
-        <CardTitle className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+        <CardTitle className="text-[10px] uppercase tracking-widest text-dd-on-muted font-medium">
           {title}
         </CardTitle>
-        <div className="rounded-sm border border-white/[0.06] bg-white/[0.02] p-1.5">
-          <Icon className="h-3 w-3 text-white/30" />
+        <div className="rounded-sm border border-dd-border-subtle bg-dd-surface-raised p-1.5">
+          <Icon className="h-3 w-3 text-dd-on-muted" />
         </div>
       </div>
-      <div className="text-xl font-light tracking-tight text-white">
+      <div className="text-xl font-light tracking-tight text-dd-on-primary">
         {value}
       </div>
-      <p className="mt-1 text-[10px] text-white/30">{description}</p>
+      <p className="mt-1 text-[10px] text-dd-on-muted">{description}</p>
     </Card>
   );
 }
@@ -137,31 +137,31 @@ function GroupedMetricsTable({
 }) {
   return (
     <Card className="card-premium">
-      <CardHeader className="border-b border-white/[0.06] pb-3">
-        <CardTitle className="text-sm font-medium text-white">
+      <CardHeader className="border-b border-dd-border-subtle pb-3">
+        <CardTitle className="text-sm font-medium text-dd-on-primary">
           {title}
         </CardTitle>
-        <CardDescription className="text-white/30 text-[10px]">
+        <CardDescription className="text-dd-on-muted text-[10px]">
           {description}
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-3">
         <Table>
           <TableHeader>
-            <TableRow className="border-white/[0.06] hover:bg-transparent">
-              <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+            <TableRow className="border-dd-border-subtle hover:bg-transparent">
+              <TableHead className="text-[10px] uppercase tracking-widest text-dd-on-muted font-medium">
                 Grupo
               </TableHead>
-              <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+              <TableHead className="text-[10px] uppercase tracking-widest text-dd-on-muted font-medium">
                 Total
               </TableHead>
-              <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+              <TableHead className="text-[10px] uppercase tracking-widest text-dd-on-muted font-medium">
                 Conv. op.
               </TableHead>
-              <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+              <TableHead className="text-[10px] uppercase tracking-widest text-dd-on-muted font-medium">
                 Conv. com.
               </TableHead>
-              <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+              <TableHead className="text-[10px] uppercase tracking-widest text-dd-on-muted font-medium">
                 Prontidao
               </TableHead>
             </TableRow>
@@ -171,7 +171,7 @@ function GroupedMetricsTable({
               <TableRow>
                 <TableCell
                   colSpan={5}
-                  className="text-center text-white/30 text-xs"
+                  className="text-center text-dd-on-muted text-xs"
                 >
                   Sem dados
                 </TableCell>
@@ -180,26 +180,26 @@ function GroupedMetricsTable({
               rows.slice(0, 6).map((row) => (
                 <TableRow
                   key={`${title}-${row.key}`}
-                  className="border-white/[0.06] hover:bg-white/[0.02]"
+                  className="border-dd-border-subtle hover:bg-dd-surface-raised"
                 >
                   <TableCell>
-                    <div className="text-sm text-white">
+                    <div className="text-sm text-dd-on-primary">
                       {row.label || row.key || "-"}
                     </div>
-                    <div className="text-[10px] text-white/30">
+                    <div className="text-[10px] text-dd-on-muted">
                       Potencial {row.score_potencial_medio.toFixed(1)}
                     </div>
                   </TableCell>
-                  <TableCell className="text-white/60">
+                  <TableCell className="text-dd-on-surface">
                     {row.total_leads}
                   </TableCell>
-                  <TableCell className="text-white/60">
+                  <TableCell className="text-dd-on-surface">
                     {row.conversoes_operacionais}
                   </TableCell>
-                  <TableCell className="text-white/60">
+                  <TableCell className="text-dd-on-surface">
                     {row.conversoes_comerciais}
                   </TableCell>
-                  <TableCell className="text-white/60">
+                  <TableCell className="text-dd-on-surface">
                     {row.score_prontidao_medio.toFixed(1)}
                   </TableCell>
                 </TableRow>
@@ -234,36 +234,36 @@ function LeadRankingTable({
 
   return (
     <Card className="card-premium">
-      <CardHeader className="border-b border-white/[0.06] pb-3">
+      <CardHeader className="border-b border-dd-border-subtle pb-3">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <CardTitle className="text-sm font-medium text-white">
+            <CardTitle className="text-sm font-medium text-dd-on-primary">
               {title}
             </CardTitle>
-            <CardDescription className="text-white/30 text-[10px]">
+            <CardDescription className="text-dd-on-muted text-[10px]">
               {description}
             </CardDescription>
           </div>
-          <div className="text-[10px] text-white/30">{meta.total} reg.</div>
+          <div className="text-[10px] text-dd-on-muted">{meta.total} reg.</div>
         </div>
       </CardHeader>
       <CardContent className="space-y-3 pt-3">
         <Table>
           <TableHeader>
-            <TableRow className="border-white/[0.06] hover:bg-transparent">
-              <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+            <TableRow className="border-dd-border-subtle hover:bg-transparent">
+              <TableHead className="text-[10px] uppercase tracking-widest text-dd-on-muted font-medium">
                 Lead
               </TableHead>
-              <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+              <TableHead className="text-[10px] uppercase tracking-widest text-dd-on-muted font-medium">
                 Tracking
               </TableHead>
-              <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+              <TableHead className="text-[10px] uppercase tracking-widest text-dd-on-muted font-medium">
                 Prontidao
               </TableHead>
-              <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+              <TableHead className="text-[10px] uppercase tracking-widest text-dd-on-muted font-medium">
                 Potencial
               </TableHead>
-              <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+              <TableHead className="text-[10px] uppercase tracking-widest text-dd-on-muted font-medium">
                 Atualizado
               </TableHead>
             </TableRow>
@@ -273,7 +273,7 @@ function LeadRankingTable({
               <TableRow>
                 <TableCell
                   colSpan={5}
-                  className="text-center text-white/30 text-xs"
+                  className="text-center text-dd-on-muted text-xs"
                 >
                   Sem dados
                 </TableCell>
@@ -282,21 +282,21 @@ function LeadRankingTable({
               rows.map((row) => (
                 <TableRow
                   key={`${title}-${row.lead_id}`}
-                  className="border-white/[0.06] hover:bg-white/[0.02]"
+                  className="border-dd-border-subtle hover:bg-dd-surface-raised"
                 >
                   <TableCell>
-                    <div className="text-sm text-white">
+                    <div className="text-sm text-dd-on-primary">
                       {row.nome_completo || row.telefone}
                     </div>
-                    <div className="text-[10px] text-white/30">
+                    <div className="text-[10px] text-dd-on-muted">
                       {row.canal_origem || "-"} / {row.sistema_origem || "-"}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="text-white/70">
+                    <div className="text-dd-on-primary/70">
                       {row.tracked_codigo_ref || row.campanha_origem || "-"}
                     </div>
-                    <div className="text-[10px] text-white/30">
+                    <div className="text-[10px] text-dd-on-muted">
                       {row.status || "-"} / {row.fase || "-"}
                     </div>
                   </TableCell>
@@ -318,7 +318,7 @@ function LeadRankingTable({
                       {row.score_potencial_comercial}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-white/50 text-xs">
+                  <TableCell className="text-dd-on-muted text-xs">
                     {formatDateTime(row.updated_at)}
                   </TableCell>
                 </TableRow>
@@ -328,7 +328,7 @@ function LeadRankingTable({
         </Table>
 
         <div className="flex items-center justify-between">
-          <div className="text-[10px] text-white/30">
+          <div className="text-[10px] text-dd-on-muted">
             {page}/{totalPages}
           </div>
           <div className="flex gap-1.5">
@@ -345,7 +345,7 @@ function LeadRankingTable({
               size="sm"
               disabled={page >= totalPages}
               onClick={() => onPageChange(page + 1)}
-              className="h-6 text-[10px] bg-white text-black hover:bg-white/90"
+              className="h-6 text-[10px] bg-dd-on-primary text-dd-primary hover:bg-dd-on-primary/90"
             >
               Prox.
             </Button>
@@ -575,7 +575,7 @@ export default function AnalyticsPage() {
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div
               key={i}
-              className="card-premium rounded-sm border border-white/[0.06] bg-white/[0.02] p-4"
+              className="card-premium rounded-sm border border-dd-border-subtle bg-dd-surface-raised p-4"
             >
               <div className="flex items-center justify-between mb-3">
                 <Skeleton className="h-3 w-20" />
@@ -587,12 +587,12 @@ export default function AnalyticsPage() {
           ))}
         </div>
         <div className="grid gap-4 xl:grid-cols-[1.2fr_1fr]">
-          <div className="rounded-sm border border-white/[0.06] bg-white/[0.02] p-4">
+          <div className="rounded-sm border border-dd-border-subtle bg-dd-surface-raised p-4">
             <Skeleton className="h-5 w-32 mb-4" />
             {[1, 2, 3, 4, 5].map((i) => (
               <div
                 key={i}
-                className="flex gap-4 py-2 border-b border-white/[0.06]"
+                className="flex gap-4 py-2 border-b border-dd-border-subtle"
               >
                 <Skeleton className="h-4 w-24" />
                 <Skeleton className="h-4 w-12" />
@@ -602,12 +602,12 @@ export default function AnalyticsPage() {
               </div>
             ))}
           </div>
-          <div className="rounded-sm border border-white/[0.06] bg-white/[0.02] p-4">
+          <div className="rounded-sm border border-dd-border-subtle bg-dd-surface-raised p-4">
             <Skeleton className="h-5 w-32 mb-4" />
             {[1, 2, 3, 4, 5].map((i) => (
               <div
                 key={i}
-                className="flex gap-4 py-2 border-b border-white/[0.06]"
+                className="flex gap-4 py-2 border-b border-dd-border-subtle"
               >
                 <Skeleton className="h-4 w-32" />
                 <Skeleton className="h-4 w-12" />
@@ -627,7 +627,7 @@ export default function AnalyticsPage() {
       <div className="flex items-center justify-center h-64">
         <div className="text-dd-accent-red text-center">
           <p className="text-sm font-medium">Erro ao carregar</p>
-          <p className="text-xs text-white/40 mt-1">{error}</p>
+          <p className="text-xs text-dd-on-muted mt-1">{error}</p>
         </div>
       </div>
     );
@@ -636,23 +636,23 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-lg font-medium tracking-tight text-white">
+        <h1 className="text-lg font-medium tracking-tight text-dd-on-primary">
           Analytics
         </h1>
-        <p className="text-xs text-white/40">
+        <p className="text-xs text-dd-on-muted">
           Consumo direto da camada analitica dedicada
         </p>
       </div>
 
       <Card className="card-premium">
-        <CardHeader className="border-b border-white/[0.06] pb-3">
+        <CardHeader className="border-b border-dd-border-subtle pb-3">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <CardTitle className="flex items-center gap-2 text-sm font-medium text-white">
-                <Filter className="h-3.5 w-3.5 text-white/40" />
+              <CardTitle className="flex items-center gap-2 text-sm font-medium text-dd-on-primary">
+                <Filter className="h-3.5 w-3.5 text-dd-on-muted" />
                 Filtros
               </CardTitle>
-              <CardDescription className="text-white/30 text-[10px] mt-1">
+              <CardDescription className="text-dd-on-muted text-[10px] mt-1">
                 date_from, date_to, origem, tracking, status, fase
               </CardDescription>
             </div>
@@ -773,7 +773,7 @@ export default function AnalyticsPage() {
           <div className="flex justify-end">
             <Button
               onClick={applyFilters}
-              className="bg-white text-black hover:bg-white/90 h-7 text-[10px]"
+              className="bg-dd-on-primary text-dd-primary hover:bg-dd-on-primary/90 h-7 text-[10px]"
             >
               Aplicar
             </Button>
@@ -795,32 +795,32 @@ export default function AnalyticsPage() {
 
       <div className="grid gap-4 xl:grid-cols-[1.2fr_1fr]">
         <Card className="card-premium">
-          <CardHeader className="border-b border-white/[0.06] pb-3">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-white">
-              <LineChart className="h-3.5 w-3.5 text-white/40" />
+          <CardHeader className="border-b border-dd-border-subtle pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-dd-on-primary">
+              <LineChart className="h-3.5 w-3.5 text-dd-on-muted" />
               Serie temporal
             </CardTitle>
-            <CardDescription className="text-white/30 text-[10px]">
+            <CardDescription className="text-dd-on-muted text-[10px]">
               /analytics/timeseries por dia
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-3">
             <Table>
               <TableHeader>
-                <TableRow className="border-white/[0.06] hover:bg-transparent">
-                  <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                <TableRow className="border-dd-border-subtle hover:bg-transparent">
+                  <TableHead className="text-[10px] uppercase tracking-widest text-dd-on-muted font-medium">
                     Data
                   </TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                  <TableHead className="text-[10px] uppercase tracking-widest text-dd-on-muted font-medium">
                     Leads
                   </TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                  <TableHead className="text-[10px] uppercase tracking-widest text-dd-on-muted font-medium">
                     Conv. op.
                   </TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                  <TableHead className="text-[10px] uppercase tracking-widest text-dd-on-muted font-medium">
                     Conv. com.
                   </TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                  <TableHead className="text-[10px] uppercase tracking-widest text-dd-on-muted font-medium">
                     Takeovers
                   </TableHead>
                 </TableRow>
@@ -830,7 +830,7 @@ export default function AnalyticsPage() {
                   <TableRow>
                     <TableCell
                       colSpan={5}
-                      className="text-center text-white/30 text-xs"
+                      className="text-center text-dd-on-muted text-xs"
                     >
                       Sem dados
                     </TableCell>
@@ -839,21 +839,21 @@ export default function AnalyticsPage() {
                   timeseries.map((point) => (
                     <TableRow
                       key={point.date}
-                      className="border-white/[0.06] hover:bg-white/[0.02]"
+                      className="border-dd-border-subtle hover:bg-dd-surface-raised"
                     >
-                      <TableCell className="text-white/60">
+                      <TableCell className="text-dd-on-surface">
                         {formatDate(point.date)}
                       </TableCell>
-                      <TableCell className="text-white/60">
+                      <TableCell className="text-dd-on-surface">
                         {point.leads}
                       </TableCell>
-                      <TableCell className="text-white/60">
+                      <TableCell className="text-dd-on-surface">
                         {point.operational_conversions}
                       </TableCell>
-                      <TableCell className="text-white/60">
+                      <TableCell className="text-dd-on-surface">
                         {point.commercial_conversions}
                       </TableCell>
-                      <TableCell className="text-white/60">
+                      <TableCell className="text-dd-on-surface">
                         {point.human_takeovers}
                       </TableCell>
                     </TableRow>
@@ -901,15 +901,15 @@ export default function AnalyticsPage() {
           rows={corretorRankings}
         />
         <Card className="card-premium">
-          <CardHeader className="border-b border-white/[0.06] pb-3">
-            <CardTitle className="text-sm font-medium text-white">
+          <CardHeader className="border-b border-dd-border-subtle pb-3">
+            <CardTitle className="text-sm font-medium text-dd-on-primary">
               Regras
             </CardTitle>
-            <CardDescription className="text-white/30 text-[10px]">
+            <CardDescription className="text-dd-on-muted text-[10px]">
               Travas aplicadas
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2 text-xs text-white/30 pt-3">
+          <CardContent className="space-y-2 text-xs text-dd-on-muted pt-3">
             <p>
               `conversoes_operacionais` e `conversoes_comerciais` seguem
               separados.

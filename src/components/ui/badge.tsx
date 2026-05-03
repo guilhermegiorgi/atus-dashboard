@@ -11,13 +11,16 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-white/10 text-white/80 px-2 py-0.5 rounded-full",
-        secondary: "bg-white/5 text-white/50 px-2 py-0.5 rounded-full",
-        destructive: "bg-dd-accent-red/10 text-dd-accent-red px-2 py-0.5 rounded-full",
+        default:
+          "bg-dd-surface-overlay text-dd-on-surface px-2 py-0.5 rounded-full",
+        secondary:
+          "bg-dd-surface-raised text-dd-on-muted px-2 py-0.5 rounded-full",
+        destructive:
+          "bg-dd-accent-red/10 text-dd-accent-red px-2 py-0.5 rounded-full",
         outline:
-          "text-white/40 border border-white/10 px-2 py-0.5 rounded-full",
-        ghost: "text-white/40",
-        new: "bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded-full",
+          "text-dd-on-muted border border-dd-border px-2 py-0.5 rounded-full",
+        ghost: "text-dd-on-muted",
+        new: "bg-dd-accent-green/15 text-dd-accent-green px-2 py-0.5 rounded-full",
       },
     },
     defaultVariants: {

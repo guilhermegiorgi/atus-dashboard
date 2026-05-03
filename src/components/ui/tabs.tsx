@@ -20,17 +20,20 @@ function Tabs({
   );
 }
 
-const tabsListVariants = cva("inline-flex items-center gap-1 text-white/40", {
-  variants: {
-    variant: {
-      default: "",
-      underline: "border-b border-white/5 pb-px gap-0",
+const tabsListVariants = cva(
+  "inline-flex items-center gap-1 text-dd-on-muted",
+  {
+    variants: {
+      variant: {
+        default: "",
+        underline: "border-b border-dd-border-subtle pb-px gap-0",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
     },
   },
-  defaultVariants: {
-    variant: "default",
-  },
-});
+);
 
 function TabsList({
   className,
@@ -53,7 +56,7 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
       data-slot="tabs-trigger"
       className={cn(
         "inline-flex items-center justify-center text-xs font-medium whitespace-nowrap transition-colors outline-none disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0",
-        "text-white/40 hover:text-white data-[active]:text-white",
+        "text-dd-on-muted hover:text-dd-on-primary data-[active]:text-dd-on-primary",
         className,
       )}
       {...props}

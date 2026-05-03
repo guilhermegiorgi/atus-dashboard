@@ -160,7 +160,7 @@ function ToggleSwitch({
     >
       <span
         className={cn(
-          "absolute top-1 w-4 h-4 rounded-full bg-white transition-transform",
+          "absolute top-1 w-4 h-4 rounded-full bg-dd-on-primary transition-transform",
           enabled ? "left-6" : "left-1",
         )}
       />
@@ -435,7 +435,7 @@ export default function SettingsPage() {
                       className={cn(
                         "w-9 h-9 rounded-full border-2 transition-all focus-visible:ring-2 focus-visible:ring-dd-accent-green",
                         color === ACCENT_COLOR
-                          ? "border-white"
+                          ? "border-dd-on-primary"
                           : "border-transparent hover:border-dd-border",
                       )}
                       style={{ backgroundColor: color }}

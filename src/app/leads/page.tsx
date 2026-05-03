@@ -233,11 +233,11 @@ export default function LeadsPage() {
           <Skeleton className="h-8 w-24" />
         </div>
         <Skeleton className="h-9 w-full" />
-        <div className="rounded-sm border border-white/[0.06] overflow-hidden">
+        <div className="rounded-sm border border-dd-border-subtle overflow-hidden">
           {[1, 2, 3, 4, 5].map((i) => (
             <div
               key={i}
-              className="flex items-center gap-4 border-b border-white/[0.06] px-4 py-3"
+              className="flex items-center gap-4 border-b border-dd-border-subtle px-4 py-3"
             >
               <Skeleton className="h-4 w-32" />
               <Skeleton className="h-5 w-20" />
@@ -263,7 +263,7 @@ export default function LeadsPage() {
       <div className="flex items-center justify-center h-64">
         <div className="text-dd-accent-red text-center">
           <p className="text-sm font-medium">Erro ao carregar</p>
-          <p className="text-xs text-white/40 mt-1">{error}</p>
+          <p className="text-xs text-dd-on-muted mt-1">{error}</p>
         </div>
       </div>
     );
@@ -273,16 +273,16 @@ export default function LeadsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-medium tracking-tight text-white">
+          <h1 className="text-lg font-medium tracking-tight text-dd-on-primary">
             Leads
           </h1>
-          <p className="text-xs text-white/40 mt-0.5">
+          <p className="text-xs text-dd-on-muted mt-0.5">
             Lista paginada e multicanal alinhada ao contrato real do AtusBot
           </p>
         </div>
         <Button
           onClick={openCreateModal}
-          className="bg-white text-black hover:bg-white/90"
+          className="bg-dd-on-primary text-dd-primary hover:bg-dd-on-primary/90"
         >
           <Plus className="h-3.5 w-3.5 mr-1.5" />
           Novo Lead
@@ -290,7 +290,7 @@ export default function LeadsPage() {
       </div>
 
       {feedback && (
-        <div className="rounded-sm border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-xs text-white/60">
+        <div className="rounded-sm border border-dd-border-subtle bg-dd-surface-raised px-3 py-2 text-xs text-dd-on-surface">
           {feedback}
         </div>
       )}
@@ -304,20 +304,20 @@ export default function LeadsPage() {
       />
 
       <Card className="card-premium">
-        <CardHeader className="border-b border-white/[0.06] pb-4">
+        <CardHeader className="border-b border-dd-border-subtle pb-4">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="flex items-center gap-2 text-sm font-medium text-white">
-                <Users className="h-3.5 w-3.5 text-white/40" />
+              <CardTitle className="flex items-center gap-2 text-sm font-medium text-dd-on-primary">
+                <Users className="h-3.5 w-3.5 text-dd-on-muted" />
                 {meta.total} leads
               </CardTitle>
-              <CardDescription className="text-white/30 text-[10px] mt-1">
+              <CardDescription className="text-dd-on-muted text-[10px] mt-1">
                 Paginacao por `meta.total`, `meta.limit` e `meta.offset`
               </CardDescription>
             </div>
             <Badge
               variant="secondary"
-              className="bg-white/[0.06] text-white/60 border-white/[0.06] text-[10px]"
+              className="bg-dd-surface-overlay text-dd-on-muted border-dd-border-subtle text-[10px]"
             >
               {currentPage}/{totalPages}
             </Badge>
@@ -326,39 +326,39 @@ export default function LeadsPage() {
         <CardContent className="pt-4">
           {visibleLeads.length === 0 ? (
             <div className="text-center py-12">
-              <Users className="h-10 w-10 mx-auto text-white/15 mb-3" />
-              <p className="text-sm text-white/40">Nenhum lead encontrado</p>
-              <p className="text-xs text-white/25 mt-1">
+              <Users className="h-10 w-10 mx-auto text-dd-on-muted/40 mb-3" />
+              <p className="text-sm text-dd-on-muted">Nenhum lead encontrado</p>
+              <p className="text-xs text-dd-on-muted/60 mt-1">
                 Nenhum lead encontrado para os filtros atuais
               </p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-sm border border-white/[0.06]">
+            <div className="overflow-hidden rounded-sm border border-dd-border-subtle">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-white/[0.06] hover:bg-transparent">
-                    <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                  <TableRow className="border-dd-border-subtle hover:bg-transparent">
+                    <TableHead className="text-[10px] uppercase tracking-widest text-dd-on-muted font-medium">
                       Lead
                     </TableHead>
-                    <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                    <TableHead className="text-[10px] uppercase tracking-widest text-dd-on-muted font-medium">
                       Status
                     </TableHead>
-                    <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                    <TableHead className="text-[10px] uppercase tracking-widest text-dd-on-muted font-medium">
                       Fase
                     </TableHead>
-                    <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                    <TableHead className="text-[10px] uppercase tracking-widest text-dd-on-muted font-medium">
                       Origem
                     </TableHead>
-                    <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                    <TableHead className="text-[10px] uppercase tracking-widest text-dd-on-muted font-medium">
                       Tracking
                     </TableHead>
-                    <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                    <TableHead className="text-[10px] uppercase tracking-widest text-dd-on-muted font-medium">
                       Humano
                     </TableHead>
-                    <TableHead className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                    <TableHead className="text-[10px] uppercase tracking-widest text-dd-on-muted font-medium">
                       Datas
                     </TableHead>
-                    <TableHead className="text-right text-[10px] uppercase tracking-widest text-white/30 font-medium">
+                    <TableHead className="text-right text-[10px] uppercase tracking-widest text-dd-on-muted font-medium">
                       Ações
                     </TableHead>
                   </TableRow>
@@ -367,36 +367,36 @@ export default function LeadsPage() {
                   {visibleLeads.map((lead) => (
                     <TableRow
                       key={lead.id}
-                      className="border-white/[0.06] hover:bg-white/[0.02] transition-colors"
+                      className="border-dd-border-subtle hover:bg-dd-surface-overlay/30 transition-colors"
                     >
                       <TableCell>
                         <div className="space-y-1">
-                          <p className="text-sm text-white">
+                          <p className="text-sm text-dd-on-primary">
                             {lead.nome_completo || "Sem nome"}
                           </p>
-                          <p className="text-xs text-white/40">
+                          <p className="text-xs text-dd-on-muted">
                             {lead.telefone}
                           </p>
                           {lead.email && (
-                            <p className="text-xs text-white/30">
+                            <p className="text-xs text-dd-on-muted/70">
                               {lead.email}
                             </p>
                           )}
                           {lead.tipo_interesse && (
                             <Badge
                               variant="outline"
-                              className="border-white/[0.06] bg-white/[0.02] text-[10px]"
+                              className="border-dd-border-subtle bg-dd-surface-overlay/30 text-[10px]"
                             >
                               {lead.tipo_interesse}
                             </Badge>
                           )}
                           {lead.external_lead_id && (
-                            <p className="text-xs text-white/30">
+                            <p className="text-xs text-dd-on-muted/70">
                               external: {lead.external_lead_id}
                             </p>
                           )}
                           {lead.resumo_qualificacao && (
-                            <p className="line-clamp-2 text-xs text-white/30">
+                            <p className="line-clamp-2 text-xs text-dd-on-muted/70">
                               {lead.resumo_qualificacao}
                             </p>
                           )}
@@ -410,19 +410,19 @@ export default function LeadsPage() {
                           {lead.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-white/60">
+                      <TableCell className="text-dd-on-surface">
                         {lead.fase || "-"}
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="text-white/70">
+                          <div className="text-dd-on-surface">
                             {lead.canal_origem || "-"}
                           </div>
-                          <div className="text-xs text-white/30">
+                          <div className="text-xs text-dd-on-muted/70">
                             {lead.sistema_origem || "-"}
                           </div>
                           {lead.origem_detalhada && (
-                            <div className="text-xs text-white/30">
+                            <div className="text-xs text-dd-on-muted/70">
                               {lead.origem_detalhada}
                             </div>
                           )}
@@ -430,18 +430,18 @@ export default function LeadsPage() {
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="text-white/70">
+                          <div className="text-dd-on-surface">
                             {lead.tracked_codigo_ref ||
                               lead.campanha_origem ||
                               "-"}
                           </div>
-                          <div className="text-xs text-white/30">
+                          <div className="text-xs text-dd-on-muted/70">
                             click: {lead.link_click_id || "sem click id"}
                           </div>
                           {lead.campanha_origem &&
                             lead.tracked_codigo_ref !==
                               lead.campanha_origem && (
-                              <div className="text-xs text-white/30">
+                              <div className="text-xs text-dd-on-muted/70">
                                 campanha_origem: {lead.campanha_origem}
                               </div>
                             )}
@@ -461,7 +461,7 @@ export default function LeadsPage() {
                           </Badge>
                           <Badge
                             variant="outline"
-                            className="border-white/[0.06] bg-white/[0.02] text-[10px]"
+                            className="border-dd-border-subtle bg-dd-surface-overlay/30 text-[10px]"
                           >
                             {lead.em_follow_up
                               ? "Follow-up ativo"
@@ -470,7 +470,7 @@ export default function LeadsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="space-y-1 text-xs text-white/30">
+                        <div className="space-y-1 text-xs text-dd-on-muted/70">
                           <div>
                             Criado:{" "}
                             {new Date(lead.created_at).toLocaleDateString(
@@ -491,7 +491,7 @@ export default function LeadsPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => setSelectedLead(lead)}
-                            className="h-7 w-7 hover:bg-white/5 hover:text-white"
+                            className="h-7 w-7 hover:bg-dd-surface-overlay hover:text-dd-on-surface"
                           >
                             <Eye className="h-3.5 w-3.5" />
                           </Button>
@@ -499,7 +499,7 @@ export default function LeadsPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => openEditModal(lead)}
-                            className="h-7 w-7 hover:bg-white/5 hover:text-white"
+                            className="h-7 w-7 hover:bg-dd-surface-overlay hover:text-dd-on-surface"
                           >
                             <Edit className="h-3.5 w-3.5" />
                           </Button>

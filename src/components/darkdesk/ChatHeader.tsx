@@ -28,7 +28,7 @@ interface ChatHeaderProps {
 function getStatusColor(state?: string) {
   switch (state) {
     case "TRIAGE_HUMAN":
-      return "bg-orange-900/30 text-orange-400";
+      return "bg-dd-accent-orange/30 text-dd-accent-orange";
     case "ASSIGNED_TO_BROKER":
       return "bg-dd-accent-blue/30 text-dd-accent-blue";
     case "HUMAN_ACTIVE":
@@ -107,7 +107,7 @@ export function ChatHeader({
 
         {/* Info */}
         <div>
-          <h3 className="text-sm font-medium text-white">
+          <h3 className="text-sm font-medium text-dd-on-primary">
             {conversation.nome_completo || conversation.telefone || "Sem nome"}
           </h3>
           <p className="text-xs text-dd-muted">

@@ -143,14 +143,14 @@ export default function HomePage() {
         style={{ animationDelay: "0.05s" }}
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-white">
-            <Zap className="h-4 w-4 text-black" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-dd-surface">
+            <Zap className="h-4 w-4 text-dd-on-primary" />
           </div>
           <div>
-            <h1 className="text-base font-medium tracking-tight text-white">
+            <h1 className="text-base font-medium tracking-tight text-dd-on-primary">
               atus
             </h1>
-            <p className="text-[10px] uppercase tracking-widest text-white/40">
+            <p className="text-[10px] uppercase tracking-widest text-dd-on-muted">
               lead management
             </p>
           </div>
@@ -166,15 +166,15 @@ export default function HomePage() {
             style={{ animationDelay: `${0.1 + i * 0.05}s` }}
           >
             <div className="flex items-center justify-between mb-3">
-              <stat.icon className="h-3.5 w-3.5 text-white/30" />
-              <span className="text-[10px] font-medium text-emerald-400/80">
+              <stat.icon className="h-3.5 w-3.5 text-dd-on-muted" />
+              <span className="text-[10px] font-medium text-dd-accent-green/80">
                 {stat.change}
               </span>
             </div>
-            <div className="text-2xl font-light tracking-tight text-white">
+            <div className="text-2xl font-light tracking-tight text-dd-on-primary">
               {stat.value}
             </div>
-            <div className="text-[10px] uppercase tracking-widest text-white/30 mt-1.5">
+            <div className="text-[10px] uppercase tracking-widest text-dd-on-muted mt-1.5">
               {stat.label}
             </div>
           </div>
@@ -185,7 +185,7 @@ export default function HomePage() {
       <div className="grid grid-cols-3 gap-4">
         {/* Features */}
         <div className="col-span-2 space-y-3">
-          <div className="text-[10px] uppercase tracking-widest text-white/25 px-0.5">
+          <div className="text-[10px] uppercase tracking-widest text-dd-on-muted px-0.5">
             Navigation
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -197,21 +197,21 @@ export default function HomePage() {
                 style={{ animationDelay: `${0.25 + i * 0.05}s` }}
               >
                 <div className="flex items-start justify-between">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-sm border border-white/[0.06] bg-white/[0.02]">
-                    <feature.icon className="h-3.5 w-3.5 text-white/40" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-sm border border-dd-border-subtle bg-dd-surface/[0.02]">
+                    <feature.icon className="h-3.5 w-3.5 text-dd-on-muted" />
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-white/25">
+                    <span className="text-[10px] text-dd-on-muted">
                       {feature.count}
                     </span>
-                    <ArrowUpRight className="h-3 w-3 text-white/15 group-hover:text-white/30 transition-colors" />
+                    <ArrowUpRight className="h-3 w-3 text-dd-on-muted/60 group-hover:text-dd-on-muted transition-colors" />
                   </div>
                 </div>
                 <div className="mt-4">
-                  <h3 className="text-sm font-medium text-white tracking-wide">
+                  <h3 className="text-sm font-medium text-dd-on-primary tracking-wide">
                     {feature.title}
                   </h3>
-                  <p className="text-[11px] text-white/35 mt-1 leading-relaxed">
+                  <p className="text-[11px] text-dd-on-muted mt-1 leading-relaxed">
                     {feature.description}
                   </p>
                 </div>
@@ -226,25 +226,25 @@ export default function HomePage() {
             style={{ animationDelay: "0.45s" }}
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-sm border border-white/[0.06] bg-white/[0.02]">
-                <LayoutDashboard className="h-3.5 w-3.5 text-white/40" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-sm border border-dd-border-subtle bg-dd-surface/[0.02]">
+                <LayoutDashboard className="h-3.5 w-3.5 text-dd-on-muted" />
               </div>
               <div>
-                <h3 className="text-sm font-medium text-white tracking-wide">
+                <h3 className="text-sm font-medium text-dd-on-primary tracking-wide">
                   Dashboard
                 </h3>
-                <p className="text-[11px] text-white/35">
+                <p className="text-[11px] text-dd-on-muted">
                   Visão geral completa com métricas
                 </p>
               </div>
             </div>
-            <ArrowUpRight className="h-3.5 w-3.5 text-white/15 group-hover:text-white/35 transition-colors" />
+            <ArrowUpRight className="h-3.5 w-3.5 text-dd-on-muted/60 group-hover:text-dd-on-muted transition-colors" />
           </Link>
         </div>
 
         {/* Activity */}
         <div className="space-y-3">
-          <div className="text-[10px] uppercase tracking-widest text-white/25 px-0.5">
+          <div className="text-[10px] uppercase tracking-widest text-dd-on-muted px-0.5">
             Status
           </div>
           <div
@@ -252,20 +252,20 @@ export default function HomePage() {
             style={{ animationDelay: "0.3s" }}
           >
             {activity.length === 0 && (
-              <p className="text-[11px] text-white/30">
+              <p className="text-[11px] text-dd-on-muted">
                 Nenhuma atividade recente
               </p>
             )}
             {activity.map((item) => (
               <div key={item.id} className="flex items-start gap-3">
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border border-white/[0.06] bg-white/[0.02]">
-                  <Users className="h-3 w-3 text-white/30" />
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border border-dd-border-subtle bg-dd-surface/[0.02]">
+                  <Users className="h-3 w-3 text-dd-on-muted" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[11px] text-white/70 leading-snug">
+                  <p className="text-[11px] text-dd-on-surface leading-snug">
                     {item.message}
                   </p>
-                  <p className="text-[10px] text-white/25 mt-0.5">
+                  <p className="text-[10px] text-dd-on-muted mt-0.5">
                     {item.time}
                   </p>
                 </div>
@@ -280,14 +280,14 @@ export default function HomePage() {
             style={{ animationDelay: "0.35s" }}
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-sm border border-white/[0.06] bg-white/[0.02]">
-                <Target className="h-3.5 w-3.5 text-white/40" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-sm border border-dd-border-subtle bg-dd-surface/[0.02]">
+                <Target className="h-3.5 w-3.5 text-dd-on-muted" />
               </div>
               <div>
-                <h3 className="text-sm font-medium text-white tracking-wide">
+                <h3 className="text-sm font-medium text-dd-on-primary tracking-wide">
                   Links Rastreados
                 </h3>
-                <p className="text-[11px] text-white/35">
+                <p className="text-[11px] text-dd-on-muted">
                   Acompanhe a origem dos seus leads
                 </p>
               </div>

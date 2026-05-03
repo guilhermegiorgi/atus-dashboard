@@ -51,7 +51,7 @@ export function Sidebar() {
       <div className="flex h-16 items-center justify-center border-b border-dd-border-subtle">
         <Link href="/" className="flex items-center justify-center">
           <div className="flex h-9 w-9 items-center justify-center rounded-dd-full bg-dd-accent-green">
-            <MessageCircle className="h-5 w-5 text-white" />
+            <MessageCircle className="h-5 w-5 text-dd-on-primary" />
           </div>
         </Link>
       </div>

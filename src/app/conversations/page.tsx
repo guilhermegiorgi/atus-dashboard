@@ -80,7 +80,7 @@ function stateTone(state: string) {
     case "CLOSED":
       return "border-dd-accent-red/20 bg-dd-accent-red/10 text-dd-accent-red";
     default:
-      return "border-white/[0.06] white/[0.02] text-foreground";
+      return "border-dd-border-subtle bg-dd-surface-overlay/10 text-foreground";
   }
 }
 
@@ -365,8 +365,8 @@ export default function ConversationsPage() {
     return (
       <div className="flex h-64 items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-white/30" />
-          <p className="text-white/40 text-xs">Carregando inbox...</p>
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-dd-border-subtle border-t-dd-on-muted" />
+          <p className="text-dd-on-muted text-xs">Carregando inbox...</p>
         </div>
       </div>
     );
@@ -377,7 +377,7 @@ export default function ConversationsPage() {
       <div className="flex h-64 items-center justify-center">
         <div className="text-center text-dd-accent-red">
           <p className="text-sm font-medium">Erro ao carregar</p>
-          <p className="text-xs text-white/40 mt-1">{pageError}</p>
+          <p className="text-xs text-dd-on-muted mt-1">{pageError}</p>
         </div>
       </div>
     );
@@ -387,23 +387,23 @@ export default function ConversationsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-2 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <h1 className="text-lg font-medium tracking-tight text-white">
+          <h1 className="text-lg font-medium tracking-tight text-dd-on-primary">
             Inbox Humana
           </h1>
-          <p className="text-xs text-white/40 mt-0.5">
+          <p className="text-xs text-dd-on-muted mt-0.5">
             Atendimento no mesmo numero do bot
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Badge
             variant="secondary"
-            className="bg-white/[0.06] text-white/60 border-white/[0.06] text-[10px]"
+            className="bg-dd-surface-raised text-dd-on-surface border-dd-border-subtle text-[10px]"
           >
             {meta.total} na fila
           </Badge>
           <Badge
             variant="outline"
-            className="border-white/[0.06] text-white/40 text-[10px]"
+            className="border-dd-border-subtle text-dd-on-muted text-[10px]"
           >
             {visibleConversations.length} visiveis
           </Badge>
@@ -427,11 +427,11 @@ export default function ConversationsPage() {
       </div>
 
       <Card className="card-premium">
-        <CardHeader className="border-b border-white/[0.06] pb-3">
-          <CardTitle className="text-sm font-medium text-white">
+        <CardHeader className="border-b border-dd-border-subtle pb-3">
+          <CardTitle className="text-sm font-medium text-dd-on-primary">
             Filtros
           </CardTitle>
-          <CardDescription className="text-white/30 text-[10px]">
+          <CardDescription className="text-dd-on-muted text-[10px]">
             Busca local sobre os resultados carregados
           </CardDescription>
         </CardHeader>
@@ -568,7 +568,7 @@ export default function ConversationsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {visibleConversations.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-white/[0.06] px-4 py-12 text-center text-white/30">
+              <div className="rounded-xl border border-dashed border-dd-border-subtle px-4 py-12 text-center text-dd-on-muted">
                 Nenhuma conversa encontrada para os filtros atuais.
               </div>
             ) : (
@@ -584,7 +584,7 @@ export default function ConversationsPage() {
                       className={`w-full rounded-2xl border p-4 text-left transition ${
                         isSelected
                           ? "border-primary/40 bg-primary/5 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]"
-                          : "border-white/[0.06] bg-background/40 hover:border-primary/20 hover:white/[0.02]"
+                          : "border-dd-border-subtle bg-background/40 hover:border-primary/20 hover:bg-dd-surface-overlay/10"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -592,11 +592,11 @@ export default function ConversationsPage() {
                           <div className="truncate font-medium">
                             {item.nome_completo || item.telefone}
                           </div>
-                          <div className="text-xs text-white/30">
+                          <div className="text-xs text-dd-on-muted">
                             {item.telefone}
                           </div>
                         </div>
-                        <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-white/30" />
+                        <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-dd-on-muted" />
                       </div>
 
                       <div className="mt-3 flex flex-wrap gap-2">
@@ -610,7 +610,7 @@ export default function ConversationsPage() {
                         <Badge variant="outline">{item.fase || "-"}</Badge>
                       </div>
 
-                      <div className="mt-3 space-y-2 text-xs text-white/30">
+                      <div className="mt-3 space-y-2 text-xs text-dd-on-muted">
                         <div className="line-clamp-2">
                           {item.qualification_summary ||
                             "Sem resumo de qualificacao."}
@@ -706,11 +706,11 @@ export default function ConversationsPage() {
           </CardHeader>
           <CardContent>
             {!selectedLeadId ? (
-              <div className="rounded-xl border border-dashed border-white/[0.06] px-4 py-12 text-white/30">
+              <div className="rounded-xl border border-dashed border-dd-border-subtle px-4 py-12 text-dd-on-muted">
                 Nenhuma conversa disponivel nesta pagina.
               </div>
             ) : detailLoading ? (
-              <div className="py-12 text-white/30">
+              <div className="py-12 text-dd-on-muted">
                 Carregando detalhe da conversa...
               </div>
             ) : detailError ? (
@@ -718,12 +718,14 @@ export default function ConversationsPage() {
                 {detailError}
               </div>
             ) : !selectedConversation ? (
-              <div className="py-12 text-white/30">Sem detalhe carregado.</div>
+              <div className="py-12 text-dd-on-muted">
+                Sem detalhe carregado.
+              </div>
             ) : (
               <div className="space-y-6">
                 <div className="grid gap-4 lg:grid-cols-3">
-                  <div className="rounded-2xl border border-white/[0.06] p-4">
-                    <div className="text-xs uppercase tracking-wide text-white/30">
+                  <div className="rounded-2xl border border-dd-border-subtle p-4">
+                    <div className="text-xs uppercase tracking-wide text-dd-on-muted">
                       Lead
                     </div>
                     <div className="mt-3 space-y-2 text-sm">
@@ -742,8 +744,8 @@ export default function ConversationsPage() {
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-white/[0.06] p-4">
-                    <div className="text-xs uppercase tracking-wide text-white/30">
+                  <div className="rounded-2xl border border-dd-border-subtle p-4">
+                    <div className="text-xs uppercase tracking-wide text-dd-on-muted">
                       Origem e tracking
                     </div>
                     <div className="mt-3 space-y-2 text-sm">
@@ -764,8 +766,8 @@ export default function ConversationsPage() {
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-white/[0.06] p-4">
-                    <div className="text-xs uppercase tracking-wide text-white/30">
+                  <div className="rounded-2xl border border-dd-border-subtle p-4">
+                    <div className="text-xs uppercase tracking-wide text-dd-on-muted">
                       Ownership humano
                     </div>
                     <div className="mt-3 space-y-2 text-sm">
@@ -787,19 +789,21 @@ export default function ConversationsPage() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-white/[0.06] p-4">
-                  <div className="text-xs uppercase tracking-wide text-white/30">
+                <div className="rounded-2xl border border-dd-border-subtle p-4">
+                  <div className="text-xs uppercase tracking-wide text-dd-on-muted">
                     Resumo da conversa
                   </div>
                   <div className="mt-3 grid gap-3 lg:grid-cols-2">
-                    <div className="rounded-xl white/[0.02] p-3 text-sm">
-                      <div className="text-xs text-white/30">Qualificacao</div>
+                    <div className="rounded-xl bg-dd-surface-overlay/10 p-3 text-sm">
+                      <div className="text-xs text-dd-on-muted">
+                        Qualificacao
+                      </div>
                       <div className="mt-1">
                         {selectedConversation.qualification_summary || "-"}
                       </div>
                     </div>
-                    <div className="rounded-xl white/[0.02] p-3 text-sm">
-                      <div className="text-xs text-white/30">
+                    <div className="rounded-xl bg-dd-surface-overlay/10 p-3 text-sm">
+                      <div className="text-xs text-dd-on-muted">
                         Ultimo preview
                       </div>
                       <div className="mt-1">
@@ -811,13 +815,13 @@ export default function ConversationsPage() {
                 </div>
 
                 {selectedConversation.operational_status ? (
-                  <div className="rounded-2xl border border-white/[0.06] p-4">
-                    <div className="text-xs uppercase tracking-wide text-white/30">
+                  <div className="rounded-2xl border border-dd-border-subtle p-4">
+                    <div className="text-xs uppercase tracking-wide text-dd-on-muted">
                       Resumo operacional
                     </div>
                     <div className="mt-3 grid gap-3 lg:grid-cols-3">
-                      <div className="rounded-xl white/[0.02] p-3 text-sm">
-                        <div className="text-xs text-white/30">
+                      <div className="rounded-xl bg-dd-surface-overlay/10 p-3 text-sm">
+                        <div className="text-xs text-dd-on-muted">
                           Acao recomendada
                         </div>
                         <div className="mt-1">
@@ -825,8 +829,8 @@ export default function ConversationsPage() {
                             .recommended_action || "-"}
                         </div>
                       </div>
-                      <div className="rounded-xl white/[0.02] p-3 text-sm">
-                        <div className="text-xs text-white/30">
+                      <div className="rounded-xl bg-dd-surface-overlay/10 p-3 text-sm">
+                        <div className="text-xs text-dd-on-muted">
                           Campos faltantes
                         </div>
                         <div className="mt-1">
@@ -835,8 +839,8 @@ export default function ConversationsPage() {
                           ) || "-"}
                         </div>
                       </div>
-                      <div className="rounded-xl white/[0.02] p-3 text-sm">
-                        <div className="text-xs text-white/30">
+                      <div className="rounded-xl bg-dd-surface-overlay/10 p-3 text-sm">
+                        <div className="text-xs text-dd-on-muted">
                           Ultima msg do bot
                         </div>
                         <div className="mt-1">
@@ -849,8 +853,8 @@ export default function ConversationsPage() {
                 ) : null}
 
                 <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-                  <div className="rounded-2xl border border-white/[0.06] p-4">
-                    <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-white/30">
+                  <div className="rounded-2xl border border-dd-border-subtle p-4">
+                    <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-dd-on-muted">
                       <MessageSquare className="h-4 w-4" />
                       Mensagens da conversa
                     </div>
@@ -870,10 +874,10 @@ export default function ConversationsPage() {
                                 className={`max-w-[85%] rounded-2xl border p-4 ${
                                   isOutgoing
                                     ? "border-primary/20 bg-primary/10"
-                                    : "border-white/[0.06] white/[0.02]"
+                                    : "border-dd-border-subtle bg-dd-surface-overlay/10"
                                 }`}
                               >
-                                <div className="flex items-center gap-2 text-xs text-white/30">
+                                <div className="flex items-center gap-2 text-xs text-dd-on-muted">
                                   {isOutgoing ? (
                                     <Bot className="h-3 w-3" />
                                   ) : (
@@ -895,7 +899,7 @@ export default function ConversationsPage() {
                           );
                         })
                       ) : (
-                        <div className="rounded-xl border border-dashed border-white/[0.06] px-4 py-10 text-center text-sm text-white/30">
+                        <div className="rounded-xl border border-dashed border-dd-border-subtle px-4 py-10 text-center text-sm text-dd-on-muted">
                           Nenhuma mensagem retornada pelo detalhe desta
                           conversa.
                         </div>
@@ -904,8 +908,8 @@ export default function ConversationsPage() {
                   </div>
 
                   <div className="space-y-4">
-                    <div className="rounded-2xl border border-white/[0.06] p-4">
-                      <div className="text-xs uppercase tracking-wide text-white/30">
+                    <div className="rounded-2xl border border-dd-border-subtle p-4">
+                      <div className="text-xs uppercase tracking-wide text-dd-on-muted">
                         Responder como humano
                       </div>
                       <Textarea
@@ -914,7 +918,7 @@ export default function ConversationsPage() {
                         className="mt-3 min-h-28"
                         placeholder="Digite a mensagem da equipe humana..."
                       />
-                      <label className="mt-3 flex items-center gap-2 text-sm text-white/30">
+                      <label className="mt-3 flex items-center gap-2 text-sm text-dd-on-muted">
                         <input
                           type="checkbox"
                           checked={introduceActor}
@@ -934,8 +938,8 @@ export default function ConversationsPage() {
                       </Button>
                     </div>
 
-                    <div className="rounded-2xl border border-white/[0.06] p-4">
-                      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-white/30">
+                    <div className="rounded-2xl border border-dd-border-subtle p-4">
+                      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-dd-on-muted">
                         <Users className="h-4 w-4" />
                         Atribuicao para corretor
                       </div>
@@ -977,8 +981,8 @@ export default function ConversationsPage() {
                       </Button>
                     </div>
 
-                    <div className="rounded-2xl border border-white/[0.06] p-4">
-                      <div className="text-xs uppercase tracking-wide text-white/30">
+                    <div className="rounded-2xl border border-dd-border-subtle p-4">
+                      <div className="text-xs uppercase tracking-wide text-dd-on-muted">
                         Alterar estado humano
                       </div>
                       <Select
@@ -1013,8 +1017,8 @@ export default function ConversationsPage() {
                       </Button>
                     </div>
 
-                    <div className="rounded-2xl border border-white/[0.06] p-4">
-                      <div className="text-xs uppercase tracking-wide text-white/30">
+                    <div className="rounded-2xl border border-dd-border-subtle p-4">
+                      <div className="text-xs uppercase tracking-wide text-dd-on-muted">
                         Encerrar atendimento humano
                       </div>
                       <Input

@@ -119,21 +119,21 @@ export function TagManager({
       {/* Header com botão de adicionar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <TagIcon className="h-4 w-4 text-white/60" />
-          <span className="text-sm font-medium text-white/80">Tags</span>
+          <TagIcon className="h-4 w-4 text-dd-on-muted" />
+          <span className="text-sm font-medium text-dd-on-surface">Tags</span>
         </div>
         <Dialog open={isManageOpen} onOpenChange={setIsManageOpen}>
           <DialogTrigger>
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 px-2 text-xs text-white/60 hover:text-white hover:bg-white/10"
+              className="h-6 px-2 text-xs text-dd-on-muted hover:text-dd-on-primary hover:bg-dd-surface"
             >
               <Plus className="h-3 w-3 mr-1" />
               Gerenciar
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-dd-primary border border-white/[0.12] text-white">
+          <DialogContent className="bg-dd-primary border border-dd-border text-dd-on-primary">
             <DialogHeader>
               <DialogTitle>Gerenciar Tags</DialogTitle>
             </DialogHeader>
@@ -144,28 +144,28 @@ export function TagManager({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="border-white/[0.12] bg-white/[0.04] hover:bg-white/10 w-full"
+                    className="border-dd-border bg-dd-surface hover:bg-dd-surface-raised w-full"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Criar nova tag
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-dd-primary border border-white/[0.12] text-white">
+                <DialogContent className="bg-dd-primary border border-dd-border text-dd-on-primary">
                   <DialogHeader>
                     <DialogTitle>Criar Tag</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div>
-                      <label className="text-sm text-white/60">Nome</label>
+                      <label className="text-sm text-dd-on-muted">Nome</label>
                       <Input
                         value={newTagName}
                         onChange={(e) => setNewTagName(e.target.value)}
                         placeholder="Nome da tag"
-                        className="bg-white/[0.04] border-white/[0.12] text-white mt-1"
+                        className="bg-dd-surface border-dd-border text-dd-on-primary mt-1"
                       />
                     </div>
                     <div>
-                      <label className="text-sm text-white/60">Cor</label>
+                      <label className="text-sm text-dd-on-muted">Cor</label>
                       <div className="flex gap-2 mt-2 flex-wrap">
                         {TAG_COLORS.map((color) => (
                           <button
@@ -173,7 +173,7 @@ export function TagManager({
                             onClick={() => setNewTagColor(color)}
                             className={`w-6 h-6 rounded-full border-2 ${
                               newTagColor === color
-                                ? "border-white"
+                                ? "border-dd-on-primary"
                                 : "border-transparent"
                             }`}
                             style={{ backgroundColor: color }}
@@ -186,7 +186,7 @@ export function TagManager({
                     <Button
                       onClick={handleCreateTag}
                       disabled={saving || !newTagName.trim()}
-                      className="bg-white text-black hover:bg-white/90"
+                      className="bg-dd-on-primary text-dd-primary hover:bg-dd-on-primary/90"
                     >
                       {saving ? "Salvando..." : "Criar"}
                     </Button>
@@ -196,7 +196,7 @@ export function TagManager({
 
               {/* Lista de tags */}
               {loading ? (
-                <div className="text-center py-4 text-white/40">
+                <div className="text-center py-4 text-dd-on-muted">
                   Carregando...
                 </div>
               ) : error ? (
@@ -206,14 +206,16 @@ export function TagManager({
                   {tags.map((tag) => (
                     <div
                       key={tag.id}
-                      className="flex items-center justify-between p-2 rounded bg-white/[0.04] border border-white/[0.06]"
+                      className="flex items-center justify-between p-2 rounded bg-dd-surface border border-dd-border-subtle"
                     >
                       <div className="flex items-center gap-2">
                         <div
                           className="w-3 h-3 rounded-full"
                           style={{ backgroundColor: tag.color }}
                         />
-                        <span className="text-sm text-white">{tag.name}</span>
+                        <span className="text-sm text-dd-on-primary">
+                          {tag.name}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Button
@@ -228,7 +230,7 @@ export function TagManager({
                     </div>
                   ))}
                   {tags.length === 0 && (
-                    <div className="text-center py-4 text-white/40 text-sm">
+                    <div className="text-center py-4 text-dd-on-muted text-sm">
                       Nenhuma tag criada
                     </div>
                   )}
@@ -256,7 +258,7 @@ export function TagManager({
             {leadId && (
               <button
                 onClick={() => handleRemoveTagFromLead(tag.id)}
-                className="ml-1 hover:bg-white/10 rounded p-0.5"
+                className="ml-1 hover:bg-dd-surface-overlay rounded p-0.5"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -268,12 +270,12 @@ export function TagManager({
         {leadId && (
           <Dialog>
             <DialogTrigger>
-              <button className="flex items-center gap-1 px-2 py-0.5 rounded text-xs text-white/40 border border-dashed border-white/20 hover:border-white/40 hover:text-white/60 transition-colors">
+              <button className="flex items-center gap-1 px-2 py-0.5 rounded text-xs text-dd-on-muted border border-dashed border-dd-border hover:border-dd-border hover:text-dd-on-surface transition-colors">
                 <Plus className="h-3 w-3" />
                 Add
               </button>
             </DialogTrigger>
-            <DialogContent className="bg-dd-primary border border-white/[0.12] text-white">
+            <DialogContent className="bg-dd-primary border border-dd-border text-dd-on-primary">
               <DialogHeader>
                 <DialogTitle>Adicionar Tags</DialogTitle>
               </DialogHeader>
@@ -284,18 +286,20 @@ export function TagManager({
                     <button
                       key={tag.id}
                       onClick={() => handleAddTagToLead(tag.id)}
-                      className="w-full flex items-center gap-2 p-2 rounded hover:bg-white/[0.06] transition-colors text-left"
+                      className="w-full flex items-center gap-2 p-2 rounded hover:bg-dd-surface transition-colors text-left"
                     >
                       <div
                         className="w-3 h-3 rounded-full"
                         style={{ backgroundColor: tag.color }}
                       />
-                      <span className="text-sm text-white">{tag.name}</span>
+                      <span className="text-sm text-dd-on-primary">
+                        {tag.name}
+                      </span>
                     </button>
                   ))}
                 {tags.filter((t) => !leadTagIds.includes(t.id)).length ===
                   0 && (
-                  <div className="text-center py-4 text-white/40 text-sm">
+                  <div className="text-center py-4 text-dd-on-muted text-sm">
                     Todas as tags já foram adicionadas
                   </div>
                 )}
@@ -306,7 +310,7 @@ export function TagManager({
       </div>
 
       {leadTags.length === 0 && (
-        <p className="text-xs text-white/40">Nenhuma tag adicionada</p>
+        <p className="text-xs text-dd-on-muted">Nenhuma tag adicionada</p>
       )}
     </div>
   );
