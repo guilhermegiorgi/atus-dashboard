@@ -233,6 +233,7 @@ export interface InboxMessage {
   timestamp: string;
   actor_name: string;
   actor_type: string;
+  tipo_msg?: string;
 }
 
 export interface InboxConversationDetail extends InboxConversationSummary {

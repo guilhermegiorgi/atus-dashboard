@@ -718,6 +718,167 @@ class AtusAPI {
     );
   }
 
+  async sendInboxImage(
+    leadId: string,
+    base64Data: string,
+    caption: string | undefined,
+    actorName: string,
+    actorType: string,
+    introduceActor: boolean = false,
+  ): Promise<ApiResult<{ success: boolean }>> {
+    return this.request(
+      `/api/internal/inbox/conversations/${leadId}/messages/image`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          base64_data: base64Data,
+          caption,
+          actor_name: actorName,
+          actor_type: actorType,
+          introduce_actor: introduceActor,
+        }),
+      },
+    );
+  }
+
+  async sendInboxAudio(
+    leadId: string,
+    base64Data: string,
+    actorName: string,
+    actorType: string,
+    introduceActor: boolean = false,
+  ): Promise<ApiResult<{ success: boolean }>> {
+    return this.request(
+      `/api/internal/inbox/conversations/${leadId}/messages/audio`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          base64_data: base64Data,
+          actor_name: actorName,
+          actor_type: actorType,
+          introduce_actor: introduceActor,
+        }),
+      },
+    );
+  }
+
+  async sendInboxVideo(
+    leadId: string,
+    base64Data: string,
+    caption: string | undefined,
+    actorName: string,
+    actorType: string,
+    introduceActor: boolean = false,
+  ): Promise<ApiResult<{ success: boolean }>> {
+    return this.request(
+      `/api/internal/inbox/conversations/${leadId}/messages/video`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          base64_data: base64Data,
+          caption,
+          actor_name: actorName,
+          actor_type: actorType,
+          introduce_actor: introduceActor,
+        }),
+      },
+    );
+  }
+
+  async sendInboxDocument(
+    leadId: string,
+    base64Data: string,
+    filename: string,
+    caption: string | undefined,
+    actorName: string,
+    actorType: string,
+    introduceActor: boolean = false,
+  ): Promise<ApiResult<{ success: boolean }>> {
+    return this.request(
+      `/api/internal/inbox/conversations/${leadId}/messages/document`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          base64_data: base64Data,
+          filename,
+          caption,
+          actor_name: actorName,
+          actor_type: actorType,
+          introduce_actor: introduceActor,
+        }),
+      },
+    );
+  }
+
+  async sendInboxSticker(
+    leadId: string,
+    base64Data: string,
+    actorName: string,
+    actorType: string,
+    introduceActor: boolean = false,
+  ): Promise<ApiResult<{ success: boolean }>> {
+    return this.request(
+      `/api/internal/inbox/conversations/${leadId}/messages/sticker`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          base64_data: base64Data,
+          actor_name: actorName,
+          actor_type: actorType,
+          introduce_actor: introduceActor,
+        }),
+      },
+    );
+  }
+
+  async sendInboxLocation(
+    leadId: string,
+    latitude: number,
+    longitude: number,
+    title: string | undefined,
+    actorName: string,
+    actorType: string,
+    introduceActor: boolean = false,
+  ): Promise<ApiResult<{ success: boolean }>> {
+    return this.request(
+      `/api/internal/inbox/conversations/${leadId}/messages/location`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          latitude,
+          longitude,
+          title,
+          actor_name: actorName,
+          actor_type: actorType,
+          introduce_actor: introduceActor,
+        }),
+      },
+    );
+  }
+
+  async sendInboxContact(
+    leadId: string,
+    contactName: string,
+    vcard: string,
+    actorName: string,
+    actorType: string,
+    introduceActor: boolean = false,
+  ): Promise<ApiResult<{ success: boolean }>> {
+    return this.request(
+      `/api/internal/inbox/conversations/${leadId}/messages/contact`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          contact_name: contactName,
+          vcard,
+          actor_name: actorName,
+          actor_type: actorType,
+          introduce_actor: introduceActor,
+        }),
+      },
+    );
+  }
+
   // Send Media (WhatsApp)
   async sendWhatsAppMedia(
     phone: string,

@@ -95,30 +95,59 @@ export default function CRMPage() {
     await loadInbox();
   };
 
-  const handleSendAttachment = async (file: File) => {
-    if (!selectedConversation?.telefone) return;
+  const handleSendMedia = async (
+    type: "image" | "video" | "document" | "sticker",
+    file: File,
+  ) => {
+    if (!selectedLeadId) return;
 
     const reader = new FileReader();
     reader.onload = async () => {
       const base64 = reader.result as string;
-      const fileType = file.type.startsWith("image/") ? "image" : "document";
+      let result;
 
-      const result =
-        fileType === "image"
-          ? await api.sendWhatsAppImage(
-              selectedConversation.telefone,
-              base64,
-              file.name,
-            )
-          : await api.sendWhatsAppDocument(
-              selectedConversation.telefone,
-              base64,
-              file.name,
-            );
+      switch (type) {
+        case "image":
+          result = await api.sendInboxImage(
+            selectedLeadId,
+            base64,
+            undefined,
+            "Dashboard",
+            "admin",
+          );
+          break;
+        case "video":
+          result = await api.sendInboxVideo(
+            selectedLeadId,
+            base64,
+            undefined,
+            "Dashboard",
+            "admin",
+          );
+          break;
+        case "document":
+          result = await api.sendInboxDocument(
+            selectedLeadId,
+            base64,
+            file.name,
+            undefined,
+            "Dashboard",
+            "admin",
+          );
+          break;
+        case "sticker":
+          result = await api.sendInboxSticker(
+            selectedLeadId,
+            base64,
+            "Dashboard",
+            "admin",
+          );
+          break;
+      }
 
-      if (result.error) {
-        console.error("Erro ao enviar arquivo:", result.error);
-      } else if (selectedLeadId) {
+      if (result?.error) {
+        console.error("Erro ao enviar mídia:", result.error);
+      } else {
         await loadConversationDetail(selectedLeadId);
         await loadInbox();
       }
@@ -127,24 +156,70 @@ export default function CRMPage() {
   };
 
   const handleSendAudio = async (audioBlob: Blob) => {
-    if (!selectedConversation?.telefone) return;
+    if (!selectedLeadId) return;
 
     const reader = new FileReader();
     reader.onload = async () => {
       const base64 = reader.result as string;
-      const result = await api.sendWhatsAppAudio(
-        selectedConversation.telefone,
+      const result = await api.sendInboxAudio(
+        selectedLeadId,
         base64,
+        "Dashboard",
+        "admin",
       );
 
       if (result.error) {
         console.error("Erro ao enviar áudio:", result.error);
-      } else if (selectedLeadId) {
+      } else {
         await loadConversationDetail(selectedLeadId);
         await loadInbox();
       }
     };
     reader.readAsDataURL(audioBlob);
+  };
+
+  const handleSendLocation = async (
+    lat: number,
+    lng: number,
+    title?: string,
+  ) => {
+    if (!selectedLeadId) return;
+
+    const result = await api.sendInboxLocation(
+      selectedLeadId,
+      lat,
+      lng,
+      title,
+      "Dashboard",
+      "admin",
+    );
+
+    if (result.error) {
+      console.error("Erro ao enviar localização:", result.error);
+    } else {
+      await loadConversationDetail(selectedLeadId);
+      await loadInbox();
+    }
+  };
+
+  const handleSendContact = async (name: string, phone: string) => {
+    if (!selectedLeadId) return;
+
+    const vcard = `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL:${phone}\nEND:VCARD`;
+    const result = await api.sendInboxContact(
+      selectedLeadId,
+      name,
+      vcard,
+      "Dashboard",
+      "admin",
+    );
+
+    if (result.error) {
+      console.error("Erro ao enviar contato:", result.error);
+    } else {
+      await loadConversationDetail(selectedLeadId);
+      await loadInbox();
+    }
   };
 
   return (
@@ -172,7 +247,9 @@ export default function CRMPage() {
         {selectedConversation && (
           <ChatInput
             onSend={handleSendMessage}
-            onAttachment={handleSendAttachment}
+            onSendMedia={handleSendMedia}
+            onSendLocation={handleSendLocation}
+            onSendContact={handleSendContact}
             onAudio={handleSendAudio}
             disabled={detailLoading}
             placeholder="Digite uma mensagem..."

@@ -1,25 +1,57 @@
 "use client";
 
 import { useState, useRef, KeyboardEvent, useCallback } from "react";
-import { Send, Paperclip, Smile, Mic, X, Pause } from "lucide-react";
+import {
+  Send,
+  Paperclip,
+  Smile,
+  Mic,
+  X,
+  Pause,
+  Image as ImageIcon,
+  FileText,
+  MapPin,
+  User,
+  Sticker,
+} from "lucide-react";
+
+type MediaKind = "image" | "video" | "document" | "sticker";
 
 interface ChatInputProps {
   onSend?: (message: string) => void;
   onAttachment?: (file: File) => void;
+  onSendMedia?: (type: MediaKind, file: File) => void;
+  onSendLocation?: (lat: number, lng: number, title?: string) => void;
+  onSendContact?: (name: string, phone: string) => void;
   onAudio?: (audioBlob: Blob) => void;
   disabled?: boolean;
   placeholder?: string;
 }
 
+function classifyMedia(file: File): MediaKind | "audio" {
+  const mime = file.type;
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+
+  if (mime.startsWith("image/")) return "image";
+  if (mime.startsWith("video/")) return "video";
+  if (mime.startsWith("audio/")) return "audio";
+  if (ext === "webp") return "sticker";
+  return "document";
+}
+
 export function ChatInput({
   onSend,
   onAttachment,
+  onSendMedia,
+  onSendLocation,
+  onSendContact,
   onAudio,
   disabled = false,
   placeholder = "Digite uma mensagem...",
 }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const attachBtnRef = useRef<HTMLButtonElement>(null);
 
   // Audio recording state
   const [isRecording, setIsRecording] = useState(false);
@@ -27,6 +59,13 @@ export function ChatInput({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Attach menu state
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Modal states
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
+  const [contactModalOpen, setContactModalOpen] = useState(false);
 
   const handleSend = () => {
     if (message.trim() && onSend) {
@@ -38,22 +77,34 @@ export function ChatInput({
     }
   };
 
-  const handleAttachment = () => {
+  const openFilePicker = (accept: string) => {
     const input = document.createElement("input");
     input.type = "file";
     input.multiple = false;
-    input.accept = "image/*,.pdf,.doc,.docx,.xls,.xlsx";
+    input.accept = accept;
     input.onchange = (e) => {
       const files = (e.target as HTMLInputElement).files;
-      if (files && files.length > 0 && onAttachment) {
-        onAttachment(files[0]);
+      if (files && files.length > 0) {
+        const file = files[0];
+        const kind = classifyMedia(file);
+
+        if (kind === "audio") {
+          onAudio?.(file);
+        } else if (onSendMedia) {
+          onSendMedia(kind, file);
+        } else if (onAttachment) {
+          onAttachment(file);
+        }
       }
     };
     input.click();
   };
 
+  const handleOpenGallery = () => openFilePicker("image/*,video/*");
+  const handleOpenDocument = () =>
+    openFilePicker(".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv");
+
   const handleEmoji = () => {
-    // Simple emoji picker - could be replaced with a proper emoji picker library
     const emojis = ["😊", "👍", "❤️", "🎉", "🔥", "✅", "❌", "💡", "⭐", "🙏"];
     const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
     setMessage((prev) => prev + randomEmoji);
@@ -87,7 +138,6 @@ export function ChatInput({
       setIsRecording(true);
       setRecordingTime(0);
 
-      // Start timer
       recordingTimerRef.current = setInterval(() => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
@@ -122,7 +172,6 @@ export function ChatInput({
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessage(e.target.value);
-    // Auto-resize textarea
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
@@ -130,11 +179,97 @@ export function ChatInput({
   };
 
   return (
-    <div className="flex items-end gap-2 border-t border-dd-border-subtle bg-dd-surface p-3">
+    <div className="relative flex items-end gap-2 border-t border-dd-border-subtle bg-dd-surface p-3">
+      {/* Attach menu dropdown */}
+      {menuOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setMenuOpen(false)}
+          />
+          <div className="absolute bottom-full left-0 mb-2 z-50 min-w-[200px] rounded-dd-md border border-dd-border-subtle bg-dd-surface-raised py-1">
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                handleOpenGallery();
+              }}
+              className="flex w-full items-center gap-3 px-3 py-2.5 text-sm text-dd-on-surface hover:bg-dd-surface-overlay transition-colors"
+            >
+              <ImageIcon className="h-4 w-4 text-dd-muted" />
+              <span>Imagem / Vídeo</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                handleOpenDocument();
+              }}
+              className="flex w-full items-center gap-3 px-3 py-2.5 text-sm text-dd-on-surface hover:bg-dd-surface-overlay transition-colors"
+            >
+              <FileText className="h-4 w-4 text-dd-muted" />
+              <span>Documento</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                openFilePicker("image/*");
+              }}
+              className="flex w-full items-center gap-3 px-3 py-2.5 text-sm text-dd-on-surface hover:bg-dd-surface-overlay transition-colors"
+            >
+              <Sticker className="h-4 w-4 text-dd-muted" />
+              <span>Sticker</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                setLocationModalOpen(true);
+              }}
+              className="flex w-full items-center gap-3 px-3 py-2.5 text-sm text-dd-on-surface hover:bg-dd-surface-overlay transition-colors"
+            >
+              <MapPin className="h-4 w-4 text-dd-muted" />
+              <span>Localização</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                setContactModalOpen(true);
+              }}
+              className="flex w-full items-center gap-3 px-3 py-2.5 text-sm text-dd-on-surface hover:bg-dd-surface-overlay transition-colors"
+            >
+              <User className="h-4 w-4 text-dd-muted" />
+              <span>Contato</span>
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Location modal */}
+      {locationModalOpen && (
+        <LocationModal
+          open={locationModalOpen}
+          onClose={() => setLocationModalOpen(false)}
+          onConfirm={(lat, lng, title) => onSendLocation?.(lat, lng, title)}
+        />
+      )}
+
+      {/* Contact modal */}
+      {contactModalOpen && (
+        <ContactModal
+          open={contactModalOpen}
+          onClose={() => setContactModalOpen(false)}
+          onConfirm={(name, phone) => onSendContact?.(name, phone)}
+        />
+      )}
+
       {/* Attachment button */}
       <button
         type="button"
-        onClick={handleAttachment}
+        ref={attachBtnRef}
+        onClick={() => setMenuOpen((v) => !v)}
         disabled={disabled}
         className="flex h-9 w-9 items-center justify-center rounded-dd transition-colors text-dd-muted hover:bg-dd-surface-overlay hover:text-dd-on-surface disabled:opacity-50"
         title="Anexar arquivo"
@@ -219,5 +354,227 @@ export function ChatInput({
         <Send className="h-4 w-4" />
       </button>
     </div>
+  );
+}
+
+/* ---------- Inline modals ---------- */
+
+function LocationModal({
+  open,
+  onClose,
+  onConfirm,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onConfirm: (lat: number, lng: number, title?: string) => void;
+}) {
+  const [lat, setLat] = useState("");
+  const [lng, setLng] = useState("");
+  const [title, setTitle] = useState("");
+  const [fetching, setFetching] = useState(false);
+
+  if (!open) return null;
+
+  const handleUseCurrent = async () => {
+    setFetching(true);
+    try {
+      const pos = await new Promise<GeolocationPosition>((res, rej) =>
+        navigator.geolocation.getCurrentPosition(res, rej, { timeout: 5000 }),
+      );
+      setLat(pos.coords.latitude.toFixed(6));
+      setLng(pos.coords.longitude.toFixed(6));
+    } catch {
+      // user denied or unavailable
+    } finally {
+      setFetching(false);
+    }
+  };
+
+  const handleSubmit = () => {
+    const latitude = parseFloat(lat);
+    const longitude = parseFloat(lng);
+    if (isNaN(latitude) || isNaN(longitude)) return;
+    onConfirm(latitude, longitude, title.trim() || undefined);
+    setLat("");
+    setLng("");
+    setTitle("");
+    onClose();
+  };
+
+  return (
+    <>
+      <div className="fixed inset-0 z-40 bg-black/60" onClick={onClose} />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-sm rounded-dd-md border border-dd-border-subtle bg-dd-surface p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-dd-on-surface">
+              Enviar localização
+            </h3>
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-dd-muted hover:text-dd-on-surface"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-dd-muted mb-1">
+                  Latitude
+                </label>
+                <input
+                  type="text"
+                  value={lat}
+                  onChange={(e) => setLat(e.target.value)}
+                  placeholder="-23.5505"
+                  className="w-full rounded-dd-md bg-dd-surface-raised px-3 py-2 text-sm text-dd-on-surface placeholder:text-dd-muted border border-dd-border-subtle focus:border-dd-accent-green focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-dd-muted mb-1">
+                  Longitude
+                </label>
+                <input
+                  type="text"
+                  value={lng}
+                  onChange={(e) => setLng(e.target.value)}
+                  placeholder="-46.6333"
+                  className="w-full rounded-dd-md bg-dd-surface-raised px-3 py-2 text-sm text-dd-on-surface placeholder:text-dd-muted border border-dd-border-subtle focus:border-dd-accent-green focus:outline-none"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs text-dd-muted mb-1">
+                Título (opcional)
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Ex: Escritório"
+                className="w-full rounded-dd-md bg-dd-surface-raised px-3 py-2 text-sm text-dd-on-surface placeholder:text-dd-muted border border-dd-border-subtle focus:border-dd-accent-green focus:outline-none"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handleUseCurrent}
+              disabled={fetching}
+              className="w-full rounded-dd-md border border-dd-border-subtle px-3 py-2 text-sm text-dd-muted hover:text-dd-on-surface hover:bg-dd-surface-overlay transition-colors disabled:opacity-50"
+            >
+              {fetching ? "Obtendo localização..." : "Usar localização atual"}
+            </button>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-dd-md px-3 py-1.5 text-sm text-dd-muted hover:text-dd-on-surface transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isNaN(parseFloat(lat)) || isNaN(parseFloat(lng))}
+              className="rounded-dd-md bg-dd-accent-green px-3 py-1.5 text-sm text-white hover:bg-[#17a348] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Enviar
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function ContactModal({
+  open,
+  onClose,
+  onConfirm,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onConfirm: (name: string, phone: string) => void;
+}) {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+
+  if (!open) return null;
+
+  const handleSubmit = () => {
+    if (!name.trim() || !phone.trim()) return;
+    onConfirm(name.trim(), phone.trim());
+    setName("");
+    setPhone("");
+    onClose();
+  };
+
+  return (
+    <>
+      <div className="fixed inset-0 z-40 bg-black/60" onClick={onClose} />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-sm rounded-dd-md border border-dd-border-subtle bg-dd-surface p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-dd-on-surface">
+              Enviar contato
+            </h3>
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-dd-muted hover:text-dd-on-surface"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs text-dd-muted mb-1">Nome</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Nome do contato"
+                className="w-full rounded-dd-md bg-dd-surface-raised px-3 py-2 text-sm text-dd-on-surface placeholder:text-dd-muted border border-dd-border-subtle focus:border-dd-accent-green focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-dd-muted mb-1">
+                Telefone
+              </label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+55 11 99999-0000"
+                className="w-full rounded-dd-md bg-dd-surface-raised px-3 py-2 text-sm text-dd-on-surface placeholder:text-dd-muted border border-dd-border-subtle focus:border-dd-accent-green focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-dd-md px-3 py-1.5 text-sm text-dd-muted hover:text-dd-on-surface transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!name.trim() || !phone.trim()}
+              className="rounded-dd-md bg-dd-accent-green px-3 py-1.5 text-sm text-white hover:bg-[#17a348] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Enviar
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
