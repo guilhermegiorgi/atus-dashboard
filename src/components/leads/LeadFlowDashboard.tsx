@@ -15,11 +15,11 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<string, string> = {
-  NOVO: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-  EM_ATENDIMENTO: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  AGUARDANDO_RETORNO: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-  CONVERTIDO: "bg-green-500/20 text-green-400 border-green-500/30",
-  PERDIDO: "bg-red-500/20 text-red-400 border-red-500/30",
+  NOVO: "bg-dd-accent-orange/20 text-dd-accent-orange border-dd-accent-orange/30",
+  EM_ATENDIMENTO: "bg-dd-accent-blue/20 text-dd-accent-blue border-dd-accent-blue/30",
+  AGUARDANDO_RETORNO: "bg-dd-accent-purple/20 text-dd-accent-purple border-dd-accent-purple/30",
+  CONVERTIDO: "bg-dd-accent-green/20 text-dd-accent-green border-dd-accent-green/30",
+  PERDIDO: "bg-dd-accent-red/20 text-dd-accent-red border-dd-accent-red/30",
 };
 
 interface FlowData {
@@ -80,7 +80,7 @@ export function LeadFlowDashboard({ className }: { className?: string }) {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-400">{conversionRate}%</div>
+            <div className="text-2xl font-bold text-dd-accent-green">{conversionRate}%</div>
             <p className="text-xs text-muted-foreground">{convertidos} convertidos</p>
           </CardContent>
         </Card>
@@ -113,7 +113,7 @@ export function LeadFlowDashboard({ className }: { className?: string }) {
               <div className="space-y-3">
                 {Object.entries(data.por_status).map(([status, count]) => (
                   <div key={status} className="flex items-center justify-between">
-                    <Badge variant="outline" className={STATUS_COLOR[status] ?? "bg-zinc-500/20 text-zinc-400"}>
+                    <Badge variant="outline" className={STATUS_COLOR[status] ?? "bg-dd-surface-overlay/20 text-dd-on-muted"}>
                       {STATUS_LABEL[status] ?? status}
                     </Badge>
                     <div className="flex items-center gap-3">
@@ -178,7 +178,7 @@ export function LeadFlowDashboard({ className }: { className?: string }) {
                 const pct = (item.total / maxVal) * 100;
                 return (
                   <div key={item.dia} className="flex flex-col items-center gap-1 flex-1">
-                    <span className="text-xs font-medium text-zinc-300">{item.total}</span>
+                    <span className="text-xs font-medium text-dd-on-surface">{item.total}</span>
                     <div
                       className="w-full rounded-t bg-primary/60 transition-all"
                       style={{ height: `${Math.max(pct, 4)}%`, minHeight: "4px" }}

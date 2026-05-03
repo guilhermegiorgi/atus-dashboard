@@ -87,11 +87,11 @@ function formatDateTime(value: string) {
 function bucketTone(bucket: string) {
   switch (bucket) {
     case "alto":
-      return "border-green-500/20 bg-green-500/10 text-green-400";
+      return "border-dd-accent-green/20 bg-dd-accent-green/10 text-dd-accent-green";
     case "medio":
-      return "border-amber-500/20 bg-amber-500/10 text-amber-300";
+      return "border-dd-accent-orange/20 bg-dd-accent-orange/10 text-dd-accent-orange";
     case "baixo":
-      return "border-red-500/20 bg-red-500/10 text-red-300";
+      return "border-dd-accent-red/20 bg-dd-accent-red/10 text-dd-accent-red";
     default:
       return "border-border/50 bg-secondary/30 text-foreground";
   }
@@ -625,7 +625,7 @@ export default function AnalyticsPage() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-red-400 text-center">
+        <div className="text-dd-accent-red text-center">
           <p className="text-sm font-medium">Erro ao carregar</p>
           <p className="text-xs text-white/40 mt-1">{error}</p>
         </div>

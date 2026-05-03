@@ -48,11 +48,11 @@ export function LeadFilters({
       <CardContent className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-200">
+            <label className="text-sm font-medium text-dd-on-primary">
               Busca local na pagina
             </label>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-dd-muted" />
               <Input
                 value={filters.search ?? ""}
                 onChange={(event) =>
@@ -65,7 +65,7 @@ export function LeadFilters({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-200">Status</label>
+            <label className="text-sm font-medium text-dd-on-primary">Status</label>
             <Select
               value={filters.status ?? "all"}
               onValueChange={(value) =>
@@ -91,7 +91,7 @@ export function LeadFilters({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-200">Fase</label>
+            <label className="text-sm font-medium text-dd-on-primary">Fase</label>
             <Input
               value={filters.fase ?? ""}
               onChange={(event) =>
@@ -103,7 +103,7 @@ export function LeadFilters({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-200">
+            <label className="text-sm font-medium text-dd-on-primary">
               Em Follow-up
             </label>
             <Select
@@ -129,7 +129,7 @@ export function LeadFilters({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-200">
+            <label className="text-sm font-medium text-dd-on-primary">
               Tipo de Interesse
             </label>
             <Input
@@ -146,7 +146,7 @@ export function LeadFilters({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-200">
+            <label className="text-sm font-medium text-dd-on-primary">
               Canal de Origem
             </label>
             <Input
@@ -163,7 +163,7 @@ export function LeadFilters({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-200">
+            <label className="text-sm font-medium text-dd-on-primary">
               Sistema de Origem
             </label>
             <Input
@@ -180,7 +180,7 @@ export function LeadFilters({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-200">Com Nome</label>
+            <label className="text-sm font-medium text-dd-on-primary">Com Nome</label>
             <Select
               value={filters.has_nome === undefined ? "all" : String(filters.has_nome)}
               onValueChange={(value) =>
@@ -202,7 +202,7 @@ export function LeadFilters({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-200">Com Email</label>
+            <label className="text-sm font-medium text-dd-on-primary">Com Email</label>
             <Select
               value={filters.has_email === undefined ? "all" : String(filters.has_email)}
               onValueChange={(value) =>

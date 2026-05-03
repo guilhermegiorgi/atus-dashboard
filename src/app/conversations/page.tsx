@@ -68,17 +68,17 @@ const MUTABLE_INBOX_STATES = [
 function stateTone(state: string) {
   switch (state) {
     case "TRIAGE_HUMAN":
-      return "border-amber-500/20 bg-amber-500/10 text-amber-300";
+      return "border-dd-accent-orange/20 bg-dd-accent-orange/10 text-dd-accent-orange";
     case "ASSIGNED_TO_BROKER":
-      return "border-blue-500/20 bg-blue-500/10 text-blue-300";
+      return "border-dd-accent-blue/20 bg-dd-accent-blue/10 text-dd-accent-blue";
     case "HUMAN_ACTIVE":
-      return "border-green-500/20 bg-green-500/10 text-green-400";
+      return "border-dd-accent-green/20 bg-dd-accent-green/10 text-dd-accent-green";
     case "HUMAN_STANDBY":
-      return "border-zinc-500/20 bg-zinc-500/10 text-zinc-300";
+      return "border-dd-border-subtle bg-dd-surface-overlay/10 text-dd-on-surface";
     case "RETURNED_TO_BOT":
       return "border-primary/20 bg-primary/10 text-primary";
     case "CLOSED":
-      return "border-red-500/20 bg-red-500/10 text-red-300";
+      return "border-dd-accent-red/20 bg-dd-accent-red/10 text-dd-accent-red";
     default:
       return "border-white/[0.06] white/[0.02] text-foreground";
   }
@@ -375,7 +375,7 @@ export default function ConversationsPage() {
   if (pageError) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="text-center text-red-400">
+        <div className="text-center text-dd-accent-red">
           <p className="text-sm font-medium">Erro ao carregar</p>
           <p className="text-xs text-white/40 mt-1">{pageError}</p>
         </div>
@@ -940,7 +940,7 @@ export default function ConversationsPage() {
                         Atribuicao para corretor
                       </div>
                       {corretoresError ? (
-                        <div className="mt-3 rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                        <div className="mt-3 rounded-xl border border-dd-accent-orange/20 bg-dd-accent-orange/10 px-3 py-2 text-xs text-dd-accent-orange">
                           Lista de corretores indisponivel agora:{" "}
                           {corretoresError}
                         </div>

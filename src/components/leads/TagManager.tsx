@@ -200,7 +200,7 @@ export function TagManager({
                   Carregando...
                 </div>
               ) : error ? (
-                <div className="text-red-400 text-sm">{error}</div>
+                <div className="text-dd-accent-red text-sm">{error}</div>
               ) : (
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {tags.map((tag) => (
@@ -219,7 +219,7 @@ export function TagManager({
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-6 w-6 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                          className="h-6 w-6 text-dd-accent-red hover:text-dd-accent-red hover:bg-dd-accent-red/10"
                           onClick={() => handleDeleteTag(tag.id)}
                         >
                           <Trash2 className="h-3 w-3" />

@@ -92,13 +92,13 @@ function recommendedActionLabel(action: string) {
 function actionTone(action: string) {
   switch (action) {
     case "start_followup":
-      return "border-green-500/20 bg-green-500/10 text-green-400";
+      return "border-dd-accent-green/20 bg-dd-accent-green/10 text-dd-accent-green";
     case "reset_then_followup":
-      return "border-amber-500/20 bg-amber-500/10 text-amber-300";
+      return "border-dd-accent-orange/20 bg-dd-accent-orange/10 text-dd-accent-orange";
     case "manual_review":
       return "border-orange-500/20 bg-orange-500/10 text-orange-300";
     case "human_takeover_active":
-      return "border-blue-500/20 bg-blue-500/10 text-blue-300";
+      return "border-dd-accent-blue/20 bg-dd-accent-blue/10 text-dd-accent-blue";
     default:
       return "border-white/[0.06] white/[0.02] text-foreground";
   }
@@ -206,7 +206,7 @@ export default function PipelinePage() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-red-400 text-center">
+        <div className="text-dd-accent-red text-center">
           <p className="text-sm font-medium">Erro ao carregar</p>
           <p className="text-xs text-white/40 mt-1">{error}</p>
         </div>
@@ -244,7 +244,7 @@ export default function PipelinePage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-amber-300">
+            <div className="text-3xl font-bold text-dd-accent-orange">
               {metrics.expired_followups}
             </div>
             <p className="mt-1 text-xs text-white/30">
@@ -274,7 +274,7 @@ export default function PipelinePage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-400">
+            <div className="text-3xl font-bold text-dd-accent-green">
               {metrics.followup_responses_today}
             </div>
             <p className="mt-1 text-xs text-white/30">
@@ -456,7 +456,7 @@ export default function PipelinePage() {
                             {item.confirmation_pending && (
                               <Badge
                                 variant="outline"
-                                className="border-blue-500/20 bg-blue-500/10 text-blue-300"
+                                className="border-dd-accent-blue/20 bg-dd-accent-blue/10 text-dd-accent-blue"
                               >
                                 Confirmacao pendente
                               </Badge>
@@ -646,7 +646,7 @@ export default function PipelinePage() {
                       </div>
                     </div>
                     <div className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-400" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 text-dd-accent-green" />
                       <div>
                         <div className="text-xs text-white/30">
                           Ultima mensagem do lead
@@ -687,7 +687,7 @@ export default function PipelinePage() {
                       className={
                         selectedStatus.is_contaminated
                           ? "border-orange-500/20 bg-orange-500/10 text-orange-300"
-                          : "border-green-500/20 bg-green-500/10 text-green-400"
+                          : "border-dd-accent-green/20 bg-dd-accent-green/10 text-dd-accent-green"
                       }
                     >
                       {selectedStatus.is_contaminated
@@ -698,7 +698,7 @@ export default function PipelinePage() {
                       variant="outline"
                       className={
                         selectedStatus.confirmation_pending
-                          ? "border-blue-500/20 bg-blue-500/10 text-blue-300"
+                          ? "border-dd-accent-blue/20 bg-dd-accent-blue/10 text-dd-accent-blue"
                           : "border-white/[0.06]"
                       }
                     >
@@ -709,7 +709,7 @@ export default function PipelinePage() {
                     {selectedStatus.intervention_type && (
                       <Badge
                         variant="outline"
-                        className="border-blue-500/20 bg-blue-500/10 text-blue-300"
+                        className="border-dd-accent-blue/20 bg-dd-accent-blue/10 text-dd-accent-blue"
                       >
                         <ShieldAlert className="mr-1 h-3 w-3" />
                         {selectedStatus.intervention_type}

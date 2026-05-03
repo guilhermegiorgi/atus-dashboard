@@ -13,7 +13,7 @@ const badgeVariants = cva(
       variant: {
         default: "bg-white/10 text-white/80 px-2 py-0.5 rounded-full",
         secondary: "bg-white/5 text-white/50 px-2 py-0.5 rounded-full",
-        destructive: "bg-red-500/10 text-red-400 px-2 py-0.5 rounded-full",
+        destructive: "bg-dd-accent-red/10 text-dd-accent-red px-2 py-0.5 rounded-full",
         outline:
           "text-white/40 border border-white/10 px-2 py-0.5 rounded-full",
         ghost: "text-white/40",

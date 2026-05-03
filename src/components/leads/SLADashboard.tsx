@@ -27,8 +27,8 @@ export function SLADashboard({ className }: { className?: string }) {
 
   const total = data.dentro_do_sla + data.fora_do_sla;
   const complianceRate = total > 0 ? ((data.dentro_do_sla / total) * 100).toFixed(1) : "0.0";
-  const complianceColor = Number(complianceRate) >= 90 ? "text-green-400" : Number(complianceRate) >= 70 ? "text-yellow-400" : "text-red-400";
-  const responseColor = data.tempo_medio_resposta_min <= 30 ? "text-green-400" : data.tempo_medio_resposta_min <= 60 ? "text-yellow-400" : "text-red-400";
+  const complianceColor = Number(complianceRate) >= 90 ? "text-dd-accent-green" : Number(complianceRate) >= 70 ? "text-dd-accent-orange" : "text-dd-accent-red";
+  const responseColor = data.tempo_medio_resposta_min <= 30 ? "text-dd-accent-green" : data.tempo_medio_resposta_min <= 60 ? "text-dd-accent-orange" : "text-dd-accent-red";
 
   if (loading) {
     return (
@@ -93,23 +93,23 @@ export function SLADashboard({ className }: { className?: string }) {
           <div className="grid gap-4 grid-cols-2">
             <div className="rounded-xl border border-white/10 bg-white/5 p-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/20">
-                  <CheckCircle className="h-5 w-5 text-green-400" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-dd-accent-green/20">
+                  <CheckCircle className="h-5 w-5 text-dd-accent-green" />
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Dentro do SLA</p>
-                  <p className="text-2xl font-semibold text-green-400">{data.dentro_do_sla}</p>
+                  <p className="text-2xl font-semibold text-dd-accent-green">{data.dentro_do_sla}</p>
                 </div>
               </div>
             </div>
             <div className="rounded-xl border border-white/10 bg-white/5 p-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/20">
-                  <XCircle className="h-5 w-5 text-red-400" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-dd-accent-red/20">
+                  <XCircle className="h-5 w-5 text-dd-accent-red" />
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Fora do SLA</p>
-                  <p className="text-2xl font-semibold text-red-400">{data.fora_do_sla}</p>
+                  <p className="text-2xl font-semibold text-dd-accent-red">{data.fora_do_sla}</p>
                 </div>
               </div>
             </div>
@@ -135,9 +135,9 @@ export function SLADashboard({ className }: { className?: string }) {
                   <div key={origem} className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-4 py-2.5">
                     <span className="text-sm capitalize">{origem}</span>
                     <div className="flex items-center gap-4 text-xs text-right">
-                      <span className="text-green-400">{vals.dentro} ✓</span>
-                      <span className="text-red-400">{vals.fora} ✗</span>
-                      <span className="font-semibold text-zinc-300 w-10">{pct}%</span>
+                      <span className="text-dd-accent-green">{vals.dentro} ✓</span>
+                      <span className="text-dd-accent-red">{vals.fora} ✗</span>
+                      <span className="font-semibold text-dd-on-surface w-10">{pct}%</span>
                     </div>
                   </div>
                 );

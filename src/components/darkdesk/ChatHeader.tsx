@@ -30,17 +30,17 @@ function getStatusColor(state?: string) {
     case "TRIAGE_HUMAN":
       return "bg-orange-900/30 text-orange-400";
     case "ASSIGNED_TO_BROKER":
-      return "bg-blue-900/30 text-blue-400";
+      return "bg-dd-accent-blue/30 text-dd-accent-blue";
     case "HUMAN_ACTIVE":
-      return "bg-green-900/30 text-green-400";
+      return "bg-dd-accent-green/30 text-dd-accent-green";
     case "HUMAN_STANDBY":
-      return "bg-gray-700 text-gray-400";
+      return "bg-dd-surface-overlay text-dd-on-muted";
     case "RETURNED_TO_BOT":
-      return "bg-gray-700 text-gray-400";
+      return "bg-dd-surface-overlay text-dd-on-muted";
     case "CLOSED":
-      return "bg-red-900/30 text-red-400";
+      return "bg-dd-accent-red/30 text-dd-accent-red";
     default:
-      return "bg-gray-700 text-gray-400";
+      return "bg-dd-surface-overlay text-dd-on-muted";
   }
 }
 
@@ -70,12 +70,12 @@ export function ChatHeader({
 }: ChatHeaderProps) {
   if (isLoading) {
     return (
-      <div className="flex h-16 shrink-0 items-center justify-between border-b border-gray-700 bg-gray-900 px-4">
+      <div className="flex h-16 shrink-0 items-center justify-between border-b border-dd-border bg-dd-surface px-4">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 animate-pulse rounded-full bg-gray-800" />
+          <div className="h-10 w-10 animate-pulse rounded-full bg-dd-surface-raised" />
           <div className="space-y-2">
-            <div className="h-4 w-32 animate-pulse rounded bg-gray-800" />
-            <div className="h-3 w-20 animate-pulse rounded bg-gray-800" />
+            <div className="h-4 w-32 animate-pulse rounded bg-dd-surface-raised" />
+            <div className="h-3 w-20 animate-pulse rounded bg-dd-surface-raised" />
           </div>
         </div>
       </div>
@@ -84,17 +84,17 @@ export function ChatHeader({
 
   if (!conversation) {
     return (
-      <div className="flex h-16 shrink-0 items-center justify-between border-b border-gray-700 bg-gray-900 px-4">
-        <span className="text-sm text-gray-400">Selecione uma conversa</span>
+      <div className="flex h-16 shrink-0 items-center justify-between border-b border-dd-border bg-dd-surface px-4">
+        <span className="text-sm text-dd-on-muted">Selecione uma conversa</span>
       </div>
     );
   }
 
   return (
-    <div className="flex h-16 shrink-0 items-center justify-between border-b border-gray-700 bg-gray-900 px-4">
+    <div className="flex h-16 shrink-0 items-center justify-between border-b border-dd-border bg-dd-surface px-4">
       <div className="flex items-center gap-3">
         {/* Avatar */}
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-sm font-medium text-gray-400">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-dd-surface-raised text-sm font-medium text-dd-on-muted">
           {conversation.nome_completo
             ? conversation.nome_completo
                 .split(" ")
@@ -110,7 +110,7 @@ export function ChatHeader({
           <h3 className="text-sm font-medium text-white">
             {conversation.nome_completo || conversation.telefone || "Sem nome"}
           </h3>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-dd-muted">
             {conversation.telefone || "-"} • {conversation.canal_origem || "-"}
           </p>
         </div>
@@ -127,19 +127,19 @@ export function ChatHeader({
           {getStatusLabel(conversation.conversation_state)}
         </span>
         {conversation.status && (
-          <span className="inline-flex items-center rounded bg-gray-800 px-2 py-1 text-[10px] font-medium text-gray-500">
+          <span className="inline-flex items-center rounded bg-dd-surface-raised px-2 py-1 text-[10px] font-medium text-dd-muted">
             {conversation.status}
           </span>
         )}
         {conversation.fase && (
-          <span className="inline-flex items-center rounded bg-gray-800 px-2 py-1 text-[10px] font-medium text-gray-500">
+          <span className="inline-flex items-center rounded bg-dd-surface-raised px-2 py-1 text-[10px] font-medium text-dd-muted">
             {conversation.fase}
           </span>
         )}
         <DropdownMenu>
           <DropdownMenuTrigger>
-            <button className="p-1.5 rounded hover:bg-gray-800 transition-colors">
-              <MoreVertical className="h-4 w-4 text-gray-500" />
+            <button className="p-1.5 rounded hover:bg-dd-surface-raised transition-colors">
+              <MoreVertical className="h-4 w-4 text-dd-muted" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">

@@ -45,13 +45,13 @@ function toneForHumanState(value?: string) {
   switch (value) {
     case "TRIAGE_HUMAN":
     case "HUMAN_ACTIVE":
-      return "border-amber-500/20 bg-amber-500/10 text-amber-300";
+      return "border-dd-accent-orange/20 bg-dd-accent-orange/10 text-dd-accent-orange";
     case "ASSIGNED_TO_BROKER":
-      return "border-blue-500/20 bg-blue-500/10 text-blue-300";
+      return "border-dd-accent-blue/20 bg-dd-accent-blue/10 text-dd-accent-blue";
     case "RETURNED_TO_BOT":
-      return "border-green-500/20 bg-green-500/10 text-green-400";
+      return "border-dd-accent-green/20 bg-dd-accent-green/10 text-dd-accent-green";
     case "CLOSED":
-      return "border-zinc-500/20 bg-zinc-500/10 text-zinc-300";
+      return "border-dd-border-subtle bg-dd-surface-overlay/10 text-dd-on-surface";
     default:
       return "border-border/50 bg-secondary/30 text-foreground";
   }
@@ -60,13 +60,13 @@ function toneForHumanState(value?: string) {
 function toneForStatus(value?: string) {
   switch (value) {
     case "NOVO":
-      return "border-yellow-500/20 bg-yellow-500/10 text-yellow-300";
+      return "border-dd-accent-orange/20 bg-dd-accent-orange/10 text-dd-accent-orange";
     case "EM_ATENDIMENTO":
-      return "border-blue-500/20 bg-blue-500/10 text-blue-300";
+      return "border-dd-accent-blue/20 bg-dd-accent-blue/10 text-dd-accent-blue";
     case "CONVERTIDO":
-      return "border-green-500/20 bg-green-500/10 text-green-400";
+      return "border-dd-accent-green/20 bg-dd-accent-green/10 text-dd-accent-green";
     case "PERDIDO":
-      return "border-red-500/20 bg-red-500/10 text-red-300";
+      return "border-dd-accent-red/20 bg-dd-accent-red/10 text-dd-accent-red";
     default:
       return "border-primary/20 bg-primary/10 text-primary";
   }
@@ -261,7 +261,7 @@ export default function LeadsPage() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-red-400 text-center">
+        <div className="text-dd-accent-red text-center">
           <p className="text-sm font-medium">Erro ao carregar</p>
           <p className="text-xs text-white/40 mt-1">{error}</p>
         </div>
@@ -507,7 +507,7 @@ export default function LeadsPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => void handleDeleteLead(lead)}
-                            className="h-7 w-7 hover:bg-red-500/10 hover:text-red-400"
+                            className="h-7 w-7 hover:bg-dd-accent-red/10 hover:text-dd-accent-red"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>

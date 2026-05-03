@@ -47,13 +47,13 @@ function toneForState(value?: string | null) {
   switch (state) {
     case "TRIAGE_HUMAN":
     case "HUMAN_ACTIVE":
-      return "border-amber-500/20 bg-amber-500/10 text-amber-300";
+      return "border-dd-accent-orange/20 bg-dd-accent-orange/10 text-dd-accent-orange";
     case "ASSIGNED_TO_BROKER":
-      return "border-blue-500/20 bg-blue-500/10 text-blue-300";
+      return "border-dd-accent-blue/20 bg-dd-accent-blue/10 text-dd-accent-blue";
     case "RETURNED_TO_BOT":
-      return "border-green-500/20 bg-green-500/10 text-green-400";
+      return "border-dd-accent-green/20 bg-dd-accent-green/10 text-dd-accent-green";
     case "CLOSED":
-      return "border-zinc-500/20 bg-zinc-500/10 text-zinc-300";
+      return "border-dd-border-subtle bg-dd-surface-overlay/10 text-dd-on-surface";
     default:
       return "border-border/50 bg-secondary/30 text-foreground";
   }
@@ -293,7 +293,7 @@ export function LeadDetailModal({
                           {operationalStatus.is_contaminated ? "Contaminado" : "Não contaminado"}
                         </Badge>
                         {operationalStatus.missing_fields.map((field) => (
-                          <Badge key={field} variant="outline" className="border-amber-500/20 bg-amber-500/10 text-amber-300">
+                          <Badge key={field} variant="outline" className="border-dd-accent-orange/20 bg-dd-accent-orange/10 text-dd-accent-orange">
                             {field}
                           </Badge>
                         ))}

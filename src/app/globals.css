@@ -178,6 +178,9 @@
   .dd-accent-blue { color: var(--dd-accent-blue); }
   .dd-accent-blue-muted { background-color: var(--dd-accent-blue-muted); }
 
+  .dd-accent-red { color: var(--dd-accent-red); }
+  .dd-accent-red-muted { background-color: var(--dd-accent-red-muted); }
+
   /* Conversation states */
   .dd-conversation-active { background-color: var(--dd-conversation-active); }
   .dd-conversation-hover { background-color: var(--dd-conversation-hover); }
@@ -244,27 +247,39 @@
   --dd-on-surface: #262626;
   --dd-on-muted: #737373;
 
+  /* Functional accents — keep same hue, adjust for white bg */
   --dd-accent-green: #16A34A;
+  --dd-accent-green-hover: #15803D;
   --dd-accent-green-muted: #DCFCE7;
-
-  --dd-scrollbar: #D4D4D4;
-  --dd-selection: #DCFCE7;
-
-  /* Accent muted variants for light mode */
+  --dd-accent-pink: #DB2777;
   --dd-accent-pink-muted: #FCE7F3;
+  --dd-accent-purple: #7C3AED;
   --dd-accent-purple-muted: #EDE9FE;
+  --dd-accent-orange: #EA580C;
   --dd-accent-orange-muted: #FEF3C7;
+  --dd-accent-blue: #2563EB;
   --dd-accent-blue-muted: #DBEAFE;
+  --dd-accent-red: #DC2626;
+  --dd-accent-red-hover: #B91C1C;
+  --dd-accent-red-muted: #FEF2F2;
 
-  /* Badge light variants */
+  /* Status badges */
+  --dd-badge-new: #16A34A;
+  --dd-badge-waiting: #EA580C;
+  --dd-badge-urgent: #DC2626;
   --dd-badge-urgent-bg: #FEF2F2;
+  --dd-badge-indicated: #7C3AED;
   --dd-badge-bot-bg: #EFF6FF;
+  --dd-badge-bot: #2563EB;
   --dd-badge-human-bg: #FEF2F2;
   --dd-badge-human: #DC2626;
 
   /* Conversation states */
   --dd-conversation-active: #ECFDF5;
   --dd-conversation-hover: #F5F5F5;
+
+  --dd-scrollbar: #D4D4D4;
+  --dd-selection: #DCFCE7;
 
   /* Shadcn compatibility */
   --background: 0 0% 100%;

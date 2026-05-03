@@ -58,8 +58,8 @@ function formatDateTime(value: string | null | undefined) {
 
 function activeTone(active: boolean) {
   return active
-    ? "border-green-500/20 bg-green-500/10 text-green-400"
-    : "border-red-500/20 bg-red-500/10 text-red-300";
+    ? "border-dd-accent-green/20 bg-dd-accent-green/10 text-dd-accent-green"
+    : "border-dd-accent-red/20 bg-dd-accent-red/10 text-dd-accent-red";
 }
 
 export default function TrackingPage() {
@@ -208,7 +208,7 @@ export default function TrackingPage() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-red-400 text-center">
+        <div className="text-dd-accent-red text-center">
           <p className="text-sm font-medium">Erro ao carregar</p>
           <p className="text-xs text-white/40 mt-1">{error}</p>
         </div>
@@ -264,7 +264,7 @@ export default function TrackingPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-400">
+            <div className="text-3xl font-bold text-dd-accent-green">
               {links.reduce((total, item) => total + item.leads_convertidos, 0)}
             </div>
             <p className="mt-1 text-xs text-white/30">
@@ -609,7 +609,7 @@ export default function TrackingPage() {
                     {selectedLink.clicks} click(s)
                   </div>
                   <div className="mt-2 flex items-center gap-2">
-                    <Target className="h-4 w-4 text-green-400" />
+                    <Target className="h-4 w-4 text-dd-accent-green" />
                     {selectedLink.leads_convertidos} lead(s) convertidos
                   </div>
                   <div className="mt-3 text-white/30">

@@ -91,7 +91,7 @@ function DropdownMenuItem({
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        "relative flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-white/60 outline-none transition-colors select-none data-[variant=destructive]:text-red-400 data-[variant=destructive]:hover:bg-red-500/10 data-hover:bg-white/5 data-hover:text-white data-disabled:pointer-events-none data-disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
+        "relative flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-white/60 outline-none transition-colors select-none data-[variant=destructive]:text-dd-accent-red data-[variant=destructive]:hover:bg-dd-accent-red/10 data-hover:bg-white/5 data-hover:text-white data-disabled:pointer-events-none data-disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
         className,
       )}
       {...props}

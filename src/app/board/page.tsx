@@ -17,11 +17,11 @@ const STATUS_COLUMNS: Array<{ id: LeadStatus; label: string; color: string }> =
   ];
 
 const STATUS_COLORS: Record<string, string> = {
-  NOVO: "border-yellow-500/30 bg-yellow-500/10 text-yellow-300",
-  EM_ATENDIMENTO: "border-blue-500/30 bg-blue-500/10 text-blue-300",
+  NOVO: "border-dd-accent-orange/30 bg-dd-accent-orange/10 text-dd-accent-orange",
+  EM_ATENDIMENTO: "border-dd-accent-blue/30 bg-dd-accent-blue/10 text-dd-accent-blue",
   AGUARDANDO_RETORNO: "border-orange-500/30 bg-orange-500/10 text-orange-300",
-  CONVERTIDO: "border-green-500/30 bg-green-500/10 text-green-400",
-  PERDIDO: "border-red-500/30 bg-red-500/10 text-red-300",
+  CONVERTIDO: "border-dd-accent-green/30 bg-dd-accent-green/10 text-dd-accent-green",
+  PERDIDO: "border-dd-accent-red/30 bg-dd-accent-red/10 text-dd-accent-red",
 };
 
 function formatDate(value?: string | null) {
@@ -50,11 +50,11 @@ function KanbanColumn({
   onSelectLead,
 }: ColumnProps) {
   const colorClasses: Record<string, string> = {
-    yellow: "border-t-yellow-500",
-    blue: "border-t-blue-500",
-    orange: "border-t-orange-500",
-    green: "border-t-green-500",
-    red: "border-t-red-500",
+    yellow: "border-t-dd-accent-orange",
+    blue: "border-t-dd-accent-blue",
+    orange: "border-t-dd-accent-orange",
+    green: "border-t-dd-accent-green",
+    red: "border-t-dd-accent-red",
   };
 
   return (
@@ -100,7 +100,7 @@ function KanbanColumn({
                 {lead.em_follow_up && (
                   <Badge
                     variant="outline"
-                    className="shrink-0 border-amber-500/20 bg-amber-500/10 text-amber-300 text-[10px]"
+                    className="shrink-0 border-dd-accent-orange/20 bg-dd-accent-orange/10 text-dd-accent-orange text-[10px]"
                   >
                     FU
                   </Badge>
@@ -260,7 +260,7 @@ export default function BoardPage() {
               {selectedLead.em_follow_up && (
                 <Badge
                   variant="outline"
-                  className="border-amber-500/20 bg-amber-500/10 text-amber-300"
+                  className="border-dd-accent-orange/20 bg-dd-accent-orange/10 text-dd-accent-orange"
                 >
                   Follow-up ativo
                 </Badge>
