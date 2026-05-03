@@ -14,6 +14,7 @@ import {
   MessageCircle,
   Settings,
 } from "lucide-react";
+import { ThemeToggle } from "./ThemeToggle";
 
 const navigation = [
   { name: "overview", href: "/", icon: Home, label: "Início" },
@@ -84,8 +85,9 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Dashboard link at bottom */}
-      <div className="border-t border-dd-border-subtle py-3">
+      {/* Theme toggle + Dashboard at bottom */}
+      <div className="border-t border-dd-border-subtle py-3 flex flex-col items-center gap-1">
+        <ThemeToggle />
         <Link
           href="/dashboard"
           title="Dashboard"
