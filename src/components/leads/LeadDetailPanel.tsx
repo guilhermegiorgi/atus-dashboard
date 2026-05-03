@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { X, Edit, Send, UserCheck, UserX, RotateCcw } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { Conversa, Lead, Mensagem, Tag } from "@/types/leads";
@@ -247,7 +248,7 @@ export function LeadDetailPanel({
   };
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 w-[min(480px,100vw)] border-l border-white/[0.12] bg-[#000000] shadow-2xl animate-slide-in-right">
+    <div className="fixed inset-y-0 right-0 z-50 w-[min(480px,100vw)] border-l border-white/[0.12] bg-dd-primary shadow-2xl animate-slide-in-right">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/[0.12] px-5 py-4">
         <div className="min-w-0 flex-1">
@@ -260,7 +261,8 @@ export function LeadDetailPanel({
           variant="ghost"
           size="icon"
           onClick={onClose}
-          className="shrink-0 h-8 w-8 hover:bg-white/10 hover:text-white"
+          aria-label="Fechar painel"
+          className="shrink-0 h-8 w-8 hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-dd-accent-green"
         >
           <X className="h-4 w-4" />
         </Button>
@@ -269,8 +271,40 @@ export function LeadDetailPanel({
       {/* Content */}
       <div className="h-[calc(100vh-73px)] overflow-y-auto">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="h-8 w-8 rounded-full border-2 border-white/10 border-t-white/30 animate-spin" />
+          <div className="space-y-4 p-4">
+            <div className="flex gap-2">
+              <Skeleton className="h-5 w-20" />
+              <Skeleton className="h-5 w-24" />
+            </div>
+            <div className="border border-white/[0.12] rounded-lg p-3 bg-white/[0.02] space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <div className="flex gap-1.5">
+                <Skeleton className="h-5 w-16" />
+                <Skeleton className="h-5 w-16" />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-8 w-28" />
+              <Skeleton className="h-8 w-16" />
+            </div>
+            <div className="border border-white/[0.12] rounded-lg p-4 bg-white/[0.02] space-y-3">
+              <Skeleton className="h-3 w-20" />
+              <div className="grid grid-cols-2 gap-2">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="space-y-1">
+                    <Skeleton className="h-3 w-16" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="border border-white/[0.12] rounded-lg p-4 bg-white/[0.02] space-y-3">
+              <Skeleton className="h-3 w-20" />
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
           </div>
         ) : error ? (
           <div className="m-4 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-sm text-red-400">
@@ -322,7 +356,8 @@ export function LeadDetailPanel({
                 size="sm"
                 variant="outline"
                 onClick={() => onEdit(lead)}
-                className="border-white/[0.12] bg-white/[0.04] hover:bg-white/10 hover:text-white"
+                aria-label="Editar lead"
+                className="border-white/[0.12] bg-white/[0.04] hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-dd-accent-green"
               >
                 <Edit className="mr-1.5 h-3.5 w-3.5" />
                 Editar
@@ -332,7 +367,8 @@ export function LeadDetailPanel({
                   size="sm"
                   variant="outline"
                   onClick={() => handleHumanIntervention("release")}
-                  className="border-white/[0.12] bg-white/[0.04] hover:bg-white/10 hover:text-white"
+                  aria-label="Liberar para bot"
+                  className="border-white/[0.12] bg-white/[0.04] hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-dd-accent-green"
                 >
                   <UserX className="mr-1.5 h-3.5 w-3.5" />
                   Liberar para Bot
@@ -342,7 +378,8 @@ export function LeadDetailPanel({
                   size="sm"
                   variant="outline"
                   onClick={() => handleHumanIntervention("intervene")}
-                  className="border-white/[0.12] bg-white/[0.04] hover:bg-white/10 hover:text-white"
+                  aria-label="Intervir na conversa"
+                  className="border-white/[0.12] bg-white/[0.04] hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-dd-accent-green"
                 >
                   <UserCheck className="mr-1.5 h-3.5 w-3.5" />
                   Intervir
@@ -352,7 +389,8 @@ export function LeadDetailPanel({
                 size="sm"
                 variant="outline"
                 onClick={handleResetLead}
-                className="border-white/[0.12] bg-white/[0.04] hover:bg-white/10 hover:text-white"
+                aria-label="Resetar dados do lead"
+                className="border-white/[0.12] bg-white/[0.04] hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-dd-accent-green"
               >
                 <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
                 Resetar
@@ -509,8 +547,24 @@ export function LeadDetailPanel({
                 </h3>
 
                 {messagesLoading ? (
-                  <div className="py-4 text-center text-sm text-white/30">
-                    Carregando...
+                  <div className="max-h-64 space-y-2">
+                    {[1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className={`rounded-lg border p-2 ${
+                          i % 2 === 0
+                            ? "border-white/[0.12] bg-white/[0.04]"
+                            : "border-white/[0.08]"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <Skeleton className="h-3 w-12" />
+                          <Skeleton className="h-3 w-20" />
+                        </div>
+                        <Skeleton className="mt-1 h-4 w-full" />
+                        <Skeleton className="mt-1 h-4 w-3/4" />
+                      </div>
+                    ))}
                   </div>
                 ) : messages.length === 0 ? (
                   <div className="py-4 text-center text-sm text-white/30">
@@ -553,7 +607,8 @@ export function LeadDetailPanel({
                     size="icon"
                     onClick={handleSendMessage}
                     disabled={sendingMessage || !newMessage.trim()}
-                    className="shrink-0 bg-white text-black hover:bg-white/90"
+                    aria-label="Enviar mensagem"
+                    className="shrink-0 bg-white text-black hover:bg-white/90 focus-visible:ring-2 focus-visible:ring-dd-accent-green"
                   >
                     <Send className="h-4 w-4" />
                   </Button>

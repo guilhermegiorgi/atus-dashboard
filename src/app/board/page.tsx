@@ -231,7 +231,7 @@ export default function BoardPage() {
 
       {/* Detail Panel */}
       {selectedLead && (
-        <div className="fixed inset-y-0 right-0 z-50 w-[min(420px,100vw)] border-l border-white/[0.12] bg-[#000000] shadow-2xl animate-slide-in-right overflow-y-auto">
+        <div className="fixed inset-y-0 right-0 z-50 w-[min(420px,100vw)] border-l border-white/[0.12] bg-dd-primary shadow-2xl animate-slide-in-right overflow-y-auto">
           <div className="flex items-center justify-between border-b border-white/[0.12] px-5 py-4">
             <div className="min-w-0 flex-1">
               <h2 className="truncate text-lg font-medium text-white">

@@ -163,7 +163,7 @@ export function UsersManager() {
         </div>
         <Button
           onClick={openCreate}
-          className="bg-dd-accent-green hover:bg-[#17a348]"
+          className="bg-dd-accent-green hover:bg-dd-green-hover"
         >
           <UserPlus className="h-4 w-4 mr-2" />
           Novo Usuário
@@ -201,7 +201,12 @@ export function UsersManager() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleToggleStatus(user)}
-                  className={`text-xs px-2 py-1 rounded ${
+                  aria-label={
+                    user.ativo
+                      ? `Desativar ${user.nome}`
+                      : `Ativar ${user.nome}`
+                  }
+                  className={`text-xs px-2 py-1 rounded focus-visible:ring-2 focus-visible:ring-dd-accent-green ${
                     user.ativo
                       ? "bg-dd-accent-green/20 text-dd-accent-green"
                       : "bg-dd-surface-raised text-dd-muted"
@@ -215,7 +220,8 @@ export function UsersManager() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 text-dd-muted hover:text-dd-on-surface"
+                  aria-label={`Editar ${user.nome}`}
+                  className="h-7 w-7 text-dd-muted hover:text-dd-on-surface focus-visible:ring-2 focus-visible:ring-dd-accent-green"
                   onClick={() => openEdit(user)}
                 >
                   <Edit2 className="h-3.5 w-3.5" />
@@ -223,7 +229,8 @@ export function UsersManager() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 text-dd-muted hover:text-dd-accent-red"
+                  aria-label={`Excluir ${user.nome}`}
+                  className="h-7 w-7 text-dd-muted hover:text-dd-accent-red focus-visible:ring-2 focus-visible:ring-dd-accent-green"
                   onClick={() => handleDelete(user.id)}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
@@ -303,7 +310,7 @@ export function UsersManager() {
             <Button
               onClick={handleCreate}
               disabled={saving || !formNome || !formEmail}
-              className="bg-dd-accent-green hover:bg-[#17a348]"
+              className="bg-dd-accent-green hover:bg-dd-green-hover"
             >
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Criar
@@ -370,7 +377,7 @@ export function UsersManager() {
             <Button
               onClick={handleUpdate}
               disabled={saving || !formNome || !formEmail}
-              className="bg-dd-accent-green hover:bg-[#17a348]"
+              className="bg-dd-accent-green hover:bg-dd-green-hover"
             >
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Salvar

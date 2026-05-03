@@ -13,6 +13,7 @@ import {
   Contact,
   Download,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { InboxConversationDetail } from "@/types/dashboard";
 
 interface ChatAreaProps {
@@ -98,14 +99,18 @@ function MediaContent({
 
     case "audio":
       return (
-        <audio controls className="w-full">
+        <audio controls aria-label="Áudio da conversa" className="w-full">
           <source src={content} />
         </audio>
       );
 
     case "video":
       return (
-        <video controls className="max-h-64 w-full rounded-dd-sm">
+        <video
+          controls
+          aria-label="Vídeo da conversa"
+          className="max-h-64 w-full rounded-dd-sm"
+        >
           <source src={content} />
         </video>
       );
@@ -116,6 +121,7 @@ function MediaContent({
           href={content}
           target="_blank"
           rel="noopener noreferrer"
+          aria-label="Baixar documento"
           className="flex items-center gap-2 rounded-dd-sm border border-dd-border-subtle px-3 py-2 transition-opacity hover:opacity-80"
         >
           <FileText className="h-4 w-4 text-dd-on-muted" />
@@ -135,6 +141,7 @@ function MediaContent({
           href={mapsUrl}
           target="_blank"
           rel="noopener noreferrer"
+          aria-label={`Abrir localização ${lat}, ${lng} no Google Maps`}
           className="flex items-center gap-2 rounded-dd-sm border border-dd-border-subtle px-3 py-2 transition-opacity hover:opacity-80"
         >
           <MapPin className="h-4 w-4 text-dd-on-muted" />
@@ -234,23 +241,13 @@ export function ChatArea({ conversation, isLoading }: ChatAreaProps) {
                   i % 2 === 0 ? "ml-auto" : "mr-auto",
                 )}
               >
-                <div className="mb-2 h-3 w-24 animate-pulse rounded bg-dd-surface-overlay" />
+                <Skeleton className="mb-2 h-3 w-24" />
                 <div className="space-y-2">
-                  <div
-                    className={cn(
-                      "h-4 animate-pulse rounded",
-                      i % 2 === 0
-                        ? "bg-dd-accent-green-muted w-48"
-                        : "bg-dd-surface-raised w-64",
-                    )}
+                  <Skeleton
+                    className={cn("h-4", i % 2 === 0 ? "w-48" : "w-64")}
                   />
-                  <div
-                    className={cn(
-                      "h-4 animate-pulse rounded",
-                      i % 2 === 0
-                        ? "bg-dd-accent-green-muted w-32"
-                        : "bg-dd-surface-raised w-48",
-                    )}
+                  <Skeleton
+                    className={cn("h-4", i % 2 === 0 ? "w-32" : "w-48")}
                   />
                 </div>
               </div>

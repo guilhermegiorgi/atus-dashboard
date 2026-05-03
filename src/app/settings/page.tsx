@@ -13,9 +13,9 @@ import {
   Moon,
   Sun,
   ChevronRight,
-  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api/client";
 import type { UserNotificationSettings } from "@/types/leads";
 import { UsersManager } from "@/components/settings/UsersManager";
@@ -34,7 +34,7 @@ const COLOR_OPTIONS = [
   "#EF4444",
   "#F97316",
   "#EAB308",
-  "#22C55E",
+  "#1DB954",
   "#14B8A6",
   "#3B82F6",
   "#6366F1",
@@ -43,10 +43,22 @@ const COLOR_OPTIONS = [
   "#6B7280",
 ];
 
-const ACCENT_COLOR = "#22C55E";
+const ACCENT_COLOR = "#1DB954";
 
 // TODO: obter de contexto de auth
 const CURRENT_USER_ID = "1";
+
+function applyTheme(theme: "dark" | "light") {
+  const root = document.documentElement;
+  if (theme === "light") {
+    root.classList.remove("dark");
+    root.classList.add("light");
+  } else {
+    root.classList.remove("light");
+    root.classList.add("dark");
+  }
+  localStorage.setItem("atus-theme", theme);
+}
 
 type NotificationItem = {
   id: string;
@@ -186,6 +198,14 @@ export default function SettingsPage() {
     load();
   }, []);
 
+  // Initialize theme from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("atus-theme") as "dark" | "light" | null;
+    const initial = saved || "dark";
+    setTheme(initial);
+    applyTheme(initial);
+  }, []);
+
   const toggleNotification = async (id: string, enabled: boolean) => {
     if (!rawSettings) return;
 
@@ -217,8 +237,9 @@ export default function SettingsPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
+              aria-label={`Aba ${tab.label}`}
               className={cn(
-                "w-full flex items-center gap-3 rounded-DD px-3 py-2.5 text-left text-sm font-medium transition-all",
+                "w-full flex items-center gap-3 rounded-DD px-3 py-2.5 text-left text-sm font-medium transition-all focus-visible:ring-2 focus-visible:ring-dd-accent-green",
                 activeTab === tab.id
                   ? "bg-dd-surface-raised text-dd-on-primary"
                   : "text-dd-muted hover:bg-dd-surface hover:text-dd-on-surface",
@@ -263,8 +284,22 @@ export default function SettingsPage() {
             </div>
 
             {loading && (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-6 w-6 animate-spin text-dd-muted" />
+              <div className="space-y-1">
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between p-3 rounded-DD bg-dd-surface border border-dd-border-subtle"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-7 w-7 rounded" />
+                      <div className="space-y-1.5">
+                        <Skeleton className="h-4 w-36" />
+                        <Skeleton className="h-3 w-56" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-6 w-11 rounded-full" />
+                  </div>
+                ))}
               </div>
             )}
 
@@ -339,9 +374,13 @@ export default function SettingsPage() {
                 </h3>
                 <div className="flex gap-3">
                   <button
-                    onClick={() => setTheme("dark")}
+                    onClick={() => {
+                      setTheme("dark");
+                      applyTheme("dark");
+                    }}
+                    aria-label="Tema escuro"
                     className={cn(
-                      "flex-1 p-3 rounded-DD border transition-all",
+                      "flex-1 p-3 rounded-DD border transition-all focus-visible:ring-2 focus-visible:ring-dd-accent-green",
                       theme === "dark"
                         ? "border-dd-accent-green bg-dd-accent-green/5"
                         : "border-dd-border-subtle hover:border-dd-border",
@@ -358,9 +397,13 @@ export default function SettingsPage() {
                     </p>
                   </button>
                   <button
-                    onClick={() => setTheme("light")}
+                    onClick={() => {
+                      setTheme("light");
+                      applyTheme("light");
+                    }}
+                    aria-label="Tema claro"
                     className={cn(
-                      "flex-1 p-3 rounded-DD border transition-all",
+                      "flex-1 p-3 rounded-DD border transition-all focus-visible:ring-2 focus-visible:ring-dd-accent-green",
                       theme === "light"
                         ? "border-dd-accent-green bg-dd-accent-green/5"
                         : "border-dd-border-subtle hover:border-dd-border",
@@ -388,8 +431,9 @@ export default function SettingsPage() {
                   {COLOR_OPTIONS.map((color) => (
                     <button
                       key={color}
+                      aria-label={`Cor ${color}`}
                       className={cn(
-                        "w-9 h-9 rounded-full border-2 transition-all",
+                        "w-9 h-9 rounded-full border-2 transition-all focus-visible:ring-2 focus-visible:ring-dd-accent-green",
                         color === ACCENT_COLOR
                           ? "border-white"
                           : "border-transparent hover:border-dd-border",

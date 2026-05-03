@@ -96,7 +96,7 @@ export function GlobalSearch({ onSelectLead }: GlobalSearchProps) {
       onClick={() => setIsOpen(false)}
     >
       <div
-        className="w-full max-w-xl rounded-xl border border-white/[0.12] bg-[#000000] shadow-2xl animate-in"
+        className="w-full max-w-xl rounded-xl border border-white/[0.12] bg-dd-primary shadow-2xl animate-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input */}

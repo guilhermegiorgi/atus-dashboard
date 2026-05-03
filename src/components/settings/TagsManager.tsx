@@ -159,7 +159,7 @@ export function TagsManager() {
         </div>
         <Button
           onClick={openCreate}
-          className="bg-dd-accent-green hover:bg-[#17a348]"
+          className="bg-dd-accent-green hover:bg-dd-green-hover"
         >
           <Plus className="h-4 w-4 mr-2" />
           Nova Tag
@@ -196,7 +196,8 @@ export function TagsManager() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 text-dd-muted hover:text-dd-on-surface"
+                  aria-label={`Editar tag ${tag.name}`}
+                  className="h-7 w-7 text-dd-muted hover:text-dd-on-surface focus-visible:ring-2 focus-visible:ring-dd-accent-green"
                   onClick={() => openEdit(tag)}
                 >
                   <Edit2 className="h-3.5 w-3.5" />
@@ -204,7 +205,8 @@ export function TagsManager() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 text-dd-muted hover:text-dd-accent-red"
+                  aria-label={`Excluir tag ${tag.name}`}
+                  className="h-7 w-7 text-dd-muted hover:text-dd-accent-red focus-visible:ring-2 focus-visible:ring-dd-accent-green"
                   onClick={() => handleDeleteRequest(tag)}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
@@ -242,7 +244,8 @@ export function TagsManager() {
                   <button
                     key={color}
                     onClick={() => setFormColor(color)}
-                    className={`w-6 h-6 rounded-full border-2 ${
+                    aria-label={`Selecionar cor ${color}`}
+                    className={`w-6 h-6 rounded-full border-2 focus-visible:ring-2 focus-visible:ring-dd-accent-green ${
                       formColor === color
                         ? "border-white"
                         : "border-transparent"
@@ -260,7 +263,7 @@ export function TagsManager() {
             <Button
               onClick={handleSave}
               disabled={isModalSaving || !formName.trim()}
-              className="bg-dd-accent-green hover:bg-[#17a348]"
+              className="bg-dd-accent-green hover:bg-dd-green-hover"
             >
               {isModalSaving && (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -296,7 +299,7 @@ export function TagsManager() {
             <Button
               onClick={handleDeleteConfirm}
               disabled={saving}
-              className="bg-dd-accent-red hover:bg-[#dc2626]"
+              className="bg-dd-accent-red hover:bg-dd-red-hover"
             >
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Excluir

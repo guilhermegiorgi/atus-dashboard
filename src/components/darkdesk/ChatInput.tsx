@@ -184,7 +184,7 @@ export function ChatInput({
       {menuOpen && (
         <>
           <div
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-40 cursor-pointer"
             onClick={() => setMenuOpen(false)}
           />
           <div className="absolute bottom-full left-0 mb-2 z-50 min-w-[200px] rounded-dd-md border border-dd-border-subtle bg-dd-surface-raised py-1">
@@ -271,7 +271,8 @@ export function ChatInput({
         ref={attachBtnRef}
         onClick={() => setMenuOpen((v) => !v)}
         disabled={disabled}
-        className="flex h-9 w-9 items-center justify-center rounded-dd transition-colors text-dd-muted hover:bg-dd-surface-overlay hover:text-dd-on-surface disabled:opacity-50"
+        aria-label="Anexar arquivo"
+        className="flex h-9 w-9 items-center justify-center rounded-dd transition-colors text-dd-muted hover:bg-dd-surface-overlay hover:text-dd-on-surface focus-visible:ring-2 focus-visible:ring-dd-accent-green disabled:opacity-50"
         title="Anexar arquivo"
       >
         <Paperclip className="h-4 w-4" />
@@ -293,7 +294,8 @@ export function ChatInput({
             <button
               type="button"
               onClick={stopRecording}
-              className="flex h-6 w-6 items-center justify-center rounded-full bg-dd-accent-red text-white hover:bg-dd-accent-red/80"
+              aria-label="Parar gravação"
+              className="flex h-6 w-6 items-center justify-center rounded-full bg-dd-accent-red text-white hover:bg-dd-accent-red/80 focus-visible:ring-2 focus-visible:ring-dd-accent-green"
               title="Parar gravação"
             >
               <X className="h-3 w-3" />
@@ -319,7 +321,8 @@ export function ChatInput({
         type="button"
         onClick={handleEmoji}
         disabled={disabled}
-        className="flex h-9 w-9 items-center justify-center rounded-dd transition-colors text-dd-muted hover:bg-dd-surface-overlay hover:text-dd-on-surface disabled:opacity-50"
+        aria-label="Inserir emoji"
+        className="flex h-9 w-9 items-center justify-center rounded-dd transition-colors text-dd-muted hover:bg-dd-surface-overlay hover:text-dd-on-surface focus-visible:ring-2 focus-visible:ring-dd-accent-green disabled:opacity-50"
         title="Inserir emoji"
       >
         <Smile className="h-4 w-4" />
@@ -330,7 +333,8 @@ export function ChatInput({
         type="button"
         onClick={isRecording ? stopRecording : startRecording}
         disabled={disabled}
-        className={`flex h-9 w-9 items-center justify-center rounded-dd transition-all disabled:opacity-50 ${
+        aria-label={isRecording ? "Parar gravação" : "Gravar áudio"}
+        className={`flex h-9 w-9 items-center justify-center rounded-dd transition-all focus-visible:ring-2 focus-visible:ring-dd-accent-green disabled:opacity-50 ${
           isRecording
             ? "bg-dd-accent-red text-white animate-pulse"
             : "text-dd-muted hover:bg-dd-surface-overlay hover:text-dd-on-surface"
@@ -349,7 +353,8 @@ export function ChatInput({
         type="button"
         onClick={handleSend}
         disabled={disabled || !message.trim()}
-        className="flex h-9 w-9 items-center justify-center rounded-dd-full bg-dd-accent-green text-white transition-all hover:bg-[#17a348] disabled:opacity-50 disabled:cursor-not-allowed"
+        aria-label="Enviar mensagem"
+        className="flex h-9 w-9 items-center justify-center rounded-dd-full bg-dd-accent-green text-white transition-all hover:bg-dd-green-hover focus-visible:ring-2 focus-visible:ring-dd-accent-green disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <Send className="h-4 w-4" />
       </button>
@@ -403,7 +408,10 @@ function LocationModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/60" onClick={onClose} />
+      <div
+        className="fixed inset-0 z-40 bg-black/60 cursor-pointer"
+        onClick={onClose}
+      />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="w-full max-w-sm rounded-dd-md border border-dd-border-subtle bg-dd-surface p-4">
           <div className="flex items-center justify-between mb-4">
@@ -413,6 +421,7 @@ function LocationModal({
             <button
               type="button"
               onClick={onClose}
+              aria-label="Fechar"
               className="text-dd-muted hover:text-dd-on-surface"
             >
               <X className="h-4 w-4" />
@@ -480,7 +489,8 @@ function LocationModal({
               type="button"
               onClick={handleSubmit}
               disabled={isNaN(parseFloat(lat)) || isNaN(parseFloat(lng))}
-              className="rounded-dd-md bg-dd-accent-green px-3 py-1.5 text-sm text-white hover:bg-[#17a348] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              aria-label="Enviar localização"
+              className="rounded-dd-md bg-dd-accent-green px-3 py-1.5 text-sm text-white hover:bg-dd-green-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Enviar
             </button>
@@ -515,7 +525,10 @@ function ContactModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/60" onClick={onClose} />
+      <div
+        className="fixed inset-0 z-40 bg-black/60 cursor-pointer"
+        onClick={onClose}
+      />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="w-full max-w-sm rounded-dd-md border border-dd-border-subtle bg-dd-surface p-4">
           <div className="flex items-center justify-between mb-4">
@@ -525,6 +538,7 @@ function ContactModal({
             <button
               type="button"
               onClick={onClose}
+              aria-label="Fechar"
               className="text-dd-muted hover:text-dd-on-surface"
             >
               <X className="h-4 w-4" />
@@ -568,7 +582,8 @@ function ContactModal({
               type="button"
               onClick={handleSubmit}
               disabled={!name.trim() || !phone.trim()}
-              className="rounded-dd-md bg-dd-accent-green px-3 py-1.5 text-sm text-white hover:bg-[#17a348] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              aria-label="Enviar contato"
+              className="rounded-dd-md bg-dd-accent-green px-3 py-1.5 text-sm text-white hover:bg-dd-green-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Enviar
             </button>

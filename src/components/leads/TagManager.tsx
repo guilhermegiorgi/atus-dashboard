@@ -133,7 +133,7 @@ export function TagManager({
               Gerenciar
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-[#0A0A0A] border border-white/[0.12] text-white">
+          <DialogContent className="bg-dd-primary border border-white/[0.12] text-white">
             <DialogHeader>
               <DialogTitle>Gerenciar Tags</DialogTitle>
             </DialogHeader>
@@ -150,7 +150,7 @@ export function TagManager({
                     Criar nova tag
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-[#0A0A0A] border border-white/[0.12] text-white">
+                <DialogContent className="bg-dd-primary border border-white/[0.12] text-white">
                   <DialogHeader>
                     <DialogTitle>Criar Tag</DialogTitle>
                   </DialogHeader>
@@ -273,7 +273,7 @@ export function TagManager({
                 Add
               </button>
             </DialogTrigger>
-            <DialogContent className="bg-[#0A0A0A] border border-white/[0.12] text-white">
+            <DialogContent className="bg-dd-primary border border-white/[0.12] text-white">
               <DialogHeader>
                 <DialogTitle>Adicionar Tags</DialogTitle>
               </DialogHeader>

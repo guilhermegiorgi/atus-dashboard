@@ -42,7 +42,7 @@ function DropdownMenuContent({
         <MenuPrimitive.Popup
           data-slot="dropdown-menu-content"
           className={cn(
-            "min-w-40 rounded-lg border border-white/10 bg-[#0a0a0a] p-1 shadow-xl outline-none",
+            "min-w-40 rounded-lg border border-white/10 bg-dd-primary p-1 shadow-xl outline-none",
             className,
           )}
           {...props}

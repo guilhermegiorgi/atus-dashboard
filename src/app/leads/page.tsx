@@ -27,6 +27,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Eye, Edit, Plus, Trash2, Users } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api/client";
 import { Lead, LeadFormValues, LeadListFilters } from "@/types/leads";
 import { LeadDetailPanel } from "@/components/leads/LeadDetailPanel";
@@ -223,10 +224,35 @@ export default function LeadsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-8 w-8 rounded-full border-2 border-white/10 border-t-white/30 animate-spin" />
-          <p className="text-white/40 text-xs">Carregando...</p>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-24" />
+            <Skeleton className="h-3 w-64" />
+          </div>
+          <Skeleton className="h-8 w-24" />
+        </div>
+        <Skeleton className="h-9 w-full" />
+        <div className="rounded-sm border border-white/[0.06] overflow-hidden">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div
+              key={i}
+              className="flex items-center gap-4 border-b border-white/[0.06] px-4 py-3"
+            >
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-5 w-20" />
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-5 w-24" />
+              <Skeleton className="h-4 w-20" />
+              <div className="ml-auto flex gap-1">
+                <Skeleton className="h-7 w-7" />
+                <Skeleton className="h-7 w-7" />
+                <Skeleton className="h-7 w-7" />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );

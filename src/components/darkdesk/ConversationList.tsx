@@ -21,6 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { InboxConversationSummary } from "@/types/dashboard";
 
 interface ConversationListProps {
@@ -84,6 +85,23 @@ export function ConversationList({
   const [search, setSearch] = useState("");
   const [sortOrder, setSortOrder] = useState<"recent" | "oldest">("recent");
 
+  const handleListKeyDown = (e: React.KeyboardEvent) => {
+    const items = Array.from(
+      e.currentTarget.querySelectorAll<HTMLElement>('[role="option"]'),
+    );
+    const currentIndex = items.indexOf(document.activeElement as HTMLElement);
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      const next = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+      items[next]?.focus();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      const prev = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+      items[prev]?.focus();
+    }
+  };
+
   const filteredConversations = useMemo(() => {
     const normalized = search.trim().toLowerCase();
     let filtered = conversations;
@@ -107,10 +125,33 @@ export function ConversationList({
 
   if (isLoading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-dd-border border-t-dd-accent-green" />
-          <p className="text-xs text-dd-on-muted">Carregando conversas...</p>
+      <div className="flex h-full flex-col bg-dd-surface">
+        <div className="border-b border-dd-border-subtle p-3">
+          <div className="mb-3 flex items-center justify-between">
+            <Skeleton className="h-5 w-24" />
+            <Skeleton className="h-3 w-6" />
+          </div>
+          <Skeleton className="h-9 w-full" />
+        </div>
+        <div className="flex-1 h-0 p-2">
+          <div className="space-y-1">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-start gap-3 rounded-dd-lg p-3">
+                <Skeleton className="h-10 w-10 flex-shrink-0 rounded-dd-full" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-8" />
+                  </div>
+                  <Skeleton className="h-3 w-48" />
+                  <div className="flex gap-1.5">
+                    <Skeleton className="h-4 w-14" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -144,7 +185,7 @@ export function ConversationList({
           onClick={() =>
             setSortOrder(sortOrder === "recent" ? "oldest" : "recent")
           }
-          className="flex items-center gap-1.5 text-xs text-dd-muted hover:text-dd-on-surface transition-colors"
+          className="flex items-center gap-1.5 text-xs text-dd-muted hover:text-dd-on-surface transition-colors focus-visible:ring-2 focus-visible:ring-dd-accent-green"
         >
           <ArrowDownUp className="h-3 w-3" />
           <span>
@@ -162,7 +203,12 @@ export function ConversationList({
             </p>
           </div>
         ) : (
-          <div className="space-y-1">
+          <div
+            className="space-y-1"
+            role="listbox"
+            aria-label="Conversas"
+            onKeyDown={handleListKeyDown}
+          >
             {filteredConversations.map((conversation) => {
               const isSelected = conversation.lead_id === selectedId;
               const statusBadge = getStatusBadge(conversation.status);
@@ -171,9 +217,12 @@ export function ConversationList({
               return (
                 <button
                   key={conversation.lead_id}
+                  role="option"
+                  aria-selected={isSelected}
+                  aria-label={`Conversa com ${conversation.nome_completo || conversation.telefone || "desconhecido"}, ${conversation.last_message_preview || "sem mensagens"}`}
                   onClick={() => onSelect(conversation.lead_id)}
                   className={cn(
-                    "group w-full rounded-dd-lg p-3 text-left transition-all duration-150",
+                    "group w-full rounded-dd-lg p-3 text-left transition-all duration-150 focus-visible:ring-2 focus-visible:ring-dd-accent-green",
                     isSelected
                       ? "bg-dd-conversation-active"
                       : "hover:bg-dd-conversation-hover",
@@ -213,7 +262,8 @@ export function ConversationList({
                             <DropdownMenuTrigger>
                               <button
                                 onClick={(e) => e.stopPropagation()}
-                                className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-dd-surface-overlay transition-all"
+                                aria-label="Mais opções"
+                                className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-dd-surface-overlay transition-all focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-dd-accent-green"
                               >
                                 <MoreVertical className="h-4 w-4 text-dd-muted" />
                               </button>

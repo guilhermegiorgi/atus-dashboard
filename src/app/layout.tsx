@@ -14,8 +14,26 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const themeScript = `
+    (function() {
+      try {
+        var t = localStorage.getItem('atus-theme');
+        if (t === 'light') {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.classList.add('light');
+        } else {
+          document.documentElement.classList.remove('light');
+          document.documentElement.classList.add('dark');
+        }
+      } catch(e) {}
+    })();
+  `;
+
   return (
-    <html lang="pt-BR" className="h-full dark">
+    <html lang="pt-BR" suppressHydrationWarning className="h-full dark">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body
         className={cn(
           "font-sans antialiased h-full bg-background text-foreground",
