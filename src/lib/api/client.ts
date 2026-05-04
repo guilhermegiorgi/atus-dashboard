@@ -47,6 +47,9 @@ import {
   UserNotificationSettings,
   SetLeadFlagValues,
   SetGlobalFlagValues,
+  KanbanStage,
+  CreateKanbanStageValues,
+  UpdateKanbanStageValues,
 } from "@/types/leads";
 import {
   buildInboundLeadPayload,
@@ -1576,6 +1579,74 @@ class AtusAPI {
     };
   }
 
+  // ============ KANBAN STAGES ============
+  async getKanbanStages(): Promise<ApiResult<KanbanStage[]>> {
+    const response = await this.request<{ data: KanbanStage[] }>(
+      "/api/v1/kanban/stages",
+    );
+    return {
+      data: response.data?.data || [],
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  async createKanbanStage(
+    values: CreateKanbanStageValues,
+  ): Promise<ApiResult<KanbanStage>> {
+    const response = await this.request<{ data: KanbanStage }>(
+      "/api/v1/kanban/stages",
+      {
+        method: "POST",
+        body: JSON.stringify(values),
+      },
+    );
+    return {
+      data: response.data?.data,
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  async updateKanbanStage(
+    id: string,
+    values: UpdateKanbanStageValues,
+  ): Promise<ApiResult<KanbanStage>> {
+    const response = await this.request<{ data: KanbanStage }>(
+      `/api/v1/kanban/stages/${id}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(values),
+      },
+    );
+    return {
+      data: response.data?.data,
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  async deleteKanbanStage(id: string): Promise<ApiResult<void>> {
+    const response = await this.request(`/api/v1/kanban/stages/${id}`, {
+      method: "DELETE",
+    });
+    return {
+      error: response.error,
+      message: response.message,
+    };
+  }
+
+  async reorderKanbanStages(stageIds: string[]): Promise<ApiResult<void>> {
+    const response = await this.request("/api/v1/kanban/stages/reorder", {
+      method: "PUT",
+      body: JSON.stringify({ stage_ids: stageIds }),
+    });
+    return {
+      error: response.error,
+      message: response.message,
+    };
+  }
+
   // ============ LEAD RESET ============
   async resetLead(
     id: string,
@@ -1610,4 +1681,5 @@ export type {
   LinkStats,
   TrackedLink,
   LeadResetResult,
+  KanbanStage,
 };

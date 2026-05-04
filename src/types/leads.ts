@@ -275,6 +275,31 @@ export interface SetLeadFlagValues {
   enabled: boolean;
 }
 
+// ============ KANBAN STAGES ============
+export interface KanbanStage {
+  id: string;
+  name: string;
+  color: string;
+  position: number;
+  lead_status?: string;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateKanbanStageValues {
+  name: string;
+  color?: string;
+  lead_status?: string;
+}
+
+export interface UpdateKanbanStageValues {
+  name?: string;
+  color?: string;
+  lead_status?: string;
+  position?: number;
+}
+
 // ============ FEATURE FLAGS (Global) ============
 export interface GlobalFlag {
   nome: string;
