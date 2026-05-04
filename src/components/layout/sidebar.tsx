@@ -13,8 +13,10 @@ import {
   MessageCircle,
   Kanban,
   Settings,
+  Activity,
 } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
+import { UserMenu } from "./UserMenu";
 
 const navigation = [
   { name: "overview", href: "/", icon: Home, label: "Início" },
@@ -29,6 +31,7 @@ const navigation = [
   { name: "crm", href: "/crm", icon: MessageCircle, label: "CRM" },
   { name: "board", href: "/board", icon: Kanban, label: "Kanban" },
   { name: "pipeline", href: "/pipeline", icon: TrendingUp, label: "Pipeline" },
+  { name: "activity", href: "/activity", icon: Activity, label: "Atividades" },
   {
     name: "settings",
     href: "/settings",
@@ -80,7 +83,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Theme toggle + Dashboard at bottom */}
+      {/* Theme toggle, Dashboard, User at bottom */}
       <div className="border-t border-dd-border-subtle py-3 flex flex-col items-center gap-1">
         <ThemeToggle />
         <Link
@@ -90,6 +93,7 @@ export function Sidebar() {
         >
           <LayoutDashboard className="h-5 w-5 transition-colors group-hover:text-dd-on-surface" />
         </Link>
+        <UserMenu />
       </div>
     </div>
   );

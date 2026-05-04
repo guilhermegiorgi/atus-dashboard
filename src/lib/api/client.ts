@@ -1647,6 +1647,25 @@ class AtusAPI {
     };
   }
 
+  // ============ AUDIT LOG ============
+  async getAuditLog(
+    filters: {
+      user_id?: string;
+      action?: string;
+      entity_type?: string;
+      limit?: number;
+      offset?: number;
+    } = {},
+  ): Promise<ApiResult<{ data: Array<Record<string, unknown>> }>> {
+    const params = new URLSearchParams();
+    if (filters.user_id) params.set("user_id", filters.user_id);
+    if (filters.action) params.set("action", filters.action);
+    if (filters.entity_type) params.set("entity_type", filters.entity_type);
+    if (filters.limit) params.set("limit", String(filters.limit));
+    if (filters.offset) params.set("offset", String(filters.offset));
+    return this.request(`/api/v1/audit?${params.toString()}`);
+  }
+
   // ============ LEAD RESET ============
   async resetLead(
     id: string,
