@@ -13,6 +13,7 @@ import {
   Moon,
   Sun,
   ChevronRight,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,12 +21,14 @@ import { api } from "@/lib/api/client";
 import type { UserNotificationSettings } from "@/types/leads";
 import { UsersManager } from "@/components/settings/UsersManager";
 import { TagsManager } from "@/components/settings/TagsManager";
+import { TemplatesManager } from "@/components/settings/TemplatesManager";
 
-type Tab = "tags" | "users" | "notifications" | "appearance";
+type Tab = "tags" | "users" | "notifications" | "appearance" | "templates";
 
 const tabs: { id: Tab; label: string; icon: typeof SettingsIcon }[] = [
   { id: "tags", label: "Tags", icon: Tags },
   { id: "users", label: "Usuários", icon: Users },
+  { id: "templates", label: "Templates", icon: FileText },
   { id: "notifications", label: "Notificações", icon: Bell },
   { id: "appearance", label: "Aparência", icon: Palette },
 ];
@@ -269,6 +272,12 @@ export default function SettingsPage() {
         {activeTab === "users" && (
           <div className="max-w-3xl">
             <UsersManager />
+          </div>
+        )}
+
+        {activeTab === "templates" && (
+          <div className="max-w-3xl">
+            <TemplatesManager />
           </div>
         )}
 

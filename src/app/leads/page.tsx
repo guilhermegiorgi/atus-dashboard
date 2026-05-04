@@ -26,7 +26,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Eye, Edit, Plus, Trash2, Users } from "lucide-react";
+import { Eye, Edit, Plus, Trash2, Users, Download, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api/client";
 import { Lead, LeadFormValues, LeadListFilters } from "@/types/leads";
@@ -38,6 +38,7 @@ import {
   getOffsetForPage,
   searchWithinPage,
 } from "@/lib/leads/query-state";
+import { exportLeadsCsv } from "@/lib/export/csv";
 
 const PAGE_SIZE = 20;
 
@@ -88,6 +89,7 @@ export default function LeadsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const requestFingerprint = JSON.stringify({
     ...buildCanonicalLeadFilters(filters),
@@ -280,18 +282,81 @@ export default function LeadsPage() {
             Lista paginada e multicanal alinhada ao contrato real do AtusBot
           </p>
         </div>
-        <Button
-          onClick={openCreateModal}
-          className="bg-dd-on-primary text-dd-primary hover:bg-dd-on-primary/90"
-        >
-          <Plus className="h-3.5 w-3.5 mr-1.5" />
-          Novo Lead
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() =>
+              exportLeadsCsv(
+                leads as unknown as Record<string, unknown>[],
+                `leads-${currentPage}`,
+              )
+            }
+            className="border-dd-border-subtle text-dd-on-muted hover:text-dd-on-surface"
+          >
+            <Download className="h-3.5 w-3.5 mr-1.5" />
+            CSV
+          </Button>
+          <Button
+            onClick={openCreateModal}
+            className="bg-dd-on-primary text-dd-primary hover:bg-dd-on-primary/90"
+          >
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            Novo Lead
+          </Button>
+        </div>
       </div>
 
       {feedback && (
         <div className="rounded-sm border border-dd-border-subtle bg-dd-surface-raised px-3 py-2 text-xs text-dd-on-surface">
           {feedback}
+        </div>
+      )}
+
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 rounded-md border border-dd-accent-blue/20 bg-dd-accent-blue/5 px-4 py-2.5">
+          <span className="text-sm font-medium text-dd-accent-blue">
+            {selectedIds.size} selecionado{selectedIds.size > 1 ? "s" : ""}
+          </span>
+          <div className="flex-1" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const selected = leads.filter((l) => selectedIds.has(l.id));
+              exportLeadsCsv(
+                selected as unknown as Record<string, unknown>[],
+                "leads-selecionados",
+              );
+            }}
+            className="h-7 text-xs border-dd-border-subtle"
+          >
+            <Download className="h-3 w-3 mr-1" />
+            Exportar
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              if (!window.confirm(`Excluir ${selectedIds.size} leads?`)) return;
+              for (const id of Array.from(selectedIds)) {
+                await api.deleteLead(id);
+              }
+              setSelectedIds(new Set());
+              await loadLeads(filters);
+              setFeedback(`${selectedIds.size} leads excluídos.`);
+            }}
+            className="h-7 text-xs border-dd-accent-red/20 text-dd-accent-red hover:bg-dd-accent-red/10"
+          >
+            <Trash2 className="h-3 w-3 mr-1" />
+            Excluir
+          </Button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="flex h-6 w-6 items-center justify-center rounded text-dd-muted hover:text-dd-on-surface hover:bg-dd-surface-overlay"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
         </div>
       )}
 
@@ -337,6 +402,25 @@ export default function LeadsPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="border-dd-border-subtle hover:bg-transparent">
+                    <TableHead className="w-8">
+                      <input
+                        type="checkbox"
+                        checked={
+                          visibleLeads.length > 0 &&
+                          visibleLeads.every((l) => selectedIds.has(l.id))
+                        }
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedIds(
+                              new Set(visibleLeads.map((l) => l.id)),
+                            );
+                          } else {
+                            setSelectedIds(new Set());
+                          }
+                        }}
+                        className="h-3.5 w-3.5 rounded border-dd-border-subtle accent-dd-accent-green"
+                      />
+                    </TableHead>
                     <TableHead className="text-[10px] uppercase tracking-widest text-dd-on-muted font-medium">
                       Lead
                     </TableHead>
@@ -369,6 +453,19 @@ export default function LeadsPage() {
                       key={lead.id}
                       className="border-dd-border-subtle hover:bg-dd-surface-overlay/30 transition-colors"
                     >
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(lead.id)}
+                          onChange={(e) => {
+                            const next = new Set(selectedIds);
+                            if (e.target.checked) next.add(lead.id);
+                            else next.delete(lead.id);
+                            setSelectedIds(next);
+                          }}
+                          className="h-3.5 w-3.5 rounded border-dd-border-subtle accent-dd-accent-green"
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="space-y-1">
                           <p className="text-sm text-dd-on-primary">

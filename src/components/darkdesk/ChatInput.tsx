@@ -14,6 +14,7 @@ import {
   User,
   Sticker,
 } from "lucide-react";
+import { TemplatePicker, MessageTemplate } from "./TemplatePicker";
 
 type MediaKind = "image" | "video" | "document" | "sticker";
 
@@ -24,6 +25,8 @@ interface ChatInputProps {
   onSendLocation?: (lat: number, lng: number, title?: string) => void;
   onSendContact?: (name: string, phone: string) => void;
   onAudio?: (audioBlob: Blob) => void;
+  templates?: MessageTemplate[];
+  leadData?: Record<string, string>;
   disabled?: boolean;
   placeholder?: string;
 }
@@ -46,6 +49,8 @@ export function ChatInput({
   onSendLocation,
   onSendContact,
   onAudio,
+  templates = [],
+  leadData,
   disabled = false,
   placeholder = "Digite uma mensagem...",
 }: ChatInputProps) {
@@ -66,6 +71,15 @@ export function ChatInput({
   // Modal states
   const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [contactModalOpen, setContactModalOpen] = useState(false);
+
+  // Template picker state
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+
+  const handleTemplateSelect = (template: MessageTemplate) => {
+    setMessage(template.content);
+    setTemplatePickerOpen(false);
+    textareaRef.current?.focus();
+  };
 
   const handleSend = () => {
     if (message.trim() && onSend) {
@@ -171,7 +185,16 @@ export function ChatInput({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setMessage(e.target.value);
+    const value = e.target.value;
+    setMessage(value);
+
+    // Open template picker when user types "/" at the start
+    if (value === "/" && !templatePickerOpen) {
+      setTemplatePickerOpen(true);
+    } else if (templatePickerOpen && !value.startsWith("/")) {
+      setTemplatePickerOpen(false);
+    }
+
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
@@ -180,6 +203,14 @@ export function ChatInput({
 
   return (
     <div className="relative flex items-end gap-2 border-t border-dd-border-subtle bg-dd-surface p-3">
+      {/* Template picker */}
+      <TemplatePicker
+        open={templatePickerOpen}
+        onClose={() => setTemplatePickerOpen(false)}
+        onSelect={handleTemplateSelect}
+        templates={templates}
+        leadData={leadData}
+      />
       {/* Attach menu dropdown */}
       {menuOpen && (
         <>
