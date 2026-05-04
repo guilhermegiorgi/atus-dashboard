@@ -714,7 +714,7 @@ class AtusAPI {
     introduceActor: boolean = false,
   ): Promise<ApiResult<{ success: boolean }>> {
     return this.request(
-      `/api/internal/inbox/conversations/${leadId}/messages/image`,
+      `/api/v1/inbox/conversations/${leadId}/messages/image`,
       {
         method: "POST",
         body: JSON.stringify({
@@ -736,7 +736,7 @@ class AtusAPI {
     introduceActor: boolean = false,
   ): Promise<ApiResult<{ success: boolean }>> {
     return this.request(
-      `/api/internal/inbox/conversations/${leadId}/messages/audio`,
+      `/api/v1/inbox/conversations/${leadId}/messages/audio`,
       {
         method: "POST",
         body: JSON.stringify({
@@ -758,7 +758,7 @@ class AtusAPI {
     introduceActor: boolean = false,
   ): Promise<ApiResult<{ success: boolean }>> {
     return this.request(
-      `/api/internal/inbox/conversations/${leadId}/messages/video`,
+      `/api/v1/inbox/conversations/${leadId}/messages/video`,
       {
         method: "POST",
         body: JSON.stringify({
@@ -782,7 +782,7 @@ class AtusAPI {
     introduceActor: boolean = false,
   ): Promise<ApiResult<{ success: boolean }>> {
     return this.request(
-      `/api/internal/inbox/conversations/${leadId}/messages/document`,
+      `/api/v1/inbox/conversations/${leadId}/messages/document`,
       {
         method: "POST",
         body: JSON.stringify({
@@ -805,7 +805,7 @@ class AtusAPI {
     introduceActor: boolean = false,
   ): Promise<ApiResult<{ success: boolean }>> {
     return this.request(
-      `/api/internal/inbox/conversations/${leadId}/messages/sticker`,
+      `/api/v1/inbox/conversations/${leadId}/messages/sticker`,
       {
         method: "POST",
         body: JSON.stringify({
@@ -828,7 +828,7 @@ class AtusAPI {
     introduceActor: boolean = false,
   ): Promise<ApiResult<{ success: boolean }>> {
     return this.request(
-      `/api/internal/inbox/conversations/${leadId}/messages/location`,
+      `/api/v1/inbox/conversations/${leadId}/messages/location`,
       {
         method: "POST",
         body: JSON.stringify({
@@ -852,7 +852,7 @@ class AtusAPI {
     introduceActor: boolean = false,
   ): Promise<ApiResult<{ success: boolean }>> {
     return this.request(
-      `/api/internal/inbox/conversations/${leadId}/messages/contact`,
+      `/api/v1/inbox/conversations/${leadId}/messages/contact`,
       {
         method: "POST",
         body: JSON.stringify({
