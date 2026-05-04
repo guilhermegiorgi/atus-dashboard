@@ -11,6 +11,7 @@ import {
   Link2,
   TrendingUp,
   MessageCircle,
+  Kanban,
   Settings,
 } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
@@ -26,6 +27,7 @@ const navigation = [
   },
   { name: "tracking", href: "/tracking", icon: Link2, label: "Tracking" },
   { name: "crm", href: "/crm", icon: MessageCircle, label: "CRM" },
+  { name: "board", href: "/board", icon: Kanban, label: "Kanban" },
   { name: "pipeline", href: "/pipeline", icon: TrendingUp, label: "Pipeline" },
   {
     name: "settings",
