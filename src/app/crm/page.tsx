@@ -16,6 +16,12 @@ import {
 
 const PAGE_SIZE = 20;
 
+interface Toast {
+  id: number;
+  message: string;
+  type: "success" | "error";
+}
+
 export default function CRMPage() {
   const [filters] = useState<InboxConversationFilters>({
     limit: PAGE_SIZE,
@@ -29,6 +35,19 @@ export default function CRMPage() {
     useState<InboxConversationDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  const showToast = useCallback(
+    (message: string, type: "success" | "error") => {
+      const id = Date.now();
+      setToasts((prev) => [...prev, { id, message, type }]);
+      setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+      }, 4000);
+    },
+    [],
+  );
 
   const loadInbox = useCallback(async () => {
     setLoading(true);
@@ -51,18 +70,27 @@ export default function CRMPage() {
     setLoading(false);
   }, [filters, selectedLeadId]);
 
-  const loadConversationDetail = useCallback(async (leadId: string) => {
-    setDetailLoading(true);
-    const result = await api.getInboxConversationDetail(leadId);
+  const loadConversationDetail = useCallback(
+    async (leadId: string, refresh = false) => {
+      if (refresh) {
+        setIsRefreshing(true);
+      } else {
+        setDetailLoading(true);
+      }
+      const result = await api.getInboxConversationDetail(leadId);
 
-    if (result.error || !result.data) {
+      if (result.error || !result.data) {
+        setDetailLoading(false);
+        setIsRefreshing(false);
+        return;
+      }
+
+      setSelectedConversation(result.data);
       setDetailLoading(false);
-      return;
-    }
-
-    setSelectedConversation(result.data);
-    setDetailLoading(false);
-  }, []);
+      setIsRefreshing(false);
+    },
+    [],
+  );
 
   useEffect(() => {
     loadInbox();
@@ -83,16 +111,19 @@ export default function CRMPage() {
   const handleSendMessage = async (message: string) => {
     if (!selectedLeadId || !message.trim()) return;
 
-    await api.sendInboxMessage(selectedLeadId, {
+    const result = await api.sendInboxMessage(selectedLeadId, {
       message: message.trim(),
       actor_name: "Dashboard",
       actor_type: "admin",
       introduce_actor: false,
     });
 
-    // Refresh conversation
-    await loadConversationDetail(selectedLeadId);
-    await loadInbox();
+    if (result.error) {
+      showToast("Erro ao enviar mensagem", "error");
+    } else {
+      await loadConversationDetail(selectedLeadId, true);
+      await loadInbox();
+    }
   };
 
   const handleSendMedia = async (
@@ -146,9 +177,10 @@ export default function CRMPage() {
       }
 
       if (result?.error) {
-        console.error("Erro ao enviar mídia:", result.error);
+        showToast(`Erro ao enviar ${type}: ${result.error}`, "error");
       } else {
-        await loadConversationDetail(selectedLeadId);
+        showToast(`${type} enviado com sucesso`, "success");
+        await loadConversationDetail(selectedLeadId, true);
         await loadInbox();
       }
     };
@@ -169,9 +201,10 @@ export default function CRMPage() {
       );
 
       if (result.error) {
-        console.error("Erro ao enviar áudio:", result.error);
+        showToast(`Erro ao enviar áudio: ${result.error}`, "error");
       } else {
-        await loadConversationDetail(selectedLeadId);
+        showToast("Áudio enviado com sucesso", "success");
+        await loadConversationDetail(selectedLeadId, true);
         await loadInbox();
       }
     };
@@ -195,9 +228,10 @@ export default function CRMPage() {
     );
 
     if (result.error) {
-      console.error("Erro ao enviar localização:", result.error);
+      showToast(`Erro ao enviar localização: ${result.error}`, "error");
     } else {
-      await loadConversationDetail(selectedLeadId);
+      showToast("Localização enviada com sucesso", "success");
+      await loadConversationDetail(selectedLeadId, true);
       await loadInbox();
     }
   };
@@ -215,15 +249,42 @@ export default function CRMPage() {
     );
 
     if (result.error) {
-      console.error("Erro ao enviar contato:", result.error);
+      showToast(`Erro ao enviar contato: ${result.error}`, "error");
     } else {
-      await loadConversationDetail(selectedLeadId);
+      showToast("Contato enviado com sucesso", "success");
+      await loadConversationDetail(selectedLeadId, true);
       await loadInbox();
     }
   };
 
   return (
-    <div className="flex flex-1 h-full bg-dd-primary overflow-hidden">
+    <div className="relative flex flex-1 h-full bg-dd-primary overflow-hidden">
+      {/* Toast notifications */}
+      {toasts.length > 0 && (
+        <div className="absolute top-4 right-4 z-[100] flex flex-col gap-2">
+          {toasts.map((toast) => (
+            <div
+              key={toast.id}
+              className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm shadow-lg animate-slide-in-up ${
+                toast.type === "error"
+                  ? "bg-dd-accent-red-muted border border-dd-accent-red/30 text-dd-accent-red"
+                  : "bg-dd-accent-green-muted border border-dd-accent-green/30 text-dd-accent-green"
+              }`}
+            >
+              <span className="flex-1">{toast.message}</span>
+              <button
+                onClick={() =>
+                  setToasts((prev) => prev.filter((t) => t.id !== toast.id))
+                }
+                className="text-current opacity-60 hover:opacity-100"
+              >
+                &times;
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Conversation List - 320px */}
       <div className="w-80 flex-shrink-0 h-full border-r border-dd-border-subtle overflow-hidden">
         <ConversationList
@@ -242,7 +303,7 @@ export default function CRMPage() {
         />
         <ChatArea
           conversation={selectedConversation}
-          isLoading={detailLoading}
+          isLoading={detailLoading && !isRefreshing}
         />
         {selectedConversation && (
           <ChatInput
