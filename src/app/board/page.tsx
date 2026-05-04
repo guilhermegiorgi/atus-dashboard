@@ -1,139 +1,69 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { api } from "@/lib/api/client";
-import { Lead, LeadStatus, LeadFormValues } from "@/types/leads";
+import { Lead, LeadStatus } from "@/types/leads";
+import {
+  MoreVertical,
+  Eye,
+  Phone,
+  Mail,
+  ArrowRight,
+  X,
+  GripVertical,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-const STATUS_COLUMNS: Array<{ id: LeadStatus; label: string; color: string }> =
-  [
-    { id: "NOVO", label: "Novos", color: "yellow" },
-    { id: "EM_ATENDIMENTO", label: "Em Atendimento", color: "blue" },
-    { id: "AGUARDANDO_RETORNO", label: "Aguardando Retorno", color: "orange" },
-    { id: "CONVERTIDO", label: "Convertidos", color: "green" },
-    { id: "PERDIDO", label: "Perdidos", color: "red" },
-  ];
+const STATUS_COLUMNS: Array<{
+  id: LeadStatus;
+  label: string;
+  accent: string;
+}> = [
+  { id: "NOVO", label: "Novos", accent: "bg-dd-accent-orange" },
+  {
+    id: "EM_ATENDIMENTO",
+    label: "Em Atendimento",
+    accent: "bg-dd-accent-blue",
+  },
+  {
+    id: "AGUARDANDO_RETORNO",
+    label: "Aguardando Retorno",
+    accent: "bg-dd-accent-orange",
+  },
+  { id: "CONVERTIDO", label: "Convertidos", accent: "bg-dd-accent-green" },
+  { id: "PERDIDO", label: "Perdidos", accent: "bg-dd-accent-red" },
+];
 
-const STATUS_COLORS: Record<string, string> = {
-  NOVO: "border-dd-accent-orange/30 bg-dd-accent-orange/10 text-dd-accent-orange",
-  EM_ATENDIMENTO:
-    "border-dd-accent-blue/30 bg-dd-accent-blue/10 text-dd-accent-blue",
-  AGUARDANDO_RETORNO: "border-orange-500/30 bg-orange-500/10 text-orange-300",
-  CONVERTIDO:
-    "border-dd-accent-green/30 bg-dd-accent-green/10 text-dd-accent-green",
-  PERDIDO: "border-dd-accent-red/30 bg-dd-accent-red/10 text-dd-accent-red",
+const STATUS_BADGE: Record<string, string> = {
+  NOVO: "bg-dd-accent-orange/20 text-dd-accent-orange",
+  EM_ATENDIMENTO: "bg-dd-accent-blue/20 text-dd-accent-blue",
+  AGUARDANDO_RETORNO: "bg-dd-accent-orange/20 text-dd-accent-orange",
+  CONVERTIDO: "bg-dd-accent-green/20 text-dd-accent-green",
+  PERDIDO: "bg-dd-accent-red/20 text-dd-accent-red",
 };
 
 function formatDate(value?: string | null) {
   if (!value) return "-";
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-  }).format(new Date(value));
+  try {
+    return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(
+      new Date(value),
+    );
+  } catch {
+    return "-";
+  }
 }
 
-interface ColumnProps {
-  label: string;
-  color: string;
-  leads: Lead[];
-  loading: boolean;
-  selectedLeadId: string | null;
-  onSelectLead: (lead: Lead) => void;
-  onStatusChange: (leadId: string, newStatus: LeadStatus) => void;
-}
-
-function KanbanColumn({
-  label,
-  color,
-  leads,
-  loading,
-  selectedLeadId,
-  onSelectLead,
-}: ColumnProps) {
-  const colorClasses: Record<string, string> = {
-    yellow: "border-t-dd-accent-orange",
-    blue: "border-t-dd-accent-blue",
-    orange: "border-t-dd-accent-orange",
-    green: "border-t-dd-accent-green",
-    red: "border-t-dd-accent-red",
-  };
-
-  return (
-    <div className="flex min-w-[280px] max-w-[320px] flex-1 flex-col">
-      <div
-        className={`rounded-t-lg border-t-2 ${colorClasses[color]} border-x border-dd-border bg-dd-surface-raised px-4 py-3`}
-      >
-        <div className="flex items-center justify-between">
-          <h3 className="font-medium text-dd-on-primary">{label}</h3>
-          <Badge
-            variant="secondary"
-            className="bg-dd-surface-overlay text-dd-on-surface"
-          >
-            {leads.length}
-          </Badge>
-        </div>
-      </div>
-      <div className="flex-1 space-y-2 border-x border-b border-dd-border bg-dd-primary p-2 min-h-[400px] overflow-y-auto">
-        {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="h-6 w-6 rounded-full border-2 border-dd-border border-t-dd-on-muted animate-spin" />
-          </div>
-        ) : leads.length === 0 ? (
-          <div className="py-8 text-center text-sm text-dd-on-muted">
-            Nenhum lead
-          </div>
-        ) : (
-          leads.map((lead) => (
-            <button
-              key={lead.id}
-              type="button"
-              onClick={() => onSelectLead(lead)}
-              className={`w-full rounded-lg border p-3 text-left transition-all hover:border-dd-border ${
-                selectedLeadId === lead.id
-                  ? "border-dd-border bg-dd-surface-overlay"
-                  : "border-dd-border-subtle bg-dd-surface-raised hover:bg-dd-surface-raised"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-dd-on-primary">
-                    {lead.nome_completo || "Sem nome"}
-                  </p>
-                  <p className="text-xs text-dd-on-muted">{lead.telefone}</p>
-                </div>
-                {lead.em_follow_up && (
-                  <Badge
-                    variant="outline"
-                    className="shrink-0 border-dd-accent-orange/20 bg-dd-accent-orange/10 text-dd-accent-orange text-[10px]"
-                  >
-                    FU
-                  </Badge>
-                )}
-              </div>
-              {lead.tipo_interesse && (
-                <Badge
-                  variant="outline"
-                  className="mt-2 border-dd-border bg-dd-surface-raised text-[10px]"
-                >
-                  {lead.tipo_interesse}
-                </Badge>
-              )}
-              <div className="mt-2 flex items-center justify-between text-xs text-dd-on-muted">
-                <span>{lead.canal_origem || "-"}</span>
-                <span>{formatDate(lead.created_at)}</span>
-              </div>
-              {lead.resumo_qualificacao && (
-                <p className="mt-2 line-clamp-2 text-xs text-dd-on-muted">
-                  {lead.resumo_qualificacao}
-                </p>
-              )}
-            </button>
-          ))
-        )}
-      </div>
-    </div>
-  );
+function getInitials(name: string) {
+  if (!name) return "?";
+  const parts = name.trim().split(" ");
+  if (parts.length === 1) return parts[0][0].toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
 export default function BoardPage() {
@@ -145,12 +75,15 @@ export default function BoardPage() {
   >({});
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [draggedLead, setDraggedLead] = useState<Lead | null>(null);
+  const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
+  const dragCounterRef = useRef<Record<string, number>>({});
 
   const loadLeadsByStatus = useCallback(async (status: LeadStatus) => {
     setLoadingByStatus((prev) => ({ ...prev, [status]: true }));
 
     const result = await api.getPaginatedLeads({
-      status: status,
+      status,
       limit: 100,
       offset: 0,
     });
@@ -165,177 +98,483 @@ export default function BoardPage() {
     setLoadingByStatus((prev) => ({ ...prev, [status]: false }));
   }, []);
 
-  useEffect(() => {
+  const reloadAll = useCallback(() => {
     STATUS_COLUMNS.forEach((col) => {
       void loadLeadsByStatus(col.id);
     });
   }, [loadLeadsByStatus]);
 
+  useEffect(() => {
+    reloadAll();
+  }, [reloadAll]);
+
   const handleStatusChange = async (leadId: string, newStatus: LeadStatus) => {
-    const result = await api.updateLead(leadId, {
-      nome_completo: "",
-      telefone: "",
-      email: "",
-      tipo_interesse: "",
-      status: newStatus,
-    } as LeadFormValues);
+    const result = await api.updateLeadStatus(leadId, newStatus);
     if (!result.error) {
-      // Reload all columns
-      STATUS_COLUMNS.forEach((col) => {
-        void loadLeadsByStatus(col.id);
-      });
+      reloadAll();
+      if (selectedLead?.id === leadId) {
+        setSelectedLead(null);
+      }
     }
   };
 
+  // --- Drag and Drop handlers ---
+  const handleDragStart = (e: React.DragEvent, lead: Lead) => {
+    setDraggedLead(lead);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", lead.id);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedLead(null);
+    setDragOverColumn(null);
+    dragCounterRef.current = {};
+  };
+
+  const handleDragEnter = (e: React.DragEvent, columnId: string) => {
+    e.preventDefault();
+    dragCounterRef.current[columnId] =
+      (dragCounterRef.current[columnId] || 0) + 1;
+    setDragOverColumn(columnId);
+  };
+
+  const handleDragLeave = (e: React.DragEvent, columnId: string) => {
+    e.preventDefault();
+    dragCounterRef.current[columnId] =
+      (dragCounterRef.current[columnId] || 1) - 1;
+    if (dragCounterRef.current[columnId] <= 0) {
+      setDragOverColumn(null);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetStatus: LeadStatus) => {
+    e.preventDefault();
+    setDragOverColumn(null);
+    dragCounterRef.current = {};
+
+    if (!draggedLead || draggedLead.status === targetStatus) return;
+
+    // Optimistic: move card immediately
+    const sourceStatus = draggedLead.status as LeadStatus;
+    setLeadsByStatus((prev) => {
+      const source = (prev[sourceStatus] || []).filter(
+        (l) => l.id !== draggedLead.id,
+      );
+      const target = [
+        ...(prev[targetStatus] || []),
+        { ...draggedLead, status: targetStatus },
+      ];
+      return { ...prev, [sourceStatus]: source, [targetStatus]: target };
+    });
+
+    const result = await api.updateLeadStatus(draggedLead.id, targetStatus);
+    if (result.error) {
+      // Revert on error
+      reloadAll();
+    }
+    setDraggedLead(null);
+  };
+
+  const filteredLeads = (status: string): Lead[] => {
+    const leads = leadsByStatus[status] || [];
+    if (!searchTerm.trim()) return leads;
+    const q = searchTerm.toLowerCase();
+    return leads.filter(
+      (l) =>
+        l.nome_completo?.toLowerCase().includes(q) ||
+        l.telefone?.includes(q) ||
+        l.email?.toLowerCase().includes(q),
+    );
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="flex h-full flex-col bg-dd-primary">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-dd-border-subtle px-6 py-4">
         <div>
           <h1 className="text-lg font-medium tracking-tight text-dd-on-primary">
             Pipeline
           </h1>
           <p className="text-xs text-dd-on-muted mt-0.5">
-            Visualização Kanban dos leads por status
+            Arraste os leads entre colunas para alterar o status
           </p>
         </div>
-        <Input
-          placeholder="Buscar lead..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-64 border-dd-border bg-dd-surface-raised placeholder:text-dd-on-muted"
-        />
-      </div>
-
-      <div className="flex gap-3 overflow-x-auto pb-4">
-        {STATUS_COLUMNS.map((col) => (
-          <KanbanColumn
-            key={col.id}
-            label={col.label}
-            color={col.color}
-            leads={
-              searchTerm
-                ? (leadsByStatus[col.id] || []).filter(
-                    (lead) =>
-                      lead.nome_completo
-                        ?.toLowerCase()
-                        .includes(searchTerm.toLowerCase()) ||
-                      lead.telefone?.includes(searchTerm) ||
-                      lead.email
-                        ?.toLowerCase()
-                        .includes(searchTerm.toLowerCase()),
-                  )
-                : leadsByStatus[col.id] || []
-            }
-            loading={loadingByStatus[col.id] || false}
-            selectedLeadId={selectedLead?.id || null}
-            onSelectLead={setSelectedLead}
-            onStatusChange={handleStatusChange}
-          />
-        ))}
-      </div>
-
-      {/* Detail Panel */}
-      {selectedLead && (
-        <div className="fixed inset-y-0 right-0 z-50 w-[min(420px,100vw)] border-l border-dd-border bg-dd-primary shadow-2xl animate-slide-in-right overflow-y-auto">
-          <div className="flex items-center justify-between border-b border-dd-border px-5 py-4">
-            <div className="min-w-0 flex-1">
-              <h2 className="truncate text-lg font-medium text-dd-on-primary">
-                {selectedLead.nome_completo || "Lead sem nome"}
-              </h2>
-              <p className="text-xs text-dd-on-muted">
-                {selectedLead.telefone}
-              </p>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setSelectedLead(null)}
-              className="shrink-0 h-8 w-8 hover:bg-dd-surface-overlay hover:text-dd-on-primary"
-            >
-              ×
-            </Button>
-          </div>
-
-          <div className="space-y-4 p-4">
-            <div className="flex flex-wrap gap-2">
-              <Badge
-                variant="outline"
-                className={STATUS_COLORS[selectedLead.status]}
-              >
-                {selectedLead.status}
-              </Badge>
-              {selectedLead.em_follow_up && (
-                <Badge
-                  variant="outline"
-                  className="border-dd-accent-orange/20 bg-dd-accent-orange/10 text-dd-accent-orange"
-                >
-                  Follow-up ativo
-                </Badge>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <span className="text-dd-on-muted">Email:</span>{" "}
-                <span className="text-dd-on-primary">
-                  {selectedLead.email || "-"}
-                </span>
-              </div>
-              <div>
-                <span className="text-dd-on-muted">Tipo:</span>{" "}
-                <span className="text-dd-on-primary">
-                  {selectedLead.tipo_interesse || "-"}
-                </span>
-              </div>
-              <div>
-                <span className="text-dd-on-muted">Canal:</span>{" "}
-                <span className="text-dd-on-primary">
-                  {selectedLead.canal_origem || "-"}
-                </span>
-              </div>
-              <div>
-                <span className="text-dd-on-muted">Criado:</span>{" "}
-                <span className="text-dd-on-primary">
-                  {formatDate(selectedLead.created_at)}
-                </span>
-              </div>
-            </div>
-
-            {selectedLead.resumo_qualificacao && (
-              <div className="rounded-lg border border-dd-border bg-dd-surface-raised p-3">
-                <h4 className="mb-1 text-xs font-medium uppercase text-dd-on-muted">
-                  Qualificação
-                </h4>
-                <p className="text-sm text-dd-on-surface">
-                  {selectedLead.resumo_qualificacao}
-                </p>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <h4 className="text-xs font-medium uppercase text-dd-on-muted">
-                Alterar Status
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {STATUS_COLUMNS.map((col) => (
-                  <Button
-                    key={col.id}
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleStatusChange(selectedLead.id, col.id)}
-                    disabled={selectedLead.status === col.id}
-                    className={`border-dd-border bg-dd-surface-raised hover:bg-dd-surface-overlay hover:text-dd-on-primary ${
-                      selectedLead.status === col.id ? "opacity-50" : ""
-                    }`}
-                  >
-                    {col.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Buscar lead..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="h-9 w-64 rounded-dd bg-dd-surface-raised pl-3 pr-3 text-sm text-dd-on-surface placeholder:text-dd-muted border border-dd-border-subtle focus:border-dd-accent-green focus:outline-none"
+            />
           </div>
         </div>
+      </div>
+
+      {/* Kanban Board */}
+      <div className="flex-1 h-0 overflow-x-auto p-4">
+        <div className="flex gap-3 h-full min-w-max">
+          {STATUS_COLUMNS.map((col) => {
+            const leads = filteredLeads(col.id);
+            const isLoading = loadingByStatus[col.id] || false;
+            const isDragOver = dragOverColumn === col.id;
+
+            return (
+              <div
+                key={col.id}
+                className="flex w-72 flex-shrink-0 flex-col"
+                onDragEnter={(e) => handleDragEnter(e, col.id)}
+                onDragLeave={(e) => handleDragLeave(e, col.id)}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, col.id)}
+              >
+                {/* Column header */}
+                <div className="flex items-center gap-2 px-3 py-2.5">
+                  <div className={`h-2.5 w-2.5 rounded-full ${col.accent}`} />
+                  <h3 className="text-sm font-medium text-dd-on-primary">
+                    {col.label}
+                  </h3>
+                  <span className="ml-auto text-xs text-dd-on-muted">
+                    {leads.length}
+                  </span>
+                </div>
+
+                {/* Column body */}
+                <div
+                  className={`flex-1 h-0 overflow-y-auto rounded-dd-md border p-2 transition-colors ${
+                    isDragOver
+                      ? "border-dd-accent-green/50 bg-dd-accent-green/5"
+                      : "border-dd-border-subtle bg-dd-surface/50"
+                  }`}
+                >
+                  {isLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="h-5 w-5 rounded-full border-2 border-dd-border-subtle border-t-dd-on-muted animate-spin" />
+                    </div>
+                  ) : leads.length === 0 ? (
+                    <div className="flex h-24 items-center justify-center text-xs text-dd-on-muted">
+                      {isDragOver ? "Solte aqui" : "Nenhum lead"}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {leads.map((lead) => (
+                        <LeadCard
+                          key={lead.id}
+                          lead={lead}
+                          isDragging={draggedLead?.id === lead.id}
+                          onSelect={setSelectedLead}
+                          onDragStart={handleDragStart}
+                          onDragEnd={handleDragEnd}
+                          onStatusChange={handleStatusChange}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Detail Side Panel */}
+      {selectedLead && (
+        <LeadDetailPanel
+          lead={selectedLead}
+          onClose={() => setSelectedLead(null)}
+          onStatusChange={handleStatusChange}
+        />
       )}
+    </div>
+  );
+}
+
+/* ---------- Lead Card ---------- */
+
+function LeadCard({
+  lead,
+  isDragging,
+  onSelect,
+  onDragStart,
+  onDragEnd,
+  onStatusChange,
+}: {
+  lead: Lead;
+  isDragging: boolean;
+  onSelect: (lead: Lead) => void;
+  onDragStart: (e: React.DragEvent, lead: Lead) => void;
+  onDragEnd: () => void;
+  onStatusChange: (leadId: string, status: LeadStatus) => void;
+}) {
+  return (
+    <div
+      draggable
+      onDragStart={(e) => onDragStart(e, lead)}
+      onDragEnd={onDragEnd}
+      className={`group cursor-grab rounded-dd-md border bg-dd-surface-raised p-3 transition-all active:cursor-grabbing ${
+        isDragging
+          ? "border-dd-accent-green/50 opacity-50 shadow-lg"
+          : "border-dd-border-subtle hover:border-dd-border"
+      }`}
+    >
+      <div className="flex items-start gap-2">
+        {/* Drag handle */}
+        <GripVertical className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-dd-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+
+        {/* Avatar */}
+        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-dd-full bg-dd-surface-overlay text-[11px] font-medium text-dd-on-muted">
+          {getInitials(lead.nome_completo || lead.telefone || "?")}
+        </div>
+
+        {/* Content */}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-1">
+            <span className="truncate text-sm font-medium text-dd-on-surface">
+              {lead.nome_completo || "Sem nome"}
+            </span>
+            <DropdownMenu>
+              <DropdownMenuTrigger>
+                <button
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label="Mais opções"
+                  className="flex h-6 w-6 items-center justify-center rounded opacity-0 group-hover:opacity-100 hover:bg-dd-surface-overlay transition-all"
+                >
+                  <MoreVertical className="h-3.5 w-3.5 text-dd-muted" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem onClick={() => onSelect(lead)}>
+                  <Eye className="h-3.5 w-3.5 mr-2" />
+                  Ver detalhes
+                </DropdownMenuItem>
+                {lead.telefone && (
+                  <DropdownMenuItem
+                    onClick={() =>
+                      window.open(`https://wa.me/${lead.telefone}`, "_blank")
+                    }
+                  >
+                    <Phone className="h-3.5 w-3.5 mr-2" />
+                    Abrir WhatsApp
+                  </DropdownMenuItem>
+                )}
+                {lead.email && (
+                  <DropdownMenuItem
+                    onClick={() =>
+                      window.open(`mailto:${lead.email}`, "_blank")
+                    }
+                  >
+                    <Mail className="h-3.5 w-3.5 mr-2" />
+                    Enviar email
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                {STATUS_COLUMNS.filter((c) => c.id !== lead.status).map((c) => (
+                  <DropdownMenuItem
+                    key={c.id}
+                    onClick={() => onStatusChange(lead.id, c.id)}
+                  >
+                    <ArrowRight className="h-3.5 w-3.5 mr-2" />
+                    Mover para {c.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {lead.telefone && (
+            <p className="text-xs text-dd-on-muted">{lead.telefone}</p>
+          )}
+
+          {/* Tags */}
+          <div className="mt-2 flex flex-wrap gap-1">
+            {lead.tipo_interesse && (
+              <span className="inline-flex items-center rounded-xs bg-dd-surface-overlay px-1.5 py-0.5 text-[10px] text-dd-on-muted">
+                {lead.tipo_interesse}
+              </span>
+            )}
+            {lead.em_follow_up && (
+              <span className="inline-flex items-center rounded-xs bg-dd-accent-orange/15 px-1.5 py-0.5 text-[10px] text-dd-accent-orange">
+                FU
+              </span>
+            )}
+            {lead.canal_origem && (
+              <span className="inline-flex items-center rounded-xs bg-dd-surface-overlay px-1.5 py-0.5 text-[10px] text-dd-on-muted">
+                {lead.canal_origem}
+              </span>
+            )}
+          </div>
+
+          {/* Qualification preview */}
+          {lead.resumo_qualificacao && (
+            <p className="mt-1.5 line-clamp-2 text-[11px] text-dd-on-muted">
+              {lead.resumo_qualificacao}
+            </p>
+          )}
+
+          {/* Footer */}
+          <div className="mt-2 flex items-center justify-between text-[10px] text-dd-on-muted">
+            <span>{lead.sistema_origem || "-"}</span>
+            <span>{formatDate(lead.created_at)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Detail Side Panel ---------- */
+
+function LeadDetailPanel({
+  lead,
+  onClose,
+  onStatusChange,
+}: {
+  lead: Lead;
+  onClose: () => void;
+  onStatusChange: (leadId: string, status: LeadStatus) => void;
+}) {
+  return (
+    <>
+      <div
+        className="fixed inset-0 z-30 bg-black/40 cursor-pointer"
+        onClick={onClose}
+      />
+      <div className="fixed right-0 top-0 bottom-0 z-40 w-96 border-l border-dd-border-subtle bg-dd-surface overflow-y-auto shadow-xl">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-dd-border-subtle p-4">
+          <div className="min-w-0 flex-1">
+            <h3 className="truncate text-sm font-medium text-dd-on-primary">
+              {lead.nome_completo || "Lead sem nome"}
+            </h3>
+            <p className="text-xs text-dd-on-muted">{lead.telefone}</p>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Fechar"
+            className="flex h-8 w-8 items-center justify-center rounded-dd text-dd-muted hover:text-dd-on-surface transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="p-4 space-y-4">
+          {/* Status badge */}
+          <div className="flex flex-wrap gap-2">
+            <span
+              className={`inline-flex items-center rounded-xs px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${STATUS_BADGE[lead.status] || "bg-dd-surface-overlay text-dd-on-muted"}`}
+            >
+              {lead.status}
+            </span>
+            {lead.em_follow_up && (
+              <span className="inline-flex items-center rounded-xs bg-dd-accent-orange/15 px-2 py-0.5 text-[10px] font-medium text-dd-accent-orange">
+                Follow-up ativo
+              </span>
+            )}
+          </div>
+
+          {/* Info */}
+          <Section title="Informações">
+            <Row label="Email" value={lead.email} />
+            <Row label="Tipo" value={lead.tipo_interesse} />
+            <Row label="Canal" value={lead.canal_origem} />
+            <Row label="Sistema" value={lead.sistema_origem} />
+            <Row label="Criado" value={formatDate(lead.created_at)} />
+            <Row label="Atualizado" value={formatDate(lead.updated_at)} />
+          </Section>
+
+          {/* Qualification */}
+          {lead.resumo_qualificacao && (
+            <Section title="Qualificação">
+              <p className="text-xs text-dd-on-surface">
+                {lead.resumo_qualificacao}
+              </p>
+            </Section>
+          )}
+
+          {/* Actions */}
+          <Section title="Ações">
+            <div className="space-y-2">
+              {lead.telefone && (
+                <a
+                  href={`https://wa.me/${lead.telefone}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-dd bg-dd-accent-green/10 px-3 py-2 text-xs text-dd-accent-green hover:bg-dd-accent-green/20 transition-colors"
+                >
+                  <Phone className="h-3.5 w-3.5" />
+                  Abrir WhatsApp
+                </a>
+              )}
+              {lead.email && (
+                <a
+                  href={`mailto:${lead.email}`}
+                  className="flex items-center gap-2 rounded-dd bg-dd-accent-blue/10 px-3 py-2 text-xs text-dd-accent-blue hover:bg-dd-accent-blue/20 transition-colors"
+                >
+                  <Mail className="h-3.5 w-3.5" />
+                  Enviar email
+                </a>
+              )}
+            </div>
+          </Section>
+
+          {/* Move to status */}
+          <Section title="Alterar Status">
+            <div className="flex flex-wrap gap-1.5">
+              {STATUS_COLUMNS.map((col) => (
+                <button
+                  key={col.id}
+                  onClick={() => onStatusChange(lead.id, col.id)}
+                  disabled={lead.status === col.id}
+                  className={`inline-flex items-center gap-1.5 rounded-dd px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                    lead.status === col.id
+                      ? "bg-dd-surface-overlay text-dd-on-muted opacity-50 cursor-not-allowed"
+                      : "bg-dd-surface-raised text-dd-on-surface hover:bg-dd-surface-overlay border border-dd-border-subtle"
+                  }`}
+                >
+                  <div className={`h-2 w-2 rounded-full ${col.accent}`} />
+                  {col.label}
+                </button>
+              ))}
+            </div>
+          </Section>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ---------- Shared components ---------- */
+
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-dd-md border border-dd-border-subtle p-3">
+      <div className="text-[11px] uppercase tracking-wide text-dd-on-muted mb-2">
+        {title}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <div className="flex items-baseline justify-between gap-2 py-0.5">
+      <span className="text-[11px] text-dd-on-muted">{label}</span>
+      <span className="text-xs text-dd-on-surface text-right truncate max-w-[60%]">
+        {value || "-"}
+      </span>
     </div>
   );
 }
