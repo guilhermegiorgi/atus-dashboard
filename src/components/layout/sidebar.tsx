@@ -9,7 +9,6 @@ import {
   Home,
   BarChart3,
   Link2,
-  MessageSquare,
   TrendingUp,
   MessageCircle,
   Settings,
@@ -26,13 +25,7 @@ const navigation = [
     label: "Analytics",
   },
   { name: "tracking", href: "/tracking", icon: Link2, label: "Tracking" },
-  {
-    name: "inbox",
-    href: "/conversations",
-    icon: MessageSquare,
-    label: "Inbox",
-  },
-  { name: "crm", href: "/crm", icon: MessageCircle, label: "CRM Chat" },
+  { name: "crm", href: "/crm", icon: MessageCircle, label: "CRM" },
   { name: "pipeline", href: "/pipeline", icon: TrendingUp, label: "Pipeline" },
   {
     name: "settings",

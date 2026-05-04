@@ -40,43 +40,63 @@ interface MessageBubbleProps {
   actorType?: string | null;
   direction?: string;
   tipo_msg?: string;
+  midia_url?: string;
 }
 
-function detectMediaType(content: string, tipo_msg?: string): string {
-  if (tipo_msg === "sticker") return "sticker";
-  if (tipo_msg === "location") return "location";
-  if (tipo_msg === "contact") return "contact";
-  if (tipo_msg === "document") return "document";
-  if (
-    content.startsWith("data:image/") ||
-    content.match(/\.(png|jpe?g|gif|webp|svg)$/i)
-  )
-    return "image";
-  if (
-    content.startsWith("data:audio/") ||
-    content.match(/\.(ogg|opus|mp3|wav|m4a)$/i)
-  )
-    return "audio";
-  if (content.startsWith("data:video/") || content.match(/\.(mp4|webm|3gp)$/i))
-    return "video";
+function detectMediaType(
+  content: string,
+  tipo_msg?: string,
+  midia_url?: string,
+): string {
+  const t = tipo_msg?.toUpperCase();
+  if (t === "STICKER" || t === "STICKER") return "sticker";
+  if (t === "LOCALIZACAO" || t === "LOCATION") return "location";
+  if (t === "CONTACT" || t === "CONTATO") return "contact";
+  if (t === "DOCUMENTO" || t === "DOCUMENT") return "document";
+  if (t === "IMAGEM" || t === "IMAGE") return "image";
+  if (t === "AUDIO") return "audio";
+  if (t === "VIDEO" || t === "VÍDEO") return "video";
+  if (midia_url) {
+    if (/\.(png|jpe?g|gif|webp|svg)$/i.test(midia_url)) return "image";
+    if (/\.(ogg|opus|mp3|wav|m4a)$/i.test(midia_url)) return "audio";
+    if (/\.(mp4|webm|3gp)$/i.test(midia_url)) return "video";
+  }
+  if (content.startsWith("data:image/")) return "image";
+  if (content.startsWith("data:audio/")) return "audio";
+  if (content.startsWith("data:video/")) return "video";
   return "text";
 }
 
 function MediaContent({
   content,
   tipo_msg,
+  midia_url,
 }: {
   content: string;
   tipo_msg?: string;
+  midia_url?: string;
 }) {
-  const type = detectMediaType(content, tipo_msg);
+  const type = detectMediaType(content, tipo_msg, midia_url);
+  const mediaSrc = midia_url || content;
+  const isValidMediaSrc =
+    mediaSrc.startsWith("data:") ||
+    mediaSrc.startsWith("http") ||
+    mediaSrc.startsWith("/");
 
   switch (type) {
     case "image":
+      if (!isValidMediaSrc) {
+        return (
+          <div className="flex items-center gap-2 rounded-dd-sm border border-dd-border-subtle px-3 py-2">
+            <FileText className="h-4 w-4 text-dd-on-muted" />
+            <span className="text-sm text-dd-on-surface">Imagem</span>
+          </div>
+        );
+      }
       return (
         <div className="relative h-64 w-full">
           <Image
-            src={content}
+            src={mediaSrc}
             alt="Imagem"
             fill
             unoptimized
@@ -86,9 +106,12 @@ function MediaContent({
       );
 
     case "sticker":
+      if (!isValidMediaSrc) {
+        return <span className="text-sm text-dd-on-muted">Sticker</span>;
+      }
       return (
         <Image
-          src={content}
+          src={mediaSrc}
           alt="Sticker"
           width={120}
           height={120}
@@ -98,27 +121,51 @@ function MediaContent({
       );
 
     case "audio":
+      if (!isValidMediaSrc) {
+        return (
+          <div className="flex items-center gap-2 rounded-dd-sm border border-dd-border-subtle px-3 py-2">
+            <FileText className="h-4 w-4 text-dd-on-muted" />
+            <span className="text-sm text-dd-on-surface">Áudio</span>
+          </div>
+        );
+      }
       return (
         <audio controls aria-label="Áudio da conversa" className="w-full">
-          <source src={content} />
+          <source src={mediaSrc} />
         </audio>
       );
 
     case "video":
+      if (!isValidMediaSrc) {
+        return (
+          <div className="flex items-center gap-2 rounded-dd-sm border border-dd-border-subtle px-3 py-2">
+            <FileText className="h-4 w-4 text-dd-on-muted" />
+            <span className="text-sm text-dd-on-surface">Vídeo</span>
+          </div>
+        );
+      }
       return (
         <video
           controls
           aria-label="Vídeo da conversa"
           className="max-h-64 w-full rounded-dd-sm"
         >
-          <source src={content} />
+          <source src={mediaSrc} />
         </video>
       );
 
     case "document":
+      if (!isValidMediaSrc) {
+        return (
+          <div className="flex items-center gap-2 rounded-dd-sm border border-dd-border-subtle px-3 py-2">
+            <FileText className="h-4 w-4 text-dd-on-muted" />
+            <span className="text-sm text-dd-on-surface">Documento</span>
+          </div>
+        );
+      }
       return (
         <a
-          href={content}
+          href={mediaSrc}
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Baixar documento"
@@ -177,6 +224,7 @@ function MessageBubble({
   actorType,
   direction,
   tipo_msg,
+  midia_url,
 }: MessageBubbleProps) {
   const isOutgoing = direction === "SAIDA";
 
@@ -204,7 +252,11 @@ function MessageBubble({
 
         {/* Content */}
         {content ? (
-          <MediaContent content={content} tipo_msg={tipo_msg} />
+          <MediaContent
+            content={content}
+            tipo_msg={tipo_msg}
+            midia_url={midia_url}
+          />
         ) : (
           <p className="text-sm text-dd-on-surface">-</p>
         )}
@@ -291,6 +343,7 @@ export function ChatArea({ conversation, isLoading }: ChatAreaProps) {
                 actorType={message.actor_type}
                 direction={message.direction}
                 tipo_msg={message.tipo_msg}
+                midia_url={message.midia_url}
               />
             ))}
             <div ref={messagesEndRef} />

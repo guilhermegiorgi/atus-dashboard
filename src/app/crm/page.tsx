@@ -13,8 +13,38 @@ import {
   InboxConversationFilters,
   InboxConversationSummary,
 } from "@/types/dashboard";
+import { Corretor } from "@/types/leads";
+import { X, ShieldAlert } from "lucide-react";
 
 const PAGE_SIZE = 20;
+const ACTOR_NAME = "Dashboard";
+const ACTOR_TYPE = "admin";
+
+const MUTABLE_STATES = [
+  "TRIAGE_HUMAN",
+  "HUMAN_ACTIVE",
+  "HUMAN_STANDBY",
+  "CLOSED",
+] as const;
+
+function stateLabel(state: string) {
+  switch (state) {
+    case "TRIAGE_HUMAN":
+      return "Triagem humana";
+    case "ASSIGNED_TO_BROKER":
+      return "Atribuída";
+    case "HUMAN_ACTIVE":
+      return "Humano ativo";
+    case "HUMAN_STANDBY":
+      return "Em espera";
+    case "RETURNED_TO_BOT":
+      return "Devolvida ao bot";
+    case "CLOSED":
+      return "Fechada";
+    default:
+      return state || "-";
+  }
+}
 
 interface Toast {
   id: number;
@@ -23,10 +53,11 @@ interface Toast {
 }
 
 export default function CRMPage() {
-  const [filters] = useState<InboxConversationFilters>({
+  const [filters, setFilters] = useState<InboxConversationFilters>({
     limit: PAGE_SIZE,
     offset: 0,
   });
+  const [meta, setMeta] = useState({ total: 0, limit: PAGE_SIZE, offset: 0 });
   const [conversations, setConversations] = useState<
     InboxConversationSummary[]
   >([]);
@@ -37,6 +68,24 @@ export default function CRMPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [corretores, setCorretores] = useState<Corretor[]>([]);
+
+  // Detail panel state
+  const [detailPanelOpen, setDetailPanelOpen] = useState(false);
+
+  // Assign modal state
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [assignCorretorId, setAssignCorretorId] = useState("");
+  const [assignNote, setAssignNote] = useState("");
+
+  // State change modal
+  const [stateModalOpen, setStateModalOpen] = useState(false);
+  const [stateValue, setStateValue] = useState("HUMAN_STANDBY");
+  const [stateReason, setStateReason] = useState("");
+
+  // Return to bot modal
+  const [returnModalOpen, setReturnModalOpen] = useState(false);
+  const [returnReason, setReturnReason] = useState("");
 
   const showToast = useCallback(
     (message: string, type: "success" | "error") => {
@@ -61,6 +110,7 @@ export default function CRMPage() {
 
     const nextConversations = result.data.data;
     setConversations(nextConversations);
+    setMeta(result.data.meta);
 
     // Auto-select first conversation
     if (nextConversations.length > 0 && !selectedLeadId) {
@@ -104,17 +154,32 @@ export default function CRMPage() {
     loadConversationDetail(selectedLeadId);
   }, [selectedLeadId, loadConversationDetail]);
 
+  // Load corretores once
+  useEffect(() => {
+    api.getCorretores().then((r) => {
+      if (r.data) setCorretores(r.data);
+    });
+  }, []);
+
   const handleSelectConversation = (id: string) => {
     setSelectedLeadId(id);
   };
 
+  const refreshSelected = async () => {
+    if (selectedLeadId) {
+      await loadConversationDetail(selectedLeadId, true);
+    }
+    await loadInbox();
+  };
+
+  // --- Chat actions ---
   const handleSendMessage = async (message: string) => {
     if (!selectedLeadId || !message.trim()) return;
 
     const result = await api.sendInboxMessage(selectedLeadId, {
       message: message.trim(),
-      actor_name: "Dashboard",
-      actor_type: "admin",
+      actor_name: ACTOR_NAME,
+      actor_type: ACTOR_TYPE,
       introduce_actor: false,
     });
 
@@ -143,8 +208,8 @@ export default function CRMPage() {
             selectedLeadId,
             base64,
             undefined,
-            "Dashboard",
-            "admin",
+            ACTOR_NAME,
+            ACTOR_TYPE,
           );
           break;
         case "video":
@@ -152,8 +217,8 @@ export default function CRMPage() {
             selectedLeadId,
             base64,
             undefined,
-            "Dashboard",
-            "admin",
+            ACTOR_NAME,
+            ACTOR_TYPE,
           );
           break;
         case "document":
@@ -162,16 +227,16 @@ export default function CRMPage() {
             base64,
             file.name,
             undefined,
-            "Dashboard",
-            "admin",
+            ACTOR_NAME,
+            ACTOR_TYPE,
           );
           break;
         case "sticker":
           result = await api.sendInboxSticker(
             selectedLeadId,
             base64,
-            "Dashboard",
-            "admin",
+            ACTOR_NAME,
+            ACTOR_TYPE,
           );
           break;
       }
@@ -196,8 +261,8 @@ export default function CRMPage() {
       const result = await api.sendInboxAudio(
         selectedLeadId,
         base64,
-        "Dashboard",
-        "admin",
+        ACTOR_NAME,
+        ACTOR_TYPE,
       );
 
       if (result.error) {
@@ -223,8 +288,8 @@ export default function CRMPage() {
       lat,
       lng,
       title,
-      "Dashboard",
-      "admin",
+      ACTOR_NAME,
+      ACTOR_TYPE,
     );
 
     if (result.error) {
@@ -244,8 +309,8 @@ export default function CRMPage() {
       selectedLeadId,
       name,
       vcard,
-      "Dashboard",
-      "admin",
+      ACTOR_NAME,
+      ACTOR_TYPE,
     );
 
     if (result.error) {
@@ -254,6 +319,89 @@ export default function CRMPage() {
       showToast("Contato enviado com sucesso", "success");
       await loadConversationDetail(selectedLeadId, true);
       await loadInbox();
+    }
+  };
+
+  // --- Operational actions ---
+  const handleHeaderAction = (action: string) => {
+    switch (action) {
+      case "view":
+        setDetailPanelOpen(true);
+        break;
+      case "assign":
+        setAssignCorretorId(selectedConversation?.assigned_corretor_id ?? "");
+        setAssignNote("");
+        setAssignModalOpen(true);
+        break;
+      case "intervene":
+        setStateValue(
+          selectedConversation &&
+            MUTABLE_STATES.includes(
+              selectedConversation.conversation_state as (typeof MUTABLE_STATES)[number],
+            )
+            ? selectedConversation.conversation_state
+            : "HUMAN_STANDBY",
+        );
+        setStateReason("");
+        setStateModalOpen(true);
+        break;
+      case "release":
+        setReturnReason("");
+        setReturnModalOpen(true);
+        break;
+    }
+  };
+
+  const handleAssign = async () => {
+    if (!selectedLeadId || !assignCorretorId) return;
+
+    const result = await api.assignInboxConversation(selectedLeadId, {
+      assigned_corretor_id: assignCorretorId,
+      assigned_by: ACTOR_NAME,
+      note: assignNote || undefined,
+    });
+
+    if (result.error) {
+      showToast(`Erro ao atribuir: ${result.error}`, "error");
+    } else {
+      showToast("Conversa atribuída com sucesso", "success");
+      setAssignModalOpen(false);
+      await refreshSelected();
+    }
+  };
+
+  const handleStateChange = async () => {
+    if (!selectedLeadId) return;
+
+    const result = await api.updateInboxConversationState(selectedLeadId, {
+      state: stateValue,
+      actor_name: ACTOR_NAME,
+      reason: stateReason || undefined,
+    });
+
+    if (result.error) {
+      showToast(`Erro ao alterar estado: ${result.error}`, "error");
+    } else {
+      showToast("Estado atualizado com sucesso", "success");
+      setStateModalOpen(false);
+      await refreshSelected();
+    }
+  };
+
+  const handleReturnToBot = async () => {
+    if (!selectedLeadId) return;
+
+    const result = await api.returnInboxConversationToBot(selectedLeadId, {
+      actor_name: ACTOR_NAME,
+      reason: returnReason || undefined,
+    });
+
+    if (result.error) {
+      showToast(`Erro ao devolver: ${result.error}`, "error");
+    } else {
+      showToast("Conversa devolvida ao bot", "success");
+      setReturnModalOpen(false);
+      await refreshSelected();
     }
   };
 
@@ -285,21 +433,162 @@ export default function CRMPage() {
         </div>
       )}
 
-      {/* Conversation List - 320px */}
+      {/* Assign Modal */}
+      {assignModalOpen && (
+        <Modal
+          onClose={() => setAssignModalOpen(false)}
+          title="Atribuir corretor"
+        >
+          <div className="space-y-3">
+            {corretores.length === 0 ? (
+              <p className="text-xs text-dd-on-muted">
+                Nenhum corretor disponível
+              </p>
+            ) : (
+              <select
+                value={assignCorretorId}
+                onChange={(e) => setAssignCorretorId(e.target.value)}
+                className="h-9 w-full rounded-dd bg-dd-surface-raised border border-dd-border-subtle px-2 text-sm text-dd-on-surface focus:border-dd-accent-green focus:outline-none"
+              >
+                <option value="">Selecione um corretor</option>
+                {corretores.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nome}
+                  </option>
+                ))}
+              </select>
+            )}
+            <input
+              type="text"
+              placeholder="Nota (opcional)"
+              value={assignNote}
+              onChange={(e) => setAssignNote(e.target.value)}
+              className="h-9 w-full rounded-dd bg-dd-surface-raised border border-dd-border-subtle px-3 text-sm text-dd-on-surface placeholder:text-dd-muted focus:border-dd-accent-green focus:outline-none"
+            />
+            <div className="flex justify-end gap-2 pt-1">
+              <button
+                onClick={() => setAssignModalOpen(false)}
+                className="rounded-dd px-3 py-1.5 text-sm text-dd-muted hover:text-dd-on-surface transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleAssign}
+                disabled={!assignCorretorId || corretores.length === 0}
+                className="rounded-dd bg-dd-accent-green px-3 py-1.5 text-sm text-white hover:bg-dd-green-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Atribuir
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* State Change Modal */}
+      {stateModalOpen && (
+        <Modal onClose={() => setStateModalOpen(false)} title="Alterar estado">
+          <div className="space-y-3">
+            <select
+              value={stateValue}
+              onChange={(e) => setStateValue(e.target.value)}
+              className="h-9 w-full rounded-dd bg-dd-surface-raised border border-dd-border-subtle px-2 text-sm text-dd-on-surface focus:border-dd-accent-green focus:outline-none"
+            >
+              {MUTABLE_STATES.map((s) => (
+                <option key={s} value={s}>
+                  {stateLabel(s)}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              placeholder="Motivo (opcional)"
+              value={stateReason}
+              onChange={(e) => setStateReason(e.target.value)}
+              className="h-9 w-full rounded-dd bg-dd-surface-raised border border-dd-border-subtle px-3 text-sm text-dd-on-surface placeholder:text-dd-muted focus:border-dd-accent-green focus:outline-none"
+            />
+            <div className="flex justify-end gap-2 pt-1">
+              <button
+                onClick={() => setStateModalOpen(false)}
+                className="rounded-dd px-3 py-1.5 text-sm text-dd-muted hover:text-dd-on-surface transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleStateChange}
+                className="rounded-dd bg-dd-accent-green px-3 py-1.5 text-sm text-white hover:bg-dd-green-hover transition-colors"
+              >
+                Atualizar
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Return to Bot Modal */}
+      {returnModalOpen && (
+        <Modal
+          onClose={() => setReturnModalOpen(false)}
+          title="Devolver ao bot"
+        >
+          <div className="space-y-3">
+            <p className="text-xs text-dd-on-muted">
+              A conversa será devolvida ao bot para automação.
+            </p>
+            <input
+              type="text"
+              placeholder="Motivo (opcional)"
+              value={returnReason}
+              onChange={(e) => setReturnReason(e.target.value)}
+              className="h-9 w-full rounded-dd bg-dd-surface-raised border border-dd-border-subtle px-3 text-sm text-dd-on-surface placeholder:text-dd-muted focus:border-dd-accent-green focus:outline-none"
+            />
+            <div className="flex justify-end gap-2 pt-1">
+              <button
+                onClick={() => setReturnModalOpen(false)}
+                className="rounded-dd px-3 py-1.5 text-sm text-dd-muted hover:text-dd-on-surface transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleReturnToBot}
+                className="rounded-dd bg-dd-accent-orange px-3 py-1.5 text-sm text-white hover:opacity-80 transition-colors flex items-center gap-1.5"
+              >
+                <ShieldAlert className="h-3.5 w-3.5" />
+                Devolver
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Detail Side Panel */}
+      {detailPanelOpen && selectedConversation && (
+        <DetailPanel
+          conversation={selectedConversation}
+          onClose={() => setDetailPanelOpen(false)}
+        />
+      )}
+
+      {/* Conversation List */}
       <div className="w-80 flex-shrink-0 h-full border-r border-dd-border-subtle overflow-hidden">
         <ConversationList
           conversations={conversations}
           selectedId={selectedLeadId}
           onSelect={handleSelectConversation}
           isLoading={loading}
+          onAction={handleHeaderAction}
+          filters={filters}
+          onFiltersChange={setFilters}
+          meta={meta}
+          onPageChange={(offset) => setFilters((f) => ({ ...f, offset }))}
         />
       </div>
 
-      {/* Chat Area - flex-1 */}
+      {/* Chat Area */}
       <div className="flex flex-1 flex-col min-h-0">
         <ChatHeader
           conversation={selectedConversation}
           isLoading={detailLoading}
+          onAction={handleHeaderAction}
         />
         <ChatArea
           conversation={selectedConversation}
@@ -318,5 +607,189 @@ export default function CRMPage() {
         )}
       </div>
     </div>
+  );
+}
+
+/* ---------- Shared modal component ---------- */
+
+function Modal({
+  onClose,
+  title,
+  children,
+}: {
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <>
+      <div
+        className="fixed inset-0 z-40 bg-black/60 cursor-pointer"
+        onClick={onClose}
+      />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-sm rounded-dd-md border border-dd-border-subtle bg-dd-surface p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-dd-on-surface">{title}</h3>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Fechar"
+              className="text-dd-muted hover:text-dd-on-surface"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          {children}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ---------- Detail side panel ---------- */
+
+function DetailPanel({
+  conversation,
+  onClose,
+}: {
+  conversation: InboxConversationDetail;
+  onClose: () => void;
+}) {
+  return (
+    <>
+      <div
+        className="fixed inset-0 z-30 bg-black/40 cursor-pointer"
+        onClick={onClose}
+      />
+      <div className="fixed right-0 top-0 bottom-0 z-40 w-96 border-l border-dd-border-subtle bg-dd-surface overflow-y-auto shadow-xl">
+        <div className="flex items-center justify-between border-b border-dd-border-subtle p-4">
+          <h3 className="text-sm font-medium text-dd-on-primary">
+            Detalhes do Lead
+          </h3>
+          <button
+            onClick={onClose}
+            aria-label="Fechar"
+            className="text-dd-muted hover:text-dd-on-surface transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="p-4 space-y-4">
+          {/* Lead info */}
+          <Section title="Lead">
+            <Row label="Nome" value={conversation.nome_completo} />
+            <Row label="Telefone" value={conversation.telefone} />
+            <Row label="Email" value={conversation.email} />
+            <Row label="Atualizada" value={conversation.updated_at} />
+          </Section>
+
+          {/* Origin */}
+          <Section title="Origem e Tracking">
+            <Row label="Canal" value={conversation.canal_origem} />
+            <Row label="Sistema" value={conversation.sistema_origem} />
+            <Row label="Tracked ref" value={conversation.tracked_codigo_ref} />
+            <Row label="Link click ID" value={conversation.link_click_id} />
+          </Section>
+
+          {/* Ownership */}
+          <Section title="Ownership Humano">
+            <Row label="Owner" value={conversation.owner_user_name} />
+            <Row label="Tipo" value={conversation.owner_user_type} />
+            <Row
+              label="Corretor"
+              value={conversation.assigned_corretor_id ?? "Não atribuído"}
+            />
+            <Row label="Atribuído por" value={conversation.assigned_by} />
+          </Section>
+
+          {/* Qualification */}
+          <Section title="Qualificação">
+            <p className="text-xs text-dd-on-surface">
+              {conversation.qualification_summary || "-"}
+            </p>
+          </Section>
+
+          {/* Operational status */}
+          {conversation.operational_status && (
+            <Section title="Status Operacional">
+              <Row
+                label="Ação recomendada"
+                value={conversation.operational_status.recommended_action}
+              />
+              <Row
+                label="Campos faltantes"
+                value={
+                  conversation.operational_status.missing_fields.join(", ") ||
+                  "-"
+                }
+              />
+              <Row
+                label="Confirmação pendente"
+                value={
+                  conversation.operational_status.confirmation_pending
+                    ? "Sim"
+                    : "Não"
+                }
+              />
+              <Row
+                label="Contaminado"
+                value={
+                  conversation.operational_status.is_contaminated
+                    ? "Sim"
+                    : "Não"
+                }
+              />
+            </Section>
+          )}
+
+          {/* Status badges */}
+          <Section title="Estado">
+            <div className="flex flex-wrap gap-2">
+              <Badge>{stateLabel(conversation.conversation_state)}</Badge>
+              {conversation.status && <Badge>{conversation.status}</Badge>}
+              {conversation.fase && <Badge>{conversation.fase}</Badge>}
+            </div>
+          </Section>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-dd-md border border-dd-border-subtle p-3">
+      <div className="text-[11px] uppercase tracking-wide text-dd-on-muted mb-2">
+        {title}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <div className="flex items-baseline justify-between gap-2 py-0.5">
+      <span className="text-[11px] text-dd-on-muted">{label}</span>
+      <span className="text-xs text-dd-on-surface text-right truncate max-w-[60%]">
+        {value || "-"}
+      </span>
+    </div>
+  );
+}
+
+function Badge({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center rounded-xs bg-dd-surface-raised px-2 py-0.5 text-[10px] font-medium text-dd-on-muted">
+      {children}
+    </span>
   );
 }

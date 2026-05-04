@@ -13,6 +13,10 @@ import {
   Hand,
   Archive,
   Tag,
+  SlidersHorizontal,
+  ChevronLeft,
+  ChevronRight,
+  X,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -22,7 +26,44 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { InboxConversationSummary } from "@/types/dashboard";
+import type {
+  InboxConversationFilters,
+  InboxConversationSummary,
+} from "@/types/dashboard";
+
+const INBOX_FILTER_STATES = [
+  "TRIAGE_HUMAN",
+  "ASSIGNED_TO_BROKER",
+  "HUMAN_ACTIVE",
+  "HUMAN_STANDBY",
+  "RETURNED_TO_BOT",
+  "CLOSED",
+] as const;
+
+function stateLabel(state: string) {
+  switch (state) {
+    case "TRIAGE_HUMAN":
+      return "Triagem humana";
+    case "ASSIGNED_TO_BROKER":
+      return "Atribuída";
+    case "HUMAN_ACTIVE":
+      return "Humano ativo";
+    case "HUMAN_STANDBY":
+      return "Em espera";
+    case "RETURNED_TO_BOT":
+      return "Devolvida ao bot";
+    case "CLOSED":
+      return "Fechada";
+    default:
+      return state || "-";
+  }
+}
+
+interface ConversationListMeta {
+  total: number;
+  limit: number;
+  offset: number;
+}
 
 interface ConversationListProps {
   conversations: InboxConversationSummary[];
@@ -30,6 +71,10 @@ interface ConversationListProps {
   onSelect: (id: string) => void;
   isLoading?: boolean;
   onAction?: (action: string, leadId: string) => void;
+  filters?: InboxConversationFilters;
+  onFiltersChange?: (filters: InboxConversationFilters) => void;
+  meta?: ConversationListMeta;
+  onPageChange?: (offset: number) => void;
 }
 
 function formatTimeAgo(dateString?: string | null): string {
@@ -45,7 +90,10 @@ function formatTimeAgo(dateString?: string | null): string {
   if (diffMins < 60) return `${diffMins}m`;
   if (diffHours < 24) return `${diffHours}h`;
   if (diffDays < 7) return `${diffDays}d`;
-  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  return date.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+  });
 }
 
 function getInitials(name: string): string {
@@ -81,9 +129,14 @@ export function ConversationList({
   onSelect,
   isLoading,
   onAction,
+  filters,
+  onFiltersChange,
+  meta,
+  onPageChange,
 }: ConversationListProps) {
   const [search, setSearch] = useState("");
   const [sortOrder, setSortOrder] = useState<"recent" | "oldest">("recent");
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const handleListKeyDown = (e: React.KeyboardEvent) => {
     const items = Array.from(
@@ -101,6 +154,35 @@ export function ConversationList({
       items[prev]?.focus();
     }
   };
+
+  const updateFilter = (
+    key: keyof InboxConversationFilters,
+    value: unknown,
+  ) => {
+    if (!filters || !onFiltersChange) return;
+    onFiltersChange({
+      ...filters,
+      [key]: value || undefined,
+      offset: 0,
+    });
+  };
+
+  const clearFilters = () => {
+    if (!onFiltersChange) return;
+    onFiltersChange({ limit: filters?.limit ?? 20, offset: 0 });
+  };
+
+  const hasActiveFilters = filters
+    ? Boolean(
+        filters.state ||
+        filters.owner_user_name ||
+        filters.assigned_corretor_id ||
+        filters.canal_origem ||
+        filters.sistema_origem ||
+        filters.status ||
+        filters.fase,
+      )
+    : false;
 
   const filteredConversations = useMemo(() => {
     const normalized = search.trim().toLowerCase();
@@ -122,6 +204,13 @@ export function ConversationList({
       return sortOrder === "recent" ? dateB - dateA : dateA - dateB;
     });
   }, [conversations, search, sortOrder]);
+
+  const totalPages = meta
+    ? Math.max(1, Math.ceil(meta.total / Math.max(meta.limit, 1)))
+    : 1;
+  const currentPage = meta
+    ? Math.floor(meta.offset / Math.max(meta.limit, 1)) + 1
+    : 1;
 
   if (isLoading) {
     return (
@@ -163,9 +252,27 @@ export function ConversationList({
       <div className="border-b border-dd-border-subtle p-3">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-h3 text-dd-on-primary">Conversas</h2>
-          <span className="text-timestamp text-dd-on-muted">
-            {filteredConversations.length}
-          </span>
+          <div className="flex items-center gap-2">
+            {meta && (
+              <span className="text-timestamp text-dd-on-muted">
+                {meta.total}
+              </span>
+            )}
+            {onFiltersChange && (
+              <button
+                onClick={() => setFiltersOpen(!filtersOpen)}
+                className={cn(
+                  "flex h-7 w-7 items-center justify-center rounded-dd transition-colors focus-visible:ring-2 focus-visible:ring-dd-accent-green",
+                  filtersOpen || hasActiveFilters
+                    ? "bg-dd-accent-green/20 text-dd-accent-green"
+                    : "text-dd-muted hover:bg-dd-surface-overlay hover:text-dd-on-surface",
+                )}
+                aria-label="Filtros"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Search */}
@@ -193,6 +300,86 @@ export function ConversationList({
           </span>
         </button>
       </div>
+
+      {/* Collapsible Filters */}
+      {filtersOpen && onFiltersChange && filters && (
+        <div className="border-b border-dd-border-subtle bg-dd-surface p-3 space-y-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[11px] font-medium uppercase tracking-wide text-dd-on-muted">
+              Filtros do servidor
+            </span>
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-1 text-[11px] text-dd-accent-red hover:text-dd-accent-red/80 transition-colors"
+              >
+                <X className="h-3 w-3" />
+                Limpar
+              </button>
+            )}
+          </div>
+
+          {/* State filter */}
+          <select
+            value={filters.state ?? ""}
+            onChange={(e) => updateFilter("state", e.target.value)}
+            className="h-8 w-full rounded-dd bg-dd-surface-raised border border-dd-border-subtle px-2 text-xs text-dd-on-surface focus:border-dd-accent-green focus:outline-none"
+          >
+            <option value="">Todos os estados</option>
+            {INBOX_FILTER_STATES.map((s) => (
+              <option key={s} value={s}>
+                {stateLabel(s)}
+              </option>
+            ))}
+          </select>
+
+          <Input
+            placeholder="Owner (nome)"
+            value={filters.owner_user_name ?? ""}
+            onChange={(e) => updateFilter("owner_user_name", e.target.value)}
+            className="h-8 text-xs bg-dd-surface-raised border-dd-border-subtle"
+          />
+
+          <Input
+            placeholder="Corretor atribuído (id)"
+            value={filters.assigned_corretor_id ?? ""}
+            onChange={(e) =>
+              updateFilter("assigned_corretor_id", e.target.value)
+            }
+            className="h-8 text-xs bg-dd-surface-raised border-dd-border-subtle"
+          />
+
+          <div className="grid grid-cols-2 gap-2">
+            <Input
+              placeholder="Canal"
+              value={filters.canal_origem ?? ""}
+              onChange={(e) => updateFilter("canal_origem", e.target.value)}
+              className="h-8 text-xs bg-dd-surface-raised border-dd-border-subtle"
+            />
+            <Input
+              placeholder="Sistema"
+              value={filters.sistema_origem ?? ""}
+              onChange={(e) => updateFilter("sistema_origem", e.target.value)}
+              className="h-8 text-xs bg-dd-surface-raised border-dd-border-subtle"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <Input
+              placeholder="Status"
+              value={filters.status ?? ""}
+              onChange={(e) => updateFilter("status", e.target.value)}
+              className="h-8 text-xs bg-dd-surface-raised border-dd-border-subtle"
+            />
+            <Input
+              placeholder="Fase"
+              value={filters.fase ?? ""}
+              onChange={(e) => updateFilter("fase", e.target.value)}
+              className="h-8 text-xs bg-dd-surface-raised border-dd-border-subtle"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Conversation List */}
       <div className="flex-1 h-0 overflow-y-auto p-2">
@@ -384,6 +571,33 @@ export function ConversationList({
           </div>
         )}
       </div>
+
+      {/* Pagination */}
+      {meta && onPageChange && totalPages > 1 && (
+        <div className="flex items-center justify-between border-t border-dd-border-subtle px-3 py-2">
+          <span className="text-[11px] text-dd-on-muted">
+            Página {currentPage} de {totalPages}
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => onPageChange((currentPage - 2) * meta.limit)}
+              disabled={currentPage <= 1}
+              aria-label="Página anterior"
+              className="flex h-7 w-7 items-center justify-center rounded-dd text-dd-muted transition-colors hover:bg-dd-surface-overlay hover:text-dd-on-surface disabled:opacity-30 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-dd-accent-green"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => onPageChange(currentPage * meta.limit)}
+              disabled={currentPage >= totalPages}
+              aria-label="Próxima página"
+              className="flex h-7 w-7 items-center justify-center rounded-dd text-dd-muted transition-colors hover:bg-dd-surface-overlay hover:text-dd-on-surface disabled:opacity-30 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-dd-accent-green"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

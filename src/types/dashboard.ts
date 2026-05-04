@@ -234,6 +234,7 @@ export interface InboxMessage {
   actor_name: string;
   actor_type: string;
   tipo_msg?: string;
+  midia_url?: string;
 }
 
 export interface InboxConversationDetail extends InboxConversationSummary {

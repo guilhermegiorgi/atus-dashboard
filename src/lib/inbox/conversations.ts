@@ -60,6 +60,8 @@ function normalizeInboxMessage(raw: unknown): InboxMessage {
     timestamp: asString(item.timestamp),
     actor_name: asString(item.actor_name || metadata.actor_name),
     actor_type: asString(item.actor_type || metadata.actor_type),
+    tipo_msg: asString(item.tipo_msg || item.tipo) || undefined,
+    midia_url: asString(item.midia_url || item.media_url) || undefined,
   };
 }
 
