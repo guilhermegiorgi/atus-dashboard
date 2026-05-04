@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-import { Sidebar } from "@/components/layout/sidebar";
-import { AppContent } from "@/components/layout/AppContent";
+import { AppShell } from "@/components/layout/AppShell";
 
 export const metadata: Metadata = {
   title: "ATUS Dashboard | Gestão de Leads",
@@ -39,10 +38,7 @@ export default function RootLayout({
           "font-sans antialiased h-full bg-background text-foreground",
         )}
       >
-        <div className="flex h-full">
-          <Sidebar />
-          <AppContent>{children}</AppContent>
-        </div>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
