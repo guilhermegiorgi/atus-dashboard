@@ -217,13 +217,14 @@ export default function ActivityPage() {
                       </span>
                     )}
                   </p>
-                  {entry.details && typeof entry.details === "object" && (
+                  {entry.details && typeof entry.details === "object" && Object.keys(entry.details).length > 0 && (
                     <p className="text-[11px] text-dd-on-muted/60 mt-0.5 truncate">
                       {Object.entries(entry.details)
                         .map(([k, v]) => `${k}: ${v}`)
                         .join(" · ")}
                     </p>
                   )}
+
                 </div>
 
                 {/* Time */}

@@ -1,0 +1,9 @@
+{
+  "mcp": {
+    "synko": {
+      "type": "remote",
+      "url": "http://127.0.0.1:35359/sse",
+      "enabled": true
+    }
+  }
+}

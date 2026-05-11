@@ -1,0 +1,10 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "synko": {
+      "type": "remote",
+      "url": "http://127.0.0.1:33951/sse",
+      "enabled": true
+    }
+  }
+}

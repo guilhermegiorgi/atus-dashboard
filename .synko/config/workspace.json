@@ -1,0 +1,11 @@
+{
+  "autoSpawnSquad": null,
+  "defaultLayout": "1",
+  "defaultAgent": "shell",
+  "defaultProviderId": "claude-cli",
+  "defaultModel": "claude-opus-4-7",
+  "executionMode": "pend",
+  "lastActivePanel": "terminal",
+  "extensionPacks": [],
+  "mcpConnectors": []
+}
